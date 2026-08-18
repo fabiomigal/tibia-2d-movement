@@ -10,7 +10,7 @@
 - [x] Implementar modo idle com sessão de caça, turnos, recompensas e progresso offline.
 - [x] Implementar popups e atalhos de personagem, inventário, equipamento, skills, cidade, mapa e teleporte.
 - [x] Validar os novos fluxos em navegador e mobile, preservando os controles existentes.
-- [ ] Compilar, testar e entregar um checkpoint da expansão.
+- [x] Compilar, testar e entregar um checkpoint da expansão.
 - [x] Implementar hotspots de proximidade para portal, escada e NPC, com feedback visual e acionamento por clique, toque ou interação.
 - [x] Implementar IA local de criaturas com estados ocioso, perseguição, alcance de ataque, retorno e morte, integrada ao canvas.
 - [x] Adicionar painéis e atalhos dedicados para equipamentos, cidade e teleporte, com estados de sucesso e erro.
