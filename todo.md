@@ -28,3 +28,8 @@
 - [x] Adicionar uma verificação integrada do evento emitido por clique e toque sobre hotspots do mundo.
 - [x] Extrair e testar o pipeline de interação do mundo com pick de mesh, metadata de hotspot, ponteiro, toque e emissão de evento.
 - [x] Testar o caminho completo da tecla de ação até a emissão do evento de hotspot.
+- [x] Diagnosticar os erros ativos do cliente e do servidor por logs, tipos e chamadas de API.
+- [x] Corrigir os erros identificados sem modificar a movimentação ou a câmera aprovadas.
+- [x] Reexecutar testes, compilação e validação visual após a correção.
+- [x] Importar a dependência de raycasting exigida pelo motor para eliminar o aviso e garantir os picks de interação.
+- [x] Forçar o caminho WebGL compatível do motor e validar a eliminação dos erros de vertex shader no preview.

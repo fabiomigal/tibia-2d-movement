@@ -1,5 +1,8 @@
 /** Horizonte em Miniatura: o mundo é uma maquete em camadas onde cada obstáculo preserva silhueta e rota. */
 import { Color3 } from "@babylonjs/core/Maths/math.color";
+import "@babylonjs/core/Culling/ray";
+import "@babylonjs/core/Shaders/default.vertex";
+import "@babylonjs/core/Shaders/default.fragment";
 import { Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";

@@ -4,6 +4,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Engine } from "@babylonjs/core/Engines/engine";
+import { createGameEngineOptions } from "@/game/engineOptions";
 import { createGameScene, type GameHandle } from "@/game/scene";
 import type { GameStatus } from "@/game/types";
 import GameOverlay from "./GameOverlay";
@@ -104,11 +105,7 @@ export default function GameCanvas() {
     startedRef.current = true;
     setWorldReady(false);
 
-    const engine = new Engine(canvas, true, {
-      preserveDrawingBuffer: true,
-      stencil: true,
-      adaptToDeviceRatio: true,
-    });
+    const engine = new Engine(canvas, true, createGameEngineOptions());
     let handle: GameHandle | null = null;
     let disposed = false;
     let renderedFirstFrame = false;
