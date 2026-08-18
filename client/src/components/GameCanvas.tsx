@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import { Engine } from "@babylonjs/core/Engines/engine";
 import { createGameEngineOptions } from "@/game/engineOptions";
 import { createGameScene, type GameHandle } from "@/game/scene";
+import { appendRenderableCombatFloat } from "@/game/combatFloatLayer";
+import type { ScreenCombatFloat } from "@/game/combatFloatEvents";
 import type { GameStatus } from "@/game/types";
 import GameOverlay from "./GameOverlay";
 
@@ -87,8 +89,10 @@ function MobileJoystick() {
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const startedRef = useRef(false);
+  const floatTimersRef = useRef<number[]>([]);
   const [status, setStatus] = useState<GameStatus>(initialStatus);
   const [worldReady, setWorldReady] = useState(false);
+  const [combatFloats, setCombatFloats] = useState<ScreenCombatFloat[]>([]);
 
   useEffect(() => {
     const onStatus = (event: Event) => {
@@ -98,6 +102,24 @@ export default function GameCanvas() {
 
     window.addEventListener("vale:status", onStatus);
     return () => window.removeEventListener("vale:status", onStatus);
+  }, []);
+
+  useEffect(() => {
+    const onCombatFloat = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      const next = appendRenderableCombatFloat([], detail);
+      if (next.length === 0) return;
+      const [renderable] = next;
+      setCombatFloats((current) => appendRenderableCombatFloat(current, detail));
+      const timer = window.setTimeout(() => setCombatFloats((current) => current.filter((entry) => entry.id !== renderable.id)), renderable.lifetime * 1000);
+      floatTimersRef.current.push(timer);
+    };
+    window.addEventListener("vale:combat-float-screen", onCombatFloat);
+    return () => {
+      window.removeEventListener("vale:combat-float-screen", onCombatFloat);
+      floatTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+      floatTimersRef.current = [];
+    };
   }, []);
 
   useEffect(() => {
@@ -147,6 +169,9 @@ export default function GameCanvas() {
   return (
     <main className="game-shell" aria-label="Vale de Âmbar, campo de testes de movimentação">
       <canvas ref={canvasRef} className="game-canvas" tabIndex={0} />
+      <div className="combat-float-layer" aria-live="polite" aria-atomic="true">
+        {combatFloats.map((entry) => <span key={entry.id} className={`combat-float combat-float--${entry.kind}`} style={{ left: entry.x, top: entry.y, animationDuration: `${entry.lifetime}s` }}>{entry.kind === "heal" ? "+" : "-"}{entry.value}</span>)}
+      </div>
 
       {worldReady ? (
         <>

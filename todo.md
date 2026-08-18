@@ -38,3 +38,11 @@
 - [x] Permitir transferir itens do baú de saque para a mochila pelo painel aberto.
 - [x] Fazer a mira de Encontros próximos conduzir o personagem ao alvo e iniciar o ataque.
 - [x] Representar criaturas no minimapa de acordo com suas posições atuais.
+- [x] Exibir dano causado sobre as criaturas em branco e crítico em vermelho.
+- [x] Exibir dano sofrido sobre o personagem em branco e crítico em vermelho.
+- [x] Exibir cura recebida acima do personagem em verde.
+- [x] Validar os números flutuantes no canvas em desktop e mobile.
+- [x] Revalidar os números flutuantes pelo fluxo real em desktop e mobile após o filtro de projeções inválidas.
+- [x] Testar o descarte de coordenadas não finitas antes da camada HTML de números flutuantes.
+- [x] Cobrir de forma integrada o caminho do resultado de combate até um indicador renderizável sem coordenadas inválidas.
+- [x] Exercitar o pipeline completo de evento de combate, âncora de mundo e emissão em coordenadas renderizáveis.

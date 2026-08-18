@@ -125,11 +125,14 @@ export async function resolveCombat(monsterKey: string, skillKey?: string) {
   const finalDamage = critical ? Math.floor(damage * 1.45) : damage;
   const monsterHp = Math.max(0, encounter.hp - finalDamage);
   const defeated = monsterHp === 0;
-  const counterDamage = defeated ? 0 : monster.attackMin + Math.floor(Math.random() * (monster.attackMax - monster.attackMin + 1));
+  const counterCritical = !defeated && Math.random() < 0.14;
+  const counterBaseDamage = defeated ? 0 : monster.attackMin + Math.floor(Math.random() * (monster.attackMax - monster.attackMin + 1));
+  const counterDamage = counterCritical ? Math.floor(counterBaseDamage * 1.4) : counterBaseDamage;
   const remainingHp = Math.max(0, character.hp - counterDamage);
   const [autoPotion] = await db.select().from(gameItems).where(and(eq(gameItems.characterId, character.id), eq(gameItems.templateKey, "minor-potion"))).limit(1);
   const autoPotionUsed = Boolean(character.autoPotionEnabled && remainingHp > 0 && remainingHp <= character.maxHp * 0.35 && autoPotion);
   const hpAfterPotion = autoPotionUsed ? Math.min(character.maxHp, remainingHp + 35) : remainingHp;
+  const healing = hpAfterPotion - remainingHp;
   const progression = defeated ? levelFromXp(character.level, character.xp + monster.xp) : { level: character.level, xp: character.xp };
   const nextMaxHp = character.maxHp + Math.max(0, progression.level - character.level) * 12;
   await db.update(gameCharacters).set({ level: progression.level, xp: progression.xp, gold: character.gold + (defeated ? monster.gold : 0), hp: hpAfterPotion, maxHp: nextMaxHp, mp: Math.max(0, character.mp - skill.manaCost), energy: Math.max(0, character.energy - skill.energyCost), isDead: hpAfterPotion === 0, updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));
@@ -148,7 +151,7 @@ export async function resolveCombat(monsterKey: string, skillKey?: string) {
     const [quest] = await db.select().from(gameQuests).where(and(eq(gameQuests.characterId, character.id), eq(gameQuests.status, "active"))).limit(1);
     if (quest) { const progress = Math.min(quest.target, quest.progress + 1); await db.update(gameQuests).set({ progress, status: progress >= quest.target ? "complete" : "active" }).where(eq(gameQuests.id, quest.id)); }
   }
-  return { result: { monster: monster.name, monsterKey: monster.key, damage: finalDamage, counterDamage, element: skill.element as DamageElement, critical, defeated, monsterHp, monsterMaxHp: monster.hp, xpGained: defeated ? monster.xp : 0, goldGained: defeated ? monster.gold : 0, autoPotionUsed }, snapshot: await getGameSnapshot() };
+  return { result: { monster: monster.name, monsterKey: monster.key, damage: finalDamage, counterDamage, counterCritical, healing, element: skill.element as DamageElement, critical, defeated, monsterHp, monsterMaxHp: monster.hp, xpGained: defeated ? monster.xp : 0, goldGained: defeated ? monster.gold : 0, autoPotionUsed }, snapshot: await getGameSnapshot() };
 }
 
 export async function reviveCharacter() {
@@ -161,17 +164,20 @@ export async function updateInventory(action: "equip" | "sell" | "discard" | "us
   const db = await requireDb(); const character = await loadCharacter();
   const [item] = await db.select().from(gameItems).where(and(eq(gameItems.id, itemId), eq(gameItems.characterId, character.id))).limit(1);
   if (!item) throw new Error("Item não encontrado na mochila.");
+  let healing = 0;
   if (action === "equip" && item.slot !== "consumable" && item.slot !== "material") {
     await db.update(gameItems).set({ equipped: false }).where(and(eq(gameItems.characterId, character.id), eq(gameItems.slot, item.slot)));
     await db.update(gameItems).set({ equipped: true }).where(eq(gameItems.id, item.id));
   } else if (action === "use" && item.kind === "consumable") {
-    await db.update(gameCharacters).set({ hp: Math.min(character.maxHp, character.hp + 35), updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));
+    const hpAfterUse = Math.min(character.maxHp, character.hp + 35);
+    healing = hpAfterUse - character.hp;
+    await db.update(gameCharacters).set({ hp: hpAfterUse, updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));
     if (item.quantity > 1) await db.update(gameItems).set({ quantity: item.quantity - 1 }).where(eq(gameItems.id, item.id)); else await db.delete(gameItems).where(eq(gameItems.id, item.id));
   } else {
-    if (action === "sell") await db.update(gameCharacters).set({ gold: character.gold + item.sellValue * item.quantity, updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));
+    if (action === "sell") await db.update(gameCharacters).set({ gold: character.gold + item.sellValue * item.quantity, updatedAt: new Date() }).where(eq(gameItems.id, item.id));
     await db.delete(gameItems).where(eq(gameItems.id, item.id));
   }
-  return getGameSnapshot();
+  return { snapshot: await getGameSnapshot(), healing };
 }
 
 export async function travelToRegion(region: string) {

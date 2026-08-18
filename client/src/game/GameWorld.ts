@@ -3,7 +3,7 @@ import { Color3 } from "@babylonjs/core/Maths/math.color";
 import "@babylonjs/core/Culling/ray";
 import "@babylonjs/core/Shaders/default.vertex";
 import "@babylonjs/core/Shaders/default.fragment";
-import { Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Matrix, Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
@@ -17,6 +17,8 @@ import { Player } from "./Player";
 import type { GameStatus, MovementSource, WorldBounds } from "./types";
 import { dispatchHotspotFromActionKey, dispatchHotspotFromWorldPointer } from "./worldHotspotPipeline";
 import { resolveAttackApproach } from "./targeting";
+import { hasFiniteScreenCoordinates, toRenderableCombatFloatPosition, type CombatFloatEvent } from "./combatFloatEvents";
+import { resolveCombatFloatWorldAnchor } from "./combatFloatPipeline";
 
 const assets = {
   fieldFallback: "/manus-storage/vale-ambar-field-fallback_07dc91d6.png",
@@ -113,6 +115,17 @@ export class GameWorld {
     const chests = (event as CustomEvent<Array<{ chestKey: string; x: number; z: number }>>).detail ?? [];
     this.syncLootChests(chests);
   };
+  private readonly onFloatingCombatText = (event: Event) => {
+    const detail = (event as CustomEvent<{ target?: "player" | "monster"; kind?: "damage" | "critical" | "heal"; value?: number; monsterKey?: string }>).detail;
+    if (!detail?.target || !detail.kind || !detail.value) return;
+    const combatEvent: CombatFloatEvent = { target: detail.target, kind: detail.kind, value: detail.value, monsterKey: detail.monsterKey };
+    const anchor = resolveCombatFloatWorldAnchor(
+      combatEvent,
+      { x: this.player.position.x, z: this.player.position.y },
+      this.creatureAgents.map((entry) => ({ key: entry.interaction.monsterKey ?? "", x: entry.body.position.x, z: entry.body.position.z })),
+    );
+    if (anchor) this.spawnFloatingCombatText(anchor.x, anchor.y, anchor.z, combatEvent.value, combatEvent.kind);
+  };
 
   constructor(private readonly scene: Scene, private readonly canvas: HTMLCanvasElement, isDemo: boolean) {
     this.createWorldSurface();
@@ -139,6 +152,7 @@ export class GameWorld {
     window.addEventListener("vale:world-combat-state", this.onCombatState);
     window.addEventListener("vale:attack-target", this.onAttackTarget);
     window.addEventListener("vale:loot-chests", this.onLootChests);
+    window.addEventListener("vale:floating-combat-text", this.onFloatingCombatText);
     window.addEventListener("keydown", this.onWorldInteractionKey);
     canvas.addEventListener("pointerdown", this.onWorldPointerDown, { capture: true, passive: false });
     canvas.addEventListener("contextmenu", this.onWorldContextMenu, { capture: true });
@@ -179,6 +193,7 @@ export class GameWorld {
     window.removeEventListener("vale:world-combat-state", this.onCombatState);
     window.removeEventListener("vale:attack-target", this.onAttackTarget);
     window.removeEventListener("vale:loot-chests", this.onLootChests);
+    window.removeEventListener("vale:floating-combat-text", this.onFloatingCombatText);
     window.removeEventListener("keydown", this.onWorldInteractionKey);
     this.canvas.removeEventListener("pointerdown", this.onWorldPointerDown, true);
     this.canvas.removeEventListener("contextmenu", this.onWorldContextMenu, true);
@@ -215,6 +230,23 @@ export class GameWorld {
     bar.rail.position.set(x, y, z);
     bar.fill.position.set(x - (bar.width - 0.05) * (1 - ratio) * 0.5, y + 0.002, z - 0.007);
     bar.fill.scaling.x = Math.max(0.02, ratio);
+  }
+
+  private spawnFloatingCombatText(x: number, y: number, z: number, value: number, kind: "damage" | "critical" | "heal", lifetime = 0.82) {
+    const camera = this.scene.activeCamera;
+    if (!camera) return;
+    const projected = Vector3.Project(new Vector3(x, y, z), Matrix.Identity(), this.scene.getTransformMatrix(), camera.viewport.toGlobal(this.canvas.width, this.canvas.height));
+    const bounds = this.canvas.getBoundingClientRect();
+    if (projected.z < 0 || projected.z > 1 || !hasFiniteScreenCoordinates(projected.x, projected.y)) return;
+    const screenPosition = toRenderableCombatFloatPosition(projected.x, projected.y, this.canvas.width, this.canvas.height, bounds.width, bounds.height);
+    if (!screenPosition) return;
+    window.dispatchEvent(new CustomEvent("vale:combat-float-screen", { detail: {
+      id: `combat-float-${performance.now()}-${Math.random()}`,
+      ...screenPosition,
+      value,
+      kind,
+      lifetime,
+    } }));
   }
 
   private syncLootChests(chests: readonly { chestKey: string; x: number; z: number }[]) {

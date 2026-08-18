@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import type { GameStatus } from "@/game/types";
 import { getMinimapMarkerTheme } from "@/game/minimapTheme";
 import { groupLootChests } from "@/game/lootChestState";
+import { createCombatFloatEvents } from "@/game/combatFloatEvents";
 
 type PanelKey = "character" | "inventory" | "equipment" | "skills" | "map" | "idle" | "merchant" | "quests" | "city" | "teleport" | "loot" | null;
 type FeedbackPanel = Exclude<PanelKey, null>;
@@ -100,7 +101,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const [selectedSkill, setSelectedSkill] = useState<string>();
   const [panelFeedback, setPanelFeedback] = useState<ActionFeedback | null>(null);
   const [reviveFeedback, setReviveFeedback] = useState<ActionFeedback | null>(null);
-  const [lastCombat, setLastCombat] = useState<{ monster: string; monsterKey: string; damage: number; counterDamage: number; element: DamageElement; critical: boolean; defeated: boolean; monsterHp: number; monsterMaxHp: number; xpGained: number; goldGained: number } | null>(null);
+  const [lastCombat, setLastCombat] = useState<{ monster: string; monsterKey: string; damage: number; counterDamage: number; counterCritical: boolean; healing: number; element: DamageElement; critical: boolean; defeated: boolean; monsterHp: number; monsterMaxHp: number; xpGained: number; goldGained: number } | null>(null);
   const [selectedChestKey, setSelectedChestKey] = useState<string | null>(null);
   const merchant = trpc.game.merchant.useQuery(undefined, { enabled: panel === "merchant", retry: 1 });
 
@@ -109,6 +110,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
     onSuccess: async (result) => {
       setLastCombat(result.result);
       setNotice(result.result.defeated ? `${result.result.monster} caiu. O drop aguarda no campo.` : `${result.result.monster} contra-atacou.`);
+      createCombatFloatEvents(result.result).forEach((detail) => window.dispatchEvent(new CustomEvent("vale:floating-combat-text", { detail })));
       window.dispatchEvent(new CustomEvent("vale:world-combat-state", { detail: { player: result.snapshot.character, monsters: result.snapshot.encounters.map((entry) => ({ key: entry.monsterKey, hp: entry.hp, maxHp: entry.maxHp })) } }));
       if (result.result.defeated) {
         window.dispatchEvent(new CustomEvent("vale:creature-defeated", { detail: { monsterKey: result.result.monsterKey } }));
@@ -117,7 +119,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
     },
     onError: (error) => setNotice(error.message),
   });
-  const inventory = trpc.game.inventory.useMutation({ onSuccess: refresh, onError: (error) => setNotice(error.message) });
+  const inventory = trpc.game.inventory.useMutation({ onSuccess: async (result) => { if (result.healing > 0) window.dispatchEvent(new CustomEvent("vale:floating-combat-text", { detail: { target: "player", kind: "heal", value: result.healing } })); await refresh(); }, onError: (error) => setNotice(error.message) });
   const travel = trpc.game.travel.useMutation({ onError: (error) => setNotice(error.message) });
   const idleStart = trpc.game.idleStart.useMutation({ onSuccess: async () => { setNotice("Caça automática iniciada. Volte mais tarde para resolver o tempo decorrido."); await refresh(); }, onError: (error) => setNotice(error.message) });
   const idleResume = trpc.game.idleResume.useMutation({ onSuccess: async (result) => { setNotice(result.turns ? `Caça resolvida: ${result.turns} turnos, +${result.xp} XP e +${result.gold} ouro.` : "A sessão ainda não acumulou um turno completo."); await refresh(); }, onError: (error) => setNotice(error.message) });
