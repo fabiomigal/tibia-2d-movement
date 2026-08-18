@@ -32,4 +32,5 @@ export interface GameStatus {
   readonly hint: string;
   readonly position: readonly [number, number];
   readonly nearbyHotspot: { readonly id: string; readonly label: string; readonly kind: "npc" | "portal" | "stairs" | "monster"; readonly x: number; readonly z: number } | null;
+  readonly monsters: readonly { readonly key: string; readonly name: string; readonly x: number; readonly z: number; readonly hp: number; readonly maxHp: number }[];
 }

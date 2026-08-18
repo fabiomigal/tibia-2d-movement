@@ -15,6 +15,7 @@ const initialStatus: GameStatus = {
   hint: "WASD, setas, clique ou toque no terreno",
   position: [-4.5, -2.5],
   nearbyHotspot: null,
+  monsters: [],
 };
 
 function MobileJoystick() {

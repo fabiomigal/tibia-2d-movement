@@ -60,6 +60,12 @@ export type MonsterTemplate = {
   color: string;
 };
 
+/** Posições de referência do campo usadas pelo mundo visual e pelo baú de cada criatura derrotada. */
+export const WORLD_MONSTER_SPAWNS = [
+  { monsterKey: "field-boar", x: 2, z: 6 },
+  { monsterKey: "wind-goblin", x: 8, z: -8 },
+] as const;
+
 export type GameSkill = {
   key: string;
   name: string;

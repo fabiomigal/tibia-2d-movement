@@ -4,8 +4,9 @@ import { ARCHETYPES, ELEMENT_COLOR, ELEMENT_LABEL, REGIONS, type DamageElement }
 import { trpc } from "@/lib/trpc";
 import type { GameStatus } from "@/game/types";
 import { getMinimapMarkerTheme } from "@/game/minimapTheme";
+import { groupLootChests } from "@/game/lootChestState";
 
-type PanelKey = "character" | "inventory" | "equipment" | "skills" | "map" | "idle" | "merchant" | "quests" | "city" | "teleport" | null;
+type PanelKey = "character" | "inventory" | "equipment" | "skills" | "map" | "idle" | "merchant" | "quests" | "city" | "teleport" | "loot" | null;
 type FeedbackPanel = Exclude<PanelKey, null>;
 type ActionFeedback = { panel: FeedbackPanel; tone: "success" | "error"; message: string };
 
@@ -37,7 +38,8 @@ type Snapshot = {
   skills: Array<{ id: number; key: string; name: string; element: DamageElement; damageBase: number; manaCost: number; energyCost: number; description: string; hotkey: string | null; equipped: boolean }>;
   activeHunt: { monsterKey: string; region: string; totalTurns: number; rewardsXp: number; rewardsGold: number } | null;
   quests: Array<{ id: number; questKey: string; name: string; status: "available" | "active" | "complete"; progress: number; target: number; rewardGold: number; rewardXp: number }>;
-  drops: Array<{ id: number; name: string; rarity: string; weight: number; x: number; z: number }>;
+  drops: Array<{ id: number; chestKey: string; name: string; rarity: string; weight: number; x: number; z: number }>;
+  encounters: Array<{ id: number; monsterKey: string; hp: number; maxHp: number; respawnAt: Date | null }>;
 };
 
 const FALLBACK_CHARACTER: Snapshot["character"] = {
@@ -98,7 +100,8 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const [selectedSkill, setSelectedSkill] = useState<string>();
   const [panelFeedback, setPanelFeedback] = useState<ActionFeedback | null>(null);
   const [reviveFeedback, setReviveFeedback] = useState<ActionFeedback | null>(null);
-  const [lastCombat, setLastCombat] = useState<{ monster: string; damage: number; counterDamage: number; element: DamageElement; critical: boolean; defeated: boolean; xpGained: number; goldGained: number } | null>(null);
+  const [lastCombat, setLastCombat] = useState<{ monster: string; monsterKey: string; damage: number; counterDamage: number; element: DamageElement; critical: boolean; defeated: boolean; monsterHp: number; monsterMaxHp: number; xpGained: number; goldGained: number } | null>(null);
+  const [selectedChestKey, setSelectedChestKey] = useState<string | null>(null);
   const merchant = trpc.game.merchant.useQuery(undefined, { enabled: panel === "merchant", retry: 1 });
 
   const refresh = async () => { await utils.game.bootstrap.invalidate(); };
@@ -106,9 +109,9 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
     onSuccess: async (result) => {
       setLastCombat(result.result);
       setNotice(result.result.defeated ? `${result.result.monster} caiu. O drop aguarda no campo.` : `${result.result.monster} contra-atacou.`);
+      window.dispatchEvent(new CustomEvent("vale:world-combat-state", { detail: { player: result.snapshot.character, monsters: result.snapshot.encounters.map((entry) => ({ key: entry.monsterKey, hp: entry.hp, maxHp: entry.maxHp })) } }));
       if (result.result.defeated) {
-        const monster = DEMO_MONSTERS.find((entry) => entry.name === result.result.monster);
-        if (monster) window.dispatchEvent(new CustomEvent("vale:creature-defeated", { detail: { monsterKey: monster.key } }));
+        window.dispatchEvent(new CustomEvent("vale:creature-defeated", { detail: { monsterKey: result.result.monsterKey } }));
       }
       await refresh();
     },
@@ -152,12 +155,23 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   }, [data?.skills]);
 
   useEffect(() => {
+    if (!data) return;
+    window.dispatchEvent(new CustomEvent("vale:world-combat-state", { detail: { player: data.character, monsters: data.encounters.map((entry) => ({ key: entry.monsterKey, hp: entry.hp, maxHp: entry.maxHp })) } }));
+    const chests = groupLootChests(data.drops);
+    window.dispatchEvent(new CustomEvent("vale:loot-chests", { detail: chests }));
+    if (selectedChestKey && !chests.some((chest) => chest.chestKey === selectedChestKey)) {
+      setSelectedChestKey(null);
+      setPanel((current) => current === "loot" ? null : current);
+    }
+  }, [data, selectedChestKey]);
+
+  useEffect(() => {
     const onWorldInteraction = (event: Event) => {
       const interaction = (event as CustomEvent<{ kind: "npc" | "portal" | "stairs" | "monster"; label: string; monsterKey?: string }>).detail;
       if (!interaction) return;
       if (interaction.kind === "monster" && interaction.monsterKey) {
-        setNotice(`${interaction.label} entrou em combate.`);
-        combat.mutate({ monsterKey: interaction.monsterKey, skillKey: selectedSkill });
+        setNotice(`Alvo marcado: ${interaction.label}. Aproxime-se para atacar.`);
+        window.dispatchEvent(new CustomEvent("vale:attack-target", { detail: { monsterKey: interaction.monsterKey } }));
         return;
       }
       if (interaction.kind === "npc") { setNotice(`Você conversou com ${interaction.label}.`); setPanel("city"); return; }
@@ -173,13 +187,26 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       const detail = (event as CustomEvent<{ label?: string }>).detail;
       if (detail?.label) setNotice(`${detail.label} se aproxima. Prepare uma habilidade ou afaste-se.`);
     };
+    const onAttackReady = (event: Event) => {
+      const monsterKey = (event as CustomEvent<{ monsterKey?: string }>).detail?.monsterKey;
+      if (monsterKey) combat.mutate({ monsterKey, skillKey: selectedSkill });
+    };
+    const onOpenLootChest = (event: Event) => {
+      const chestKey = (event as CustomEvent<{ chestKey?: string }>).detail?.chestKey;
+      if (!chestKey) return;
+      setSelectedChestKey(chestKey); setPanel("loot"); setNotice("Baú aberto. Escolha os itens que deseja guardar na mochila.");
+    };
     window.addEventListener("vale:world-interaction", onWorldInteraction);
     window.addEventListener("vale:world-proximity", onProximity);
     window.addEventListener("vale:creature-attack", onCreatureAttack);
+    window.addEventListener("vale:attack-target-ready", onAttackReady);
+    window.addEventListener("vale:open-loot-chest", onOpenLootChest);
     return () => {
       window.removeEventListener("vale:world-interaction", onWorldInteraction);
       window.removeEventListener("vale:world-proximity", onProximity);
       window.removeEventListener("vale:creature-attack", onCreatureAttack);
+      window.removeEventListener("vale:attack-target-ready", onAttackReady);
+      window.removeEventListener("vale:open-loot-chest", onOpenLootChest);
     };
   }, [selectedSkill, combat]);
 
@@ -188,6 +215,8 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const minimapMarkerTheme = getMinimapMarkerTheme(character.currentRegion);
   const nearbyMonsters = DEMO_MONSTERS.filter((monster) => monster.region === character.currentRegion);
   const activeSkill = data?.skills.find((skill) => skill.key === selectedSkill) ?? data?.skills.find((skill) => skill.equipped) ?? data?.skills[0];
+  const lootChests = useMemo(() => groupLootChests(data?.drops ?? []), [data?.drops]);
+  const selectedChest = lootChests.find((chest) => chest.chestKey === selectedChestKey) ?? null;
   const minimapPlayerStyle = { left: `${Math.min(96, Math.max(4, ((status.position[0] + 23.4) / 46.8) * 100))}%`, top: `${Math.min(96, Math.max(4, ((16.4 - status.position[1]) / 32.8) * 100))}%` };
   const minimapHotspotStyle = status.nearbyHotspot ? { left: `${Math.min(96, Math.max(4, ((status.nearbyHotspot.x + 23.4) / 46.8) * 100))}%`, top: `${Math.min(96, Math.max(4, ((16.4 - status.nearbyHotspot.z) / 32.8) * 100))}%` } : undefined;
 
@@ -213,7 +242,11 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
 
       <section className="rpg-minimap" aria-label="Minimapa de região">
         <div className="rpg-minimap__heading"><Map size={14}/><span>MAPA LOCAL</span></div>
-        <div className={`rpg-minimap__map rpg-minimap__map--${character.currentRegion}`}><i className="minimap-water minimap-water--one"/><i className="minimap-water minimap-water--two"/><i className="minimap-path"/>{status.nearbyHotspot && <b className={`minimap-hotspot minimap-hotspot--${minimapMarkerTheme}`} style={minimapHotspotStyle} title={status.nearbyHotspot.label}/>}<b className={`minimap-player minimap-player--${minimapMarkerTheme}`} style={minimapPlayerStyle} title="Você"/><span className="minimap-compass">N</span></div>
+        <div className={`rpg-minimap__map rpg-minimap__map--${character.currentRegion}`}>
+          <i className="minimap-water minimap-water--one"/><i className="minimap-water minimap-water--two"/><i className="minimap-path"/>
+          {status.monsters.map((monster) => { const tone = DEMO_MONSTERS.find((entry) => entry.key === monster.key)?.tone ?? "#d58d52"; return <b key={monster.key} className="minimap-monster" style={{ left: `${Math.min(96, Math.max(4, ((monster.x + 23.4) / 46.8) * 100))}%`, top: `${Math.min(96, Math.max(4, ((16.4 - monster.z) / 32.8) * 100))}%`, background: tone }} title={`${monster.name}: ${monster.hp}/${monster.maxHp} HP`}/>; })}
+          {status.nearbyHotspot && <b className={`minimap-hotspot minimap-hotspot--${minimapMarkerTheme}`} style={minimapHotspotStyle} title={status.nearbyHotspot.label}/>}<b className={`minimap-player minimap-player--${minimapMarkerTheme}`} style={minimapPlayerStyle} title="Você"/><span className="minimap-compass">N</span>
+        </div>
         <button onClick={() => setPanel("map")}>Abrir mapa <ChevronRight size={13}/></button>
       </section>
 
@@ -235,9 +268,9 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
           <div className="combat-console__dead"><p>Você caiu em batalha.</p><button onClick={() => revive.mutate()} disabled={revive.isPending}><RotateCcw size={14}/> {revive.isPending ? "Reviver..." : "Reviver na cidade"}</button><ActionFeedback feedback={reviveFeedback ?? undefined}/></div>
         ) : nearbyMonsters.length ? (
           <div className="combat-targets">
-            {nearbyMonsters.map((monster) => <button className="monster-target" key={monster.key} onClick={() => combat.mutate({ monsterKey: monster.key, skillKey: activeSkill?.key })} disabled={combat.isPending}>
-              <i style={{ background: monster.tone }} /><span><b>{monster.name}</b><small>Lv.{monster.level} · {ELEMENT_LABEL[monster.element]}</small></span><Crosshair size={15}/>
-            </button>)}
+            {nearbyMonsters.map((monster) => { const encounter = data.encounters.find((entry) => entry.monsterKey === monster.key); return <button className="monster-target" key={monster.key} onClick={() => { setNotice(`Mira ajustada para ${monster.name}. Aproxime-se para atacar.`); window.dispatchEvent(new CustomEvent("vale:attack-target", { detail: { monsterKey: monster.key } })); }} disabled={combat.isPending || encounter?.hp === 0}>
+              <i style={{ background: monster.tone }} /><span><b>{monster.name}</b><small>Lv.{monster.level} · {ELEMENT_LABEL[monster.element]}{encounter ? ` · ${encounter.hp}/${encounter.maxHp} HP` : " · pronto"}</small></span><Crosshair size={15}/>
+            </button>; })}
           </div>
         ) : <p className="combat-console__empty">Nenhuma criatura catalogada nesta região por enquanto.</p>}
         <footer><Target size={13}/><span>{activeSkill ? `${activeSkill.name} selecionada` : "Carregando habilidades"}</span></footer>
@@ -247,7 +280,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
         <span className="status-dot"/><p>{notice}</p>
       </section>
 
-      {data.drops.length > 0 && <section className="ground-loot" aria-label="Drops no chão"><header><PackageOpen size={14}/><b>SAQUE NO CAMPO</b></header>{data.drops.map((drop) => <button key={drop.id} className={RARITY_CLASS[drop.rarity] ?? ""} onClick={() => collectDrop.mutate({ dropId: drop.id })} disabled={collectDrop.isPending}><span>{drop.name}</span><small>{drop.weight} oz · Guardar</small></button>)}</section>}
+      {lootChests.length > 0 && <section className="ground-loot" aria-label="Baús de saque no campo"><header><PackageOpen size={14}/><b>BAÚS NO CAMPO</b></header>{lootChests.map((chest) => <button key={chest.chestKey} onClick={() => { setSelectedChestKey(chest.chestKey); setPanel("loot"); }}><span>Baú de expedição</span><small>{chest.drops.length} {chest.drops.length === 1 ? "item" : "itens"} · Abrir</small></button>)}</section>}
 
       {lastCombat && <div className={`damage-toast ${lastCombat.defeated ? "damage-toast--victory" : ""}`}>
         <b style={{ color: ELEMENT_COLOR[lastCombat.element] }}>{lastCombat.critical ? "CRÍTICO " : ""}{lastCombat.damage}</b>
@@ -266,6 +299,11 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       {panel === "inventory" && <aside className="rpg-panel rpg-panel--left" aria-label="Mochila"><PanelHeader title="Mochila de expedição" onClose={() => setPanel(null)} />
         <div className="rpg-panel__body"><div className="capacity"><span><Backpack size={15}/> Capacidade</span><b>{character.currentWeight}/{character.capacity} oz</b><i><em style={{ width: `${Math.min(100, (character.currentWeight / character.capacity) * 100)}%` }}/></i></div>
           <div className="inventory-list">{data.items.map((item) => <article className={`inventory-item ${RARITY_CLASS[item.rarity] ?? ""}`} key={item.id}><div className="inventory-item__glyph">{item.kind === "weapon" ? "⚔" : item.kind === "consumable" ? "✚" : "◆"}</div><div><b>{item.name}{item.quantity > 1 ? ` ×${item.quantity}` : ""}</b><span>{item.rarity} · {item.weight * item.quantity} oz {item.equipped ? "· equipado" : ""}</span></div><div className="inventory-item__actions">{item.kind === "consumable" ? <button onClick={() => inventory.mutate({ action: "use", itemId: item.id })}>Usar</button> : item.slot !== "material" && <button onClick={() => inventory.mutate({ action: "equip", itemId: item.id })}>Equipar</button>}<button onClick={() => inventory.mutate({ action: "sell", itemId: item.id })}>Vender</button></div></article>)}</div>
+        </div></aside>}
+
+      {panel === "loot" && <aside className="rpg-panel rpg-panel--left" aria-label="Baú de saque"><PanelHeader title="Baú de expedição" onClose={() => setPanel(null)} />
+        <div className="rpg-panel__body loot-chest-panel">
+          {selectedChest ? <><p className="panel-note">Selecione um item para transferi-lo para a mochila. O baú desaparece quando estiver vazio.</p><div className="inventory-list">{selectedChest.drops.map((drop) => <article className={`inventory-item ${RARITY_CLASS[drop.rarity] ?? ""}`} key={drop.id}><div className="inventory-item__glyph">✦</div><div><b>{drop.name}</b><span>{drop.rarity} · {drop.weight} oz</span></div><button className="panel-action" onClick={() => collectDrop.mutate({ dropId: drop.id })} disabled={collectDrop.isPending}>{collectDrop.isPending ? "Guardando..." : "Guardar"}</button></article>)}</div></> : <p className="panel-note">Este baú já foi esvaziado.</p>}
         </div></aside>}
 
       {panel === "equipment" && <aside className="rpg-panel rpg-panel--left" aria-label="Equipamentos"><PanelHeader title="Equipamentos em uso" onClose={() => setPanel(null)} />

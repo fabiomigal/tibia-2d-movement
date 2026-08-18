@@ -16,6 +16,7 @@ import { MovementInput } from "./MovementInput";
 import { Player } from "./Player";
 import type { GameStatus, MovementSource, WorldBounds } from "./types";
 import { dispatchHotspotFromActionKey, dispatchHotspotFromWorldPointer } from "./worldHotspotPipeline";
+import { resolveAttackApproach } from "./targeting";
 
 const assets = {
   fieldFallback: "/manus-storage/vale-ambar-field-fallback_07dc91d6.png",
@@ -32,7 +33,9 @@ const worldBounds: WorldBounds = {
 
 type LandmarkKind = "npc" | "portal" | "stairs" | "monster";
 type LandmarkInteraction = { id: string; kind: LandmarkKind; label: string; x: number; z: number; radius: number; monsterKey?: string };
-type CreatureAgent = { interaction: LandmarkInteraction; body: Mesh; marker: Mesh; home: Vector2; phase: number; state: "idle" | "chase" | "attack" | "return" | "dead"; respawnAt: number; attackCooldown: number };
+type HealthBar = { rail: Mesh; fill: Mesh; width: number };
+type CreatureAgent = { interaction: LandmarkInteraction; body: Mesh; marker: Mesh; healthBar: HealthBar; hp: number; maxHp: number; home: Vector2; phase: number; state: "idle" | "chase" | "attack" | "return" | "dead"; respawnAt: number; attackCooldown: number };
+type LootChest = { chestKey: string; x: number; z: number; body: Mesh; lid: Mesh; glow: Mesh };
 
 export class GameWorld {
   private readonly collision = new CollisionWorld(worldBounds);
@@ -51,16 +54,26 @@ export class GameWorld {
   private hudTimer = 0;
   private landmarkInteractions: LandmarkInteraction[] = [];
   private creatureAgents: CreatureAgent[] = [];
+  private readonly lootChests = new Map<string, LootChest>();
+  private readonly playerHealthBar: HealthBar;
+  private playerHealth = { hp: 1, maxHp: 1 };
+  private activeAttackTarget: string | null = null;
   private nearbyLandmarkId: string | null = null;
   private nearbyHighlight: Mesh | null = null;
   private readonly onWorldPointerDown = (event: PointerEvent) => {
     const bounds = this.canvas.getBoundingClientRect();
+    if (this.openLootChestFromPointer(event, bounds)) return;
+    if (event.button !== 0) return;
     dispatchHotspotFromWorldPointer<LandmarkInteraction>({
       target: window,
       event,
       bounds,
       pick: (x, y) => this.scene.pick(x, y, (mesh) => Boolean((mesh.metadata as { valeInteraction?: LandmarkInteraction } | undefined)?.valeInteraction)),
     });
+  };
+  private readonly onWorldContextMenu = (event: MouseEvent) => {
+    const bounds = this.canvas.getBoundingClientRect();
+    this.openLootChestFromPointer(event as PointerEvent, bounds);
   };
   private readonly onWorldInteractionKey = (event: KeyboardEvent) => {
     dispatchHotspotFromActionKey({
@@ -79,6 +92,26 @@ export class GameWorld {
     creature.body.isVisible = false;
     creature.body.isPickable = false;
     creature.marker.isVisible = false;
+    this.setHealthBarVisible(creature.healthBar, false);
+  };
+  private readonly onCombatState = (event: Event) => {
+    const detail = (event as CustomEvent<{ player?: { hp: number; maxHp: number }; monsters?: Array<{ key: string; hp: number; maxHp: number }> }>).detail;
+    if (detail?.player) this.playerHealth = detail.player;
+    for (const state of detail?.monsters ?? []) {
+      const creature = this.creatureAgents.find((entry) => entry.interaction.monsterKey === state.key);
+      if (!creature) continue;
+      creature.hp = state.hp;
+      creature.maxHp = state.maxHp;
+      this.updateHealthBar(creature.healthBar, creature.body.position.x, 1.08, creature.body.position.z, state.hp, state.maxHp, creature.state !== "dead");
+    }
+  };
+  private readonly onAttackTarget = (event: Event) => {
+    const monsterKey = (event as CustomEvent<{ monsterKey?: string }>).detail?.monsterKey;
+    if (monsterKey) this.activeAttackTarget = monsterKey;
+  };
+  private readonly onLootChests = (event: Event) => {
+    const chests = (event as CustomEvent<Array<{ chestKey: string; x: number; z: number }>>).detail ?? [];
+    this.syncLootChests(chests);
   };
 
   constructor(private readonly scene: Scene, private readonly canvas: HTMLCanvasElement, isDemo: boolean) {
@@ -93,6 +126,7 @@ export class GameWorld {
     this.createForegroundFoliage();
 
     this.player = new Player(scene, new Vector2(-4.5, -2.5));
+    this.playerHealthBar = this.createHealthBar("player-health", "#D65752", 0.92);
     this.cameraController = new CameraController(scene, worldBounds);
     this.cameraController.update(1, this.player.position);
     this.input = new MovementInput(canvas, (x, y) => this.pickWorldPosition(canvas, x, y), (target) => this.player.setTarget(target));
@@ -102,8 +136,12 @@ export class GameWorld {
     this.textureRetryTimer = window.setInterval(() => this.tryLoadGeneratedTextures(), 12_000);
     window.addEventListener("resize", this.onResize);
     window.addEventListener("vale:creature-defeated", this.onCreatureDefeated);
+    window.addEventListener("vale:world-combat-state", this.onCombatState);
+    window.addEventListener("vale:attack-target", this.onAttackTarget);
+    window.addEventListener("vale:loot-chests", this.onLootChests);
     window.addEventListener("keydown", this.onWorldInteractionKey);
     canvas.addEventListener("pointerdown", this.onWorldPointerDown, { capture: true, passive: false });
+    canvas.addEventListener("contextmenu", this.onWorldContextMenu, { capture: true });
   }
 
   update(deltaSeconds: number) {
@@ -116,7 +154,9 @@ export class GameWorld {
     }
 
     this.player.update(deltaSeconds, continuousVector, this.collision, source);
+    this.updateHealthBar(this.playerHealthBar, this.player.position.x, 1.16, this.player.position.y, this.playerHealth.hp, this.playerHealth.maxHp, true);
     this.updateCreatureAgents(deltaSeconds);
+    this.updateTargetedAttack();
     this.cameraController.update(deltaSeconds, this.player.position);
     this.updateNearbyLandmark();
 
@@ -130,11 +170,18 @@ export class GameWorld {
   dispose() {
     this.input.dispose();
     this.nearbyHighlight?.dispose();
+    this.playerHealthBar.rail.dispose();
+    this.playerHealthBar.fill.dispose();
+    this.lootChests.forEach((chest) => { chest.body.dispose(); chest.lid.dispose(); chest.glow.dispose(); });
     if (this.textureRetryTimer !== null) window.clearInterval(this.textureRetryTimer);
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("vale:creature-defeated", this.onCreatureDefeated);
+    window.removeEventListener("vale:world-combat-state", this.onCombatState);
+    window.removeEventListener("vale:attack-target", this.onAttackTarget);
+    window.removeEventListener("vale:loot-chests", this.onLootChests);
     window.removeEventListener("keydown", this.onWorldInteractionKey);
     this.canvas.removeEventListener("pointerdown", this.onWorldPointerDown, true);
+    this.canvas.removeEventListener("contextmenu", this.onWorldContextMenu, true);
   }
 
   private readonly onResize = () => this.cameraController.resize();
@@ -144,6 +191,60 @@ export class GameWorld {
     const pick = this.scene.pick(clientX - bounds.left, clientY - bounds.top, (mesh) => mesh.name === "walkable-grass");
     if (!pick?.hit || !pick.pickedPoint) return null;
     return new Vector2(pick.pickedPoint.x, pick.pickedPoint.z);
+  }
+
+  private createHealthBar(name: string, fillColor: string, width: number): HealthBar {
+    const rail = MeshBuilder.CreateBox(`${name}-rail`, { width, height: 0.075, depth: 0.06 }, this.scene);
+    rail.material = this.colorMaterial(`${name}-rail-material`, "#1B281F", 0.06, 0.94);
+    rail.isPickable = false;
+    const fill = MeshBuilder.CreateBox(`${name}-fill`, { width: width - 0.05, height: 0.043, depth: 0.07 }, this.scene);
+    fill.material = this.colorMaterial(`${name}-fill-material`, fillColor, 0.45, 0.98);
+    fill.isPickable = false;
+    return { rail, fill, width };
+  }
+
+  private setHealthBarVisible(bar: HealthBar, visible: boolean) {
+    bar.rail.isVisible = visible;
+    bar.fill.isVisible = visible;
+  }
+
+  private updateHealthBar(bar: HealthBar, x: number, y: number, z: number, hp: number, maxHp: number, visible: boolean) {
+    this.setHealthBarVisible(bar, visible);
+    if (!visible) return;
+    const ratio = Math.max(0, Math.min(1, maxHp ? hp / maxHp : 0));
+    bar.rail.position.set(x, y, z);
+    bar.fill.position.set(x - (bar.width - 0.05) * (1 - ratio) * 0.5, y + 0.002, z - 0.007);
+    bar.fill.scaling.x = Math.max(0.02, ratio);
+  }
+
+  private syncLootChests(chests: readonly { chestKey: string; x: number; z: number }[]) {
+    const incoming = new Set(chests.map((chest) => chest.chestKey));
+    this.lootChests.forEach((chest, key) => {
+      if (incoming.has(key)) return;
+      chest.body.dispose(); chest.lid.dispose(); chest.glow.dispose();
+      this.lootChests.delete(key);
+    });
+    for (const chest of chests) {
+      if (this.lootChests.has(chest.chestKey)) continue;
+      const glow = MeshBuilder.CreateDisc(`loot-glow-${chest.chestKey}`, { radius: 0.64, tessellation: 20 }, this.scene);
+      glow.position.set(chest.x, 0.04, chest.z); glow.rotation.x = Math.PI / 2;
+      glow.material = this.colorMaterial(`loot-glow-material-${chest.chestKey}`, "#F2B84B", 0.55, 0.32); glow.isPickable = false;
+      const body = MeshBuilder.CreateBox(`loot-chest-${chest.chestKey}`, { width: 0.68, height: 0.34, depth: 0.48 }, this.scene);
+      body.position.set(chest.x, 0.22, chest.z); body.material = this.colorMaterial(`loot-chest-material-${chest.chestKey}`, "#7A5131", 0.13);
+      const lid = MeshBuilder.CreateBox(`loot-lid-${chest.chestKey}`, { width: 0.73, height: 0.12, depth: 0.53 }, this.scene);
+      lid.position.set(chest.x, 0.43, chest.z); lid.material = this.colorMaterial(`loot-lid-material-${chest.chestKey}`, "#D6A84B", 0.35);
+      [body, lid].forEach((mesh) => { mesh.isPickable = true; mesh.metadata = { ...(mesh.metadata as Record<string, unknown> | undefined), valeLootChest: chest.chestKey }; });
+      this.lootChests.set(chest.chestKey, { ...chest, body, lid, glow });
+    }
+  }
+
+  private openLootChestFromPointer(event: PointerEvent, bounds: DOMRect) {
+    const pick = this.scene.pick(event.clientX - bounds.left, event.clientY - bounds.top, (mesh) => Boolean((mesh.metadata as { valeLootChest?: string } | undefined)?.valeLootChest));
+    const chestKey = (pick?.pickedMesh?.metadata as { valeLootChest?: string } | undefined)?.valeLootChest;
+    if (!chestKey) return false;
+    event.preventDefault(); event.stopImmediatePropagation();
+    window.dispatchEvent(new CustomEvent("vale:open-loot-chest", { detail: { chestKey } }));
+    return true;
   }
 
   private createWorldSurface() {
@@ -468,7 +569,9 @@ export class GameWorld {
     marker.rotation.x = Math.PI / 2;
     marker.material = this.colorMaterial(`${name}-target-marker-material`, "#F2B84B", 0.42, 0.68);
     marker.isPickable = false;
-    this.creatureAgents.push({ interaction, body, marker, home: new Vector2(x, z), phase: this.creatureAgents.length * 1.7, state: "idle", respawnAt: 0, attackCooldown: 0 });
+    const healthBar = this.createHealthBar(`${name}-health`, "#C74E4A", 0.78);
+    this.updateHealthBar(healthBar, x, 1.08, z, 1, 1, true);
+    this.creatureAgents.push({ interaction, body, marker, healthBar, hp: 1, maxHp: 1, home: new Vector2(x, z), phase: this.creatureAgents.length * 1.7, state: "idle", respawnAt: 0, attackCooldown: 0 });
   }
 
   private registerLandmark(mesh: Mesh, interaction: LandmarkInteraction) {
@@ -503,6 +606,8 @@ export class GameWorld {
         creature.body.isVisible = true;
         creature.body.isPickable = true;
         creature.marker.isVisible = true;
+        creature.hp = creature.maxHp;
+        this.setHealthBarVisible(creature.healthBar, true);
         creature.body.position.x = creature.home.x;
         creature.body.position.z = creature.home.y;
         creature.marker.position.x = creature.home.x;
@@ -553,8 +658,24 @@ export class GameWorld {
         creature.interaction.x = bounded.x;
         creature.interaction.z = bounded.y;
       }
+      this.updateHealthBar(creature.healthBar, creature.body.position.x, 1.08, creature.body.position.z, creature.hp, creature.maxHp, true);
       creature.marker.scaling.setAll(creature.state === "attack" ? 1.32 : creature.state === "chase" ? 1.12 : 1);
     }
+  }
+
+  private updateTargetedAttack() {
+    if (!this.activeAttackTarget) return;
+    const creature = this.creatureAgents.find((entry) => entry.interaction.monsterKey === this.activeAttackTarget);
+    if (!creature || creature.state === "dead") { this.activeAttackTarget = null; return; }
+    const creaturePosition = new Vector2(creature.body.position.x, creature.body.position.z);
+    const action = resolveAttackApproach({ x: this.player.position.x, z: this.player.position.y }, { x: creaturePosition.x, z: creaturePosition.y });
+    if (action.kind === "attack") {
+      const monsterKey = this.activeAttackTarget;
+      this.activeAttackTarget = null;
+      window.dispatchEvent(new CustomEvent("vale:attack-target-ready", { detail: { monsterKey } }));
+      return;
+    }
+    this.player.setTarget(new Vector2(action.destination.x, action.destination.z));
   }
 
   private createForegroundFoliage() {
@@ -630,6 +751,7 @@ export class GameWorld {
       hint,
       position: [this.player.position.x, this.player.position.y],
       nearbyHotspot: this.landmarkInteractions.find((entry) => entry.id === this.nearbyLandmarkId) ?? null,
+      monsters: this.creatureAgents.filter((entry) => entry.state !== "dead").map((entry) => ({ key: entry.interaction.monsterKey ?? entry.interaction.id, name: entry.interaction.label, x: entry.interaction.x, z: entry.interaction.z, hp: entry.hp, maxHp: entry.maxHp })),
     };
     window.dispatchEvent(new CustomEvent<GameStatus>("vale:status", { detail }));
   }

@@ -129,6 +129,7 @@ export const groundDrops = mysqlTable("ground_drops", {
   id: int("id").autoincrement().primaryKey(),
   characterId: int("characterId").notNull(),
   region: varchar("region", { length: 64 }).notNull(),
+  chestKey: varchar("chestKey", { length: 96 }).notNull().default("legacy"),
   itemKey: varchar("itemKey", { length: 80 }).notNull(),
   name: varchar("name", { length: 120 }).notNull(),
   rarity: mysqlEnum("rarity", ["common", "uncommon", "rare", "epic", "legendary"]).notNull().default("common"),
@@ -136,6 +137,17 @@ export const groundDrops = mysqlTable("ground_drops", {
   x: int("x").notNull().default(0),
   z: int("z").notNull().default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const monsterEncounters = mysqlTable("monster_encounters", {
+  id: int("id").autoincrement().primaryKey(),
+  characterId: int("characterId").notNull(),
+  monsterKey: varchar("monsterKey", { length: 80 }).notNull(),
+  region: varchar("region", { length: 64 }).notNull(),
+  hp: int("hp").notNull(),
+  maxHp: int("maxHp").notNull(),
+  respawnAt: timestamp("respawnAt"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type User = typeof users.$inferSelect;

@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
-import { cities, gameCharacters, gameItems, gameNpcs, gameQuests, gameSkills, groundDrops, idleHunts, merchantItems } from "../drizzle/schema";
-import { ARCHETYPES, capacityForLevel, damageAfterResistance, inventoryWeight, levelFromXp, REGIONS, type ArchetypeKey, type DamageElement } from "@shared/game";
+import { and, eq, lt } from "drizzle-orm";
+import { cities, gameCharacters, gameItems, gameNpcs, gameQuests, gameSkills, groundDrops, idleHunts, merchantItems, monsterEncounters } from "../drizzle/schema";
+import { ARCHETYPES, capacityForLevel, damageAfterResistance, inventoryWeight, levelFromXp, REGIONS, WORLD_MONSTER_SPAWNS, type ArchetypeKey, type DamageElement, type MonsterTemplate } from "@shared/game";
 import { MONSTERS, SKILLS } from "./gameCatalog";
 import { getDb } from "./db";
 
@@ -65,19 +65,45 @@ async function ensureQuestSeed(characterId: number) {
   if (!existing.length) await db.insert(gameQuests).values({ characterId, questKey: "wind-road-survey", name: "Sinais da Estrada do Vento", status: "available", progress: 0, target: 3, rewardGold: 30, rewardXp: 45 });
 }
 
+async function restoreExpiredEncounters(character: CharacterRow) {
+  const db = await requireDb();
+  const expired = await db.select().from(monsterEncounters).where(and(eq(monsterEncounters.characterId, character.id), eq(monsterEncounters.region, character.currentRegion), lt(monsterEncounters.respawnAt, new Date())));
+  for (const encounter of expired) {
+    await db.update(monsterEncounters).set({ hp: encounter.maxHp, respawnAt: null }).where(eq(monsterEncounters.id, encounter.id));
+  }
+}
+
+async function encounterForMonster(character: CharacterRow, monster: MonsterTemplate) {
+  const db = await requireDb();
+  const [existing] = await db.select().from(monsterEncounters).where(and(eq(monsterEncounters.characterId, character.id), eq(monsterEncounters.monsterKey, monster.key), eq(monsterEncounters.region, character.currentRegion))).limit(1);
+  if (!existing) {
+    await db.insert(monsterEncounters).values({ characterId: character.id, monsterKey: monster.key, region: character.currentRegion, hp: monster.hp, maxHp: monster.hp, respawnAt: null });
+    const [created] = await db.select().from(monsterEncounters).where(and(eq(monsterEncounters.characterId, character.id), eq(monsterEncounters.monsterKey, monster.key), eq(monsterEncounters.region, character.currentRegion))).limit(1);
+    if (!created) throw new Error("Não foi possível preparar o encontro da criatura.");
+    return created;
+  }
+  if (existing.hp === 0 && existing.respawnAt && existing.respawnAt <= new Date()) {
+    await db.update(monsterEncounters).set({ hp: existing.maxHp, respawnAt: null }).where(eq(monsterEncounters.id, existing.id));
+    return { ...existing, hp: existing.maxHp, respawnAt: null };
+  }
+  return existing;
+}
+
 export async function getGameSnapshot() {
   const db = await requireDb();
   await ensureWorldCatalog();
   const character = await loadCharacter();
   await ensureQuestSeed(character.id);
-  const [items, skills, hunt, quests, drops] = await Promise.all([
+  await restoreExpiredEncounters(character);
+  const [items, skills, hunt, quests, drops, encounters] = await Promise.all([
     db.select().from(gameItems).where(eq(gameItems.characterId, character.id)),
     db.select().from(gameSkills).where(eq(gameSkills.characterId, character.id)),
     db.select().from(idleHunts).where(and(eq(idleHunts.characterId, character.id), eq(idleHunts.status, "active"))).limit(1),
     db.select().from(gameQuests).where(eq(gameQuests.characterId, character.id)),
     db.select().from(groundDrops).where(and(eq(groundDrops.characterId, character.id), eq(groundDrops.region, character.currentRegion))),
+    db.select().from(monsterEncounters).where(and(eq(monsterEncounters.characterId, character.id), eq(monsterEncounters.region, character.currentRegion))),
   ]);
-  return { character: { ...character, capacity: capacityForLevel(character.level), currentWeight: inventoryWeight(items) }, items, skills, activeHunt: hunt[0] ?? null, quests, drops };
+  return { character: { ...character, capacity: capacityForLevel(character.level), currentWeight: inventoryWeight(items) }, items, skills, activeHunt: hunt[0] ?? null, quests, drops, encounters };
 }
 
 function skillForKey(skillKey: string | undefined) { return SKILLS.find((skill) => skill.key === skillKey) ?? SKILLS[0]!; }
@@ -88,6 +114,8 @@ export async function resolveCombat(monsterKey: string, skillKey?: string) {
   if (character.isDead) throw new Error("Você está caído. Reviva antes de lutar.");
   const monster = MONSTERS.find((entry) => entry.key === monsterKey);
   if (!monster) throw new Error("Criatura não encontrada.");
+  const encounter = await encounterForMonster(character, monster);
+  if (encounter.hp === 0) throw new Error("A criatura ainda está se recompondo. Aguarde o retorno dela ao campo.");
   const skill = skillForKey(skillKey);
   if (character.mp < skill.manaCost || character.energy < skill.energyCost) throw new Error("Recursos insuficientes para esta habilidade.");
   const statPower = skill.element === "physical" ? character.strength + character.dexterity : character.intelligence + character.dexterity;
@@ -95,7 +123,8 @@ export async function resolveCombat(monsterKey: string, skillKey?: string) {
   const damage = damageAfterResistance(rawDamage, monster.resistances[skill.element] ?? 1);
   const critical = Math.random() < Math.min(0.28, character.dexterity / 100);
   const finalDamage = critical ? Math.floor(damage * 1.45) : damage;
-  const defeated = finalDamage >= monster.hp;
+  const monsterHp = Math.max(0, encounter.hp - finalDamage);
+  const defeated = monsterHp === 0;
   const counterDamage = defeated ? 0 : monster.attackMin + Math.floor(Math.random() * (monster.attackMax - monster.attackMin + 1));
   const remainingHp = Math.max(0, character.hp - counterDamage);
   const [autoPotion] = await db.select().from(gameItems).where(and(eq(gameItems.characterId, character.id), eq(gameItems.templateKey, "minor-potion"))).limit(1);
@@ -104,16 +133,22 @@ export async function resolveCombat(monsterKey: string, skillKey?: string) {
   const progression = defeated ? levelFromXp(character.level, character.xp + monster.xp) : { level: character.level, xp: character.xp };
   const nextMaxHp = character.maxHp + Math.max(0, progression.level - character.level) * 12;
   await db.update(gameCharacters).set({ level: progression.level, xp: progression.xp, gold: character.gold + (defeated ? monster.gold : 0), hp: hpAfterPotion, maxHp: nextMaxHp, mp: Math.max(0, character.mp - skill.manaCost), energy: Math.max(0, character.energy - skill.energyCost), isDead: hpAfterPotion === 0, updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));
+  await db.update(monsterEncounters).set({ hp: monsterHp, maxHp: monster.hp, respawnAt: defeated ? new Date(Date.now() + 8_000) : null }).where(eq(monsterEncounters.id, encounter.id));
   if (autoPotionUsed && autoPotion) {
     if (autoPotion.quantity > 1) await db.update(gameItems).set({ quantity: autoPotion.quantity - 1 }).where(eq(gameItems.id, autoPotion.id));
     else await db.delete(gameItems).where(eq(gameItems.id, autoPotion.id));
   }
   if (defeated) {
-    await db.insert(groundDrops).values({ characterId: character.id, region: character.currentRegion, itemKey: `${monster.key}-drop`, name: `Essência de ${monster.name}`, rarity: monster.level >= 20 ? "rare" : "uncommon", weight: 1, x: Math.floor(Math.random() * 3) - 1, z: Math.floor(Math.random() * 3) - 1 });
+    const spawn = WORLD_MONSTER_SPAWNS.find((entry) => entry.monsterKey === monster.key) ?? { x: 0, z: 0 };
+    const chestKey = `chest-${monster.key}-${Date.now()}`;
+    await db.insert(groundDrops).values([
+      { characterId: character.id, region: character.currentRegion, chestKey, itemKey: `${monster.key}-essence`, name: `Essência de ${monster.name}`, rarity: monster.level >= 20 ? "rare" : "uncommon", weight: 1, x: spawn.x, z: spawn.z },
+      { characterId: character.id, region: character.currentRegion, chestKey, itemKey: `${monster.key}-trophy`, name: `Trofeu de ${monster.name}`, rarity: monster.level >= 8 ? "rare" : "common", weight: 1, x: spawn.x, z: spawn.z },
+    ]);
     const [quest] = await db.select().from(gameQuests).where(and(eq(gameQuests.characterId, character.id), eq(gameQuests.status, "active"))).limit(1);
     if (quest) { const progress = Math.min(quest.target, quest.progress + 1); await db.update(gameQuests).set({ progress, status: progress >= quest.target ? "complete" : "active" }).where(eq(gameQuests.id, quest.id)); }
   }
-  return { result: { monster: monster.name, damage: finalDamage, counterDamage, element: skill.element as DamageElement, critical, defeated, xpGained: defeated ? monster.xp : 0, goldGained: defeated ? monster.gold : 0, autoPotionUsed }, snapshot: await getGameSnapshot() };
+  return { result: { monster: monster.name, monsterKey: monster.key, damage: finalDamage, counterDamage, element: skill.element as DamageElement, critical, defeated, monsterHp, monsterMaxHp: monster.hp, xpGained: defeated ? monster.xp : 0, goldGained: defeated ? monster.gold : 0, autoPotionUsed }, snapshot: await getGameSnapshot() };
 }
 
 export async function reviveCharacter() {

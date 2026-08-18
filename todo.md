@@ -33,3 +33,8 @@
 - [x] Reexecutar testes, compilação e validação visual após a correção.
 - [x] Importar a dependência de raycasting exigida pelo motor para eliminar o aviso e garantir os picks de interação.
 - [x] Forçar o caminho WebGL compatível do motor e validar a eliminação dos erros de vertex shader no preview.
+- [x] Exibir barras de vida sobre o personagem e as criaturas no mundo.
+- [x] Criar baús de saque no mapa quando criaturas forem derrotadas e abrir seu conteúdo por interação auxiliar.
+- [x] Permitir transferir itens do baú de saque para a mochila pelo painel aberto.
+- [x] Fazer a mira de Encontros próximos conduzir o personagem ao alvo e iniciar o ataque.
+- [x] Representar criaturas no minimapa de acordo com suas posições atuais.
