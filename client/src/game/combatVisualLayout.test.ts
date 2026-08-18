@@ -5,6 +5,8 @@ describe("hierarquia visual de combate", () => {
   it("mantém barras de vida elevadas e números flutuantes acima delas", () => {
     expect(COMBAT_VISUAL_HEIGHTS.playerHealthBar).toBeGreaterThan(1);
     expect(COMBAT_VISUAL_HEIGHTS.monsterHealthBar).toBeGreaterThan(1);
+    expect(COMBAT_VISUAL_HEIGHTS.playerFloat).toBeGreaterThan(COMBAT_VISUAL_HEIGHTS.playerHealthBar);
+    expect(COMBAT_VISUAL_HEIGHTS.monsterFloat).toBeGreaterThan(COMBAT_VISUAL_HEIGHTS.monsterHealthBar);
     expect(isCombatFloatAboveHealth("player")).toBe(true);
     expect(isCombatFloatAboveHealth("monster")).toBe(true);
   });

@@ -53,10 +53,12 @@
 - [x] Reforçar a leitura dos números de dano no campo em desktop e mobile.
 - [x] Evitar a sobreposição do aviso de estado com a barra de habilidades.
 - [x] Garantir que a barra de habilidades permaneça acessível sem colisão com os atalhos em telas mobile.
-- [ ] Confirmar a ausência do erro histórico de resolução do módulo de feedback de combate no servidor de desenvolvimento.
-- [ ] Validar o duplo clique da criatura até a aproximação e o ataque padrão por um fluxo de ponta a ponta.
-- [ ] Registrar a verificação visual específica das barras de vida, do anel vermelho de alvo e dos números de dano em campo.
-- [ ] Criar uma prova integrada do manipulador real de duplo clique até a emissão do ataque padrão pronto.
-- [ ] Cobrir em testes as alturas das barras de vida, o anel vermelho selecionado e o evento de dano renderizável.
-- [ ] Capturar uma prévia temporária das três categorias de dano, do alvo vermelho e das barras de vida elevadas.
+- [x] Confirmar a ausência do erro histórico de resolução do módulo de feedback de combate no servidor de desenvolvimento.
+- [x] Validar o duplo clique da criatura até a aproximação e o ataque padrão por um fluxo de ponta a ponta.
+- [x] Registrar a verificação visual específica das barras de vida, do anel vermelho de alvo e dos números de dano em campo.
+- [x] Criar uma prova integrada do manipulador real de duplo clique até a emissão do ataque padrão pronto.
+- [x] Cobrir em testes as alturas das barras de vida, o anel vermelho selecionado e o evento de dano renderizável.
+- [x] Capturar uma prévia temporária das três categorias de dano, do alvo vermelho e das barras de vida elevadas.
 - [x] Limitar as coordenadas dos números flutuantes à área visível do canvas e cobrir as bordas em teste automatizado.
+- [x] Exercitar no GameWorld o evento real de duplo clique, a aproximação e a emissão automática de ataque básico pronto.
+- [x] Comprovar que o consumidor do HUD encaminha o ataque básico pronto à requisição de combate sem skill equipada.

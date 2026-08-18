@@ -19,7 +19,8 @@ import { dispatchHotspotFromActionKey, dispatchHotspotFromWorldPointer } from ".
 import { resolveAttackApproach } from "./targeting";
 import { hasFiniteScreenCoordinates, toRenderableCombatFloatPosition, type CombatFloatEvent } from "./combatFloatEvents";
 import { resolveCombatFloatWorldAnchor } from "./combatFloatPipeline";
-import { createDefaultAttackRequest, resolveDefaultAttackFlow, resolveDefaultAttackFromDoubleClick } from "./defaultAttack";
+import { resolveDefaultAttackFlow } from "./defaultAttack";
+import { dispatchDefaultAttackFromDoubleClick } from "./combatTargetPipeline";
 import { getTargetIndicatorStyle } from "./targetIndicator";
 import { COMBAT_VISUAL_HEIGHTS } from "./combatVisualLayout";
 
@@ -83,21 +84,20 @@ export class GameWorld {
     this.openLootChestFromPointer(event as PointerEvent, bounds);
   };
   private readonly onWorldDoubleClick = (event: MouseEvent) => {
-    if (event.button !== 0) return;
     const bounds = this.canvas.getBoundingClientRect();
-    const pick = this.scene.pick(event.clientX - bounds.left, event.clientY - bounds.top, (mesh) => {
-      const interaction = (mesh.metadata as { valeInteraction?: LandmarkInteraction } | undefined)?.valeInteraction;
-      return interaction?.kind === "monster";
+    dispatchDefaultAttackFromDoubleClick({
+      target: window,
+      event,
+      bounds,
+      player: { x: this.player.position.x, z: this.player.position.y },
+      pick: (x, y) => {
+        const pick = this.scene.pick(x, y, (mesh) => {
+          const interaction = (mesh.metadata as { valeInteraction?: LandmarkInteraction } | undefined)?.valeInteraction;
+          return interaction?.kind === "monster";
+        });
+        return pick?.pickedMesh as Mesh | null | undefined;
+      },
     });
-    const interaction = (pick?.pickedMesh?.metadata as { valeInteraction?: LandmarkInteraction } | undefined)?.valeInteraction;
-    if (!interaction?.monsterKey) return;
-    event.preventDefault();
-    const attackFlow = resolveDefaultAttackFromDoubleClick(
-      { kind: "monster", monsterKey: interaction.monsterKey, x: interaction.x, z: interaction.z },
-      { x: this.player.position.x, z: this.player.position.y },
-    );
-    if (!attackFlow) return;
-    window.dispatchEvent(new CustomEvent("vale:attack-target", { detail: attackFlow.request }));
   };
   private readonly onWorldInteractionKey = (event: KeyboardEvent) => {
     dispatchHotspotFromActionKey({

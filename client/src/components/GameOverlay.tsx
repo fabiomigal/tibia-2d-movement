@@ -3,7 +3,8 @@ import { Backpack, BookOpen, ChevronRight, CircleDot, Coins, Crosshair, Heart, M
 import { ARCHETYPES, ELEMENT_COLOR, ELEMENT_LABEL, REGIONS, type DamageElement } from "@shared/game";
 import { trpc } from "@/lib/trpc";
 import type { GameStatus } from "@/game/types";
-import { getMinimapMarkerTheme } from "@/game/minimapTheme";
+import { getMinimapMarkerTheme } from "../game/minimapTheme";
+import { dispatchCombatRequestFromAttackReady } from "../game/combatRequestPipeline";
 import { groupLootChests } from "@/game/lootChestState";
 import { createCombatFloatEvents } from "@/game/combatFloatEvents";
 
@@ -190,8 +191,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       if (detail?.label) setNotice(`${detail.label} se aproxima. Prepare uma habilidade ou afaste-se.`);
     };
     const onAttackReady = (event: Event) => {
-      const detail = (event as CustomEvent<{ monsterKey?: string; defaultAttack?: boolean }>).detail;
-      if (detail?.monsterKey) combat.mutate({ monsterKey: detail.monsterKey, skillKey: detail.defaultAttack ? undefined : selectedSkill });
+      dispatchCombatRequestFromAttackReady({ event, selectedSkill, mutate: combat.mutate });
     };
     const onOpenLootChest = (event: Event) => {
       const chestKey = (event as CustomEvent<{ chestKey?: string }>).detail?.chestKey;
