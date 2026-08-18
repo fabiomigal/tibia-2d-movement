@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Backpack, BookOpen, ChevronRight, CircleDot, Coins, Crosshair, Heart, Map, MapPin, PackageOpen, Pause, Play, RotateCcw, ScrollText, Shield, ShoppingBag, Sparkles, Swords, Target, WandSparkles, X, Zap } from "lucide-react";
 import { ARCHETYPES, ELEMENT_COLOR, ELEMENT_LABEL, REGIONS, type DamageElement } from "@shared/game";
 import { trpc } from "@/lib/trpc";
 import type { GameStatus } from "@/game/types";
 import { getMinimapMarkerTheme } from "../game/minimapTheme";
 import { dispatchCombatRequestFromAttackReady } from "../game/combatRequestPipeline";
+import type { CombatRequest } from "../game/combatRequestPipeline";
+import { attemptCombatWithResources } from "../game/combatAttemptPipeline";
 import { groupLootChests } from "@/game/lootChestState";
 import { createCombatFloatEvents } from "@/game/combatFloatEvents";
 
@@ -120,6 +122,16 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
     },
     onError: (error) => setNotice(error.message),
   });
+  const attemptCombat = useCallback((request: CombatRequest) => {
+    attemptCombatWithResources({
+      request,
+      skills: (data?.skills ?? []).map((skill) => ({ key: skill.key, name: skill.name, manaCost: skill.manaCost, energyCost: skill.energyCost })),
+      mp: data?.character.mp ?? 0,
+      energy: data?.character.energy ?? 0,
+      mutate: combat.mutate,
+      notify: setNotice,
+    });
+  }, [combat, data]);
   const inventory = trpc.game.inventory.useMutation({ onSuccess: async (result) => { if (result.healing > 0) window.dispatchEvent(new CustomEvent("vale:floating-combat-text", { detail: { target: "player", kind: "heal", value: result.healing } })); await refresh(); }, onError: (error) => setNotice(error.message) });
   const travel = trpc.game.travel.useMutation({ onError: (error) => setNotice(error.message) });
   const idleStart = trpc.game.idleStart.useMutation({ onSuccess: async () => { setNotice("Caça automática iniciada. Volte mais tarde para resolver o tempo decorrido."); await refresh(); }, onError: (error) => setNotice(error.message) });
@@ -191,7 +203,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       if (detail?.label) setNotice(`${detail.label} se aproxima. Prepare uma habilidade ou afaste-se.`);
     };
     const onAttackReady = (event: Event) => {
-      dispatchCombatRequestFromAttackReady({ event, selectedSkill, mutate: combat.mutate });
+      dispatchCombatRequestFromAttackReady({ event, selectedSkill, mutate: attemptCombat });
     };
     const onOpenLootChest = (event: Event) => {
       const chestKey = (event as CustomEvent<{ chestKey?: string }>).detail?.chestKey;
@@ -210,7 +222,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       window.removeEventListener("vale:attack-target-ready", onAttackReady);
       window.removeEventListener("vale:open-loot-chest", onOpenLootChest);
     };
-  }, [selectedSkill, combat]);
+  }, [selectedSkill, attemptCombat]);
 
   const character = data?.character ?? FALLBACK_CHARACTER;
   const region = useMemo(() => REGIONS.find((entry) => entry.key === character.currentRegion) ?? REGIONS[0], [character.currentRegion]);

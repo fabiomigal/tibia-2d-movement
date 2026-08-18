@@ -62,3 +62,5 @@
 - [x] Limitar as coordenadas dos números flutuantes à área visível do canvas e cobrir as bordas em teste automatizado.
 - [x] Exercitar no GameWorld o evento real de duplo clique, a aproximação e a emissão automática de ataque básico pronto.
 - [x] Comprovar que o consumidor do HUD encaminha o ataque básico pronto à requisição de combate sem skill equipada.
+- [x] Tratar a ausência de recurso para habilidades como feedback de jogo, sem expor erro técnico de mutação ao jogador.
+- [x] Cobrir em teste a resposta do cliente quando uma habilidade não puder ser usada por recursos insuficientes.
