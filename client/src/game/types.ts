@@ -28,6 +28,7 @@ export interface WorldBounds {
 
 export interface GameStatus {
   readonly movement: string;
+  readonly isResting: boolean;
   readonly speed: number;
   readonly hint: string;
   readonly position: readonly [number, number];

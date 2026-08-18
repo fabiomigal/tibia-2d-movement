@@ -22,6 +22,13 @@
       "when": 1787066998634,
       "tag": "0002_large_mojo",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1787085633155,
+      "tag": "0003_even_wallop",
+      "breakpoints": true
     }
   ]
 }

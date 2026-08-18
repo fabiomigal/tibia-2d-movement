@@ -2,7 +2,7 @@
  * Horizonte em Miniatura: React enquadra uma janela de exploração; Babylon domina o mapa.
  * O HUD usa pedra escura, papel translúcido e o Âmbar de Rota para leitura tática discreta.
  */
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Engine } from "@babylonjs/core/Engines/engine";
 import { createGameEngineOptions } from "@/game/engineOptions";
 import { createGameScene, type GameHandle } from "@/game/scene";
@@ -13,6 +13,7 @@ import GameOverlay from "./GameOverlay";
 
 const initialStatus: GameStatus = {
   movement: "Aguardando comando",
+  isResting: true,
   speed: 0,
   hint: "WASD, setas, clique ou toque no terreno",
   position: [-4.5, -2.5],

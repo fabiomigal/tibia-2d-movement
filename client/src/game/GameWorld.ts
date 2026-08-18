@@ -8,6 +8,7 @@ import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Texture } from "@babylonjs/core/Materials/Textures/texture";
+import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture";
 import type { Scene } from "@babylonjs/core/scene";
 import { CameraController } from "./CameraController";
 import { CollisionWorld } from "./CollisionWorld";
@@ -39,7 +40,7 @@ const worldBounds: WorldBounds = {
 
 type LandmarkKind = "npc" | "portal" | "stairs" | "monster";
 type LandmarkInteraction = { id: string; kind: LandmarkKind; label: string; x: number; z: number; radius: number; monsterKey?: string };
-type HealthBar = { rail: Mesh; fill: Mesh; width: number };
+type HealthBar = { rail: Mesh; fill: Mesh; label: Mesh; labelTexture: DynamicTexture; width: number; fillWidth: number; text: string };
 type CreatureAgent = { interaction: LandmarkInteraction; body: Mesh; marker: Mesh; healthBar: HealthBar; hp: number; maxHp: number; home: Vector2; phase: number; state: "idle" | "chase" | "attack" | "return" | "dead"; respawnAt: number; attackCooldown: number };
 type LootChest = { chestKey: string; x: number; z: number; body: Mesh; lid: Mesh; glow: Mesh };
 
@@ -164,7 +165,7 @@ export class GameWorld {
     this.createForegroundFoliage();
 
     this.player = new Player(scene, new Vector2(-4.5, -2.5));
-    this.playerHealthBar = this.createHealthBar("player-health", "#D65752", 1.02);
+    this.playerHealthBar = this.createHealthBar("player-health", "Aventureiro de Âmbar", "#4FDD69", 1.46);
     this.cameraController = new CameraController(scene, worldBounds);
     this.cameraController.update(1, this.player.position);
     this.input = new MovementInput(canvas, (x, y) => this.pickWorldPosition(canvas, x, y), (target) => this.player.setTarget(target));
@@ -212,6 +213,8 @@ export class GameWorld {
     this.nearbyHighlight?.dispose();
     this.playerHealthBar.rail.dispose();
     this.playerHealthBar.fill.dispose();
+    this.playerHealthBar.label.dispose();
+    this.playerHealthBar.labelTexture.dispose();
     this.lootChests.forEach((chest) => { chest.body.dispose(); chest.lid.dispose(); chest.glow.dispose(); });
     if (this.textureRetryTimer !== null) window.clearInterval(this.textureRetryTimer);
     window.removeEventListener("resize", this.onResize);
@@ -235,19 +238,33 @@ export class GameWorld {
     return new Vector2(pick.pickedPoint.x, pick.pickedPoint.z);
   }
 
-  private createHealthBar(name: string, fillColor: string, width: number): HealthBar {
-    const rail = MeshBuilder.CreateBox(`${name}-rail`, { width, height: 0.075, depth: 0.06 }, this.scene);
-    rail.material = this.colorMaterial(`${name}-rail-material`, "#1B281F", 0.06, 0.94);
+  private createHealthBar(name: string, displayName: string, fillColor: string, width: number): HealthBar {
+    const fillWidth = width - 0.12;
+    const rail = MeshBuilder.CreateBox(`${name}-rail`, { width, height: 0.15, depth: 0.082 }, this.scene);
+    rail.material = this.colorMaterial(`${name}-rail-material`, "#111710", 0.1, 0.94);
     rail.isPickable = false;
-    const fill = MeshBuilder.CreateBox(`${name}-fill`, { width: width - 0.05, height: 0.043, depth: 0.07 }, this.scene);
-    fill.material = this.colorMaterial(`${name}-fill-material`, fillColor, 0.45, 0.98);
+    const fill = MeshBuilder.CreateBox(`${name}-fill`, { width: fillWidth, height: 0.082, depth: 0.092 }, this.scene);
+    fill.material = this.colorMaterial(`${name}-fill-material`, fillColor, 0.6, 1);
     fill.isPickable = false;
-    return { rail, fill, width };
+    const labelTexture = new DynamicTexture(`${name}-label-texture`, { width: 512, height: 128 }, this.scene, true);
+    labelTexture.hasAlpha = true;
+    const label = MeshBuilder.CreatePlane(`${name}-label`, { width: width + 0.88, height: 0.46 }, this.scene);
+    label.rotation.x = Math.PI / 2;
+    const labelMaterial = new StandardMaterial(`${name}-label-material`, this.scene);
+    labelMaterial.diffuseTexture = labelTexture;
+    labelMaterial.emissiveTexture = labelTexture;
+    labelMaterial.useAlphaFromDiffuseTexture = true;
+    labelMaterial.disableLighting = true;
+    labelMaterial.backFaceCulling = false;
+    label.material = labelMaterial;
+    label.isPickable = false;
+    return { rail, fill, label, labelTexture, width, fillWidth, text: displayName };
   }
 
   private setHealthBarVisible(bar: HealthBar, visible: boolean) {
     bar.rail.isVisible = visible;
     bar.fill.isVisible = visible;
+    bar.label.isVisible = visible;
   }
 
   private updateHealthBar(bar: HealthBar, x: number, y: number, z: number, hp: number, maxHp: number, visible: boolean) {
@@ -255,8 +272,24 @@ export class GameWorld {
     if (!visible) return;
     const ratio = Math.max(0, Math.min(1, maxHp ? hp / maxHp : 0));
     bar.rail.position.set(x, y, z);
-    bar.fill.position.set(x - (bar.width - 0.05) * (1 - ratio) * 0.5, y + 0.002, z - 0.007);
+    bar.fill.position.set(x - bar.fillWidth * (1 - ratio) * 0.5, y + 0.035, z - 0.008);
     bar.fill.scaling.x = Math.max(0.02, ratio);
+    bar.label.position.set(x, y + 0.28, z + 0.015);
+    const text = bar.text;
+    if (bar.label.metadata?.healthText !== text) {
+      const context = bar.labelTexture.getContext() as unknown as CanvasRenderingContext2D;
+      context.clearRect(0, 0, 512, 128);
+      context.font = "bold 54px Georgia";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.lineWidth = 8;
+      context.strokeStyle = "#10150f";
+      context.strokeText(text, 256, 66);
+      context.fillStyle = "#F9F3D9";
+      context.fillText(text, 256, 66);
+      bar.labelTexture.update();
+      bar.label.metadata = { ...(bar.label.metadata as Record<string, unknown> | undefined), healthText: text };
+    }
   }
 
   private spawnFloatingCombatText(x: number, y: number, z: number, value: number, kind: "damage" | "critical" | "heal", lifetime = 0.82) {
@@ -628,7 +661,7 @@ export class GameWorld {
     marker.rotation.x = Math.PI / 2;
     marker.material = this.colorMaterial(`${name}-target-marker-material`, "#F2B84B", 0.42, 0.68);
     marker.isPickable = false;
-    const healthBar = this.createHealthBar(`${name}-health`, "#C74E4A", 0.78);
+    const healthBar = this.createHealthBar(`${name}-health`, label, "#4FDD69", 1.14);
     this.updateHealthBar(healthBar, x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, z, 1, 1, true);
     this.creatureAgents.push({ interaction, body, marker, healthBar, hp: 1, maxHp: 1, home: new Vector2(x, z), phase: this.creatureAgents.length * 1.7, state: "idle", respawnAt: 0, attackCooldown: 0 });
   }
@@ -817,6 +850,7 @@ export class GameWorld {
       : "WASD, setas, clique ou toque no terreno";
     const detail: GameStatus = {
       movement,
+      isResting: !this.player.isMoving() && source !== "Rota demo",
       speed: this.player.isMoving() ? this.player.speed : 0,
       hint,
       position: [this.player.position.x, this.player.position.y],

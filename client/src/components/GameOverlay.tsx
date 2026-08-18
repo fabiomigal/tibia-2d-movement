@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Backpack, BookOpen, ChevronRight, CircleDot, Coins, Crosshair, Heart, Map, MapPin, PackageOpen, Pause, Play, RotateCcw, ScrollText, Shield, ShoppingBag, Sparkles, Swords, Target, WandSparkles, X, Zap } from "lucide-react";
 import { ARCHETYPES, ELEMENT_COLOR, ELEMENT_LABEL, REGIONS, type DamageElement } from "@shared/game";
 import { trpc } from "@/lib/trpc";
@@ -9,6 +9,8 @@ import type { CombatRequest } from "../game/combatRequestPipeline";
 import { attemptCombatWithResources } from "../game/combatAttemptPipeline";
 import { groupLootChests } from "@/game/lootChestState";
 import { createCombatFloatEvents } from "@/game/combatFloatEvents";
+import { REST_REGENERATION } from "@shared/restRegeneration";
+import { resolveRestSync } from "@/game/restSyncPipeline";
 
 type PanelKey = "character" | "inventory" | "equipment" | "skills" | "map" | "idle" | "merchant" | "quests" | "city" | "teleport" | "loot" | null;
 type FeedbackPanel = Exclude<PanelKey, null>;
@@ -106,6 +108,8 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const [reviveFeedback, setReviveFeedback] = useState<ActionFeedback | null>(null);
   const [lastCombat, setLastCombat] = useState<{ monster: string; monsterKey: string; damage: number; counterDamage: number; counterCritical: boolean; healing: number; element: DamageElement; critical: boolean; defeated: boolean; monsterHp: number; monsterMaxHp: number; xpGained: number; goldGained: number } | null>(null);
   const [selectedChestKey, setSelectedChestKey] = useState<string | null>(null);
+  const restingRef = useRef(false);
+  const lastRestRefreshRef = useRef(0);
   const merchant = trpc.game.merchant.useQuery(undefined, { enabled: panel === "merchant", retry: 1 });
 
   const refresh = async () => { await utils.game.bootstrap.invalidate(); };
@@ -137,6 +141,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const idleStart = trpc.game.idleStart.useMutation({ onSuccess: async () => { setNotice("Caça automática iniciada. Volte mais tarde para resolver o tempo decorrido."); await refresh(); }, onError: (error) => setNotice(error.message) });
   const idleResume = trpc.game.idleResume.useMutation({ onSuccess: async (result) => { setNotice(result.turns ? `Caça resolvida: ${result.turns} turnos, +${result.xp} XP e +${result.gold} ouro.` : "A sessão ainda não acumulou um turno completo."); await refresh(); }, onError: (error) => setNotice(error.message) });
   const revive = trpc.game.revive.useMutation({ onSuccess: async () => { const message = "Você retornou à Estrada do Vento, com uma pequena penalidade."; setNotice(message); setReviveFeedback({ panel: "character", tone: "success", message }); await refresh(); }, onError: (error) => { setNotice(error.message); setReviveFeedback({ panel: "character", tone: "error", message: error.message }); } });
+  const restState = trpc.game.restState.useMutation({ onSuccess: refresh, onError: (error) => setNotice(error.message) });
   const collectDrop = trpc.game.collectDrop.useMutation({ onSuccess: async () => { setNotice("Drop guardado na mochila."); await refresh(); }, onError: (error) => setNotice(error.message) });
   const autoPotion = trpc.game.autoPotion.useMutation({ onSuccess: refresh, onError: (error) => setNotice(error.message) });
   const merchantBuy = trpc.game.merchantBuy.useMutation({ onSuccess: async () => { setNotice("Compra concluída. O item foi guardado na mochila."); await refresh(); }, onError: (error) => setNotice(error.message) });
@@ -179,6 +184,35 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       setPanel((current) => current === "loot" ? null : current);
     }
   }, [data, selectedChestKey]);
+
+  useEffect(() => {
+    if (!data) return;
+    const restSync = resolveRestSync({
+      wasResting: restingRef.current,
+      worldReportsRest: status.isResting,
+      isDead: data.character.isDead,
+    });
+    if (restSync.shouldPersistTransition) {
+      restingRef.current = restSync.resting;
+      restState.mutate({ resting: restSync.resting });
+    }
+  }, [data, restState, status.isResting]);
+
+  useEffect(() => {
+    const restSync = resolveRestSync({
+      wasResting: restingRef.current,
+      worldReportsRest: status.isResting,
+      isDead: data?.character.isDead ?? true,
+    });
+    if (!restSync.shouldRefreshResources) return;
+
+    const refreshRestResources = () => {
+      lastRestRefreshRef.current = Date.now();
+      void bootstrap.refetch();
+    };
+    const timer = window.setInterval(refreshRestResources, REST_REGENERATION.tickMs);
+    return () => window.clearInterval(timer);
+  }, [bootstrap, data?.character.isDead, status.isResting]);
 
   useEffect(() => {
     const onWorldInteraction = (event: Event) => {

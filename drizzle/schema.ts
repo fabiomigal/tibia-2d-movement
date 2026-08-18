@@ -37,6 +37,8 @@ export const gameCharacters = mysqlTable("game_characters", {
   unlockedRegions: text("unlockedRegions").notNull(),
   isDead: boolean("isDead").notNull().default(false),
   autoPotionEnabled: boolean("autoPotionEnabled").notNull().default(true),
+  restStartedAt: timestamp("restStartedAt"),
+  lastResourceRegenAt: timestamp("lastResourceRegenAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -3,7 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
-import { acceptQuest, buyFromMerchant, claimQuest, collectGroundDrop, getGameSnapshot, listMerchantItems, resolveCombat, reviveCharacter, resumeIdleHunt, selectArchetype, setAutoPotion, startIdleHunt, travelToRegion, updateInventory } from "./gameService";
+import { acceptQuest, buyFromMerchant, claimQuest, collectGroundDrop, getGameSnapshot, listMerchantItems, resolveCombat, reviveCharacter, resumeIdleHunt, selectArchetype, setAutoPotion, setRestState, startIdleHunt, travelToRegion, updateInventory } from "./gameService";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -21,6 +21,7 @@ export const appRouter = router({
   game: router({
     bootstrap: publicProcedure.query(() => getGameSnapshot()),
     combat: publicProcedure.input(z.object({ monsterKey: z.string(), skillKey: z.string().optional() })).mutation(({ input }) => resolveCombat(input.monsterKey, input.skillKey)),
+    restState: publicProcedure.input(z.object({ resting: z.boolean() })).mutation(({ input }) => setRestState(input.resting)),
     revive: publicProcedure.mutation(() => reviveCharacter()),
     inventory: publicProcedure.input(z.object({ action: z.enum(["equip", "sell", "discard", "use"]), itemId: z.number().int() })).mutation(({ input }) => updateInventory(input.action, input.itemId)),
     travel: publicProcedure.input(z.object({ region: z.string() })).mutation(({ input }) => travelToRegion(input.region)),

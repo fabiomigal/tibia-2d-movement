@@ -64,3 +64,14 @@
 - [x] Comprovar que o consumidor do HUD encaminha o ataque básico pronto à requisição de combate sem skill equipada.
 - [x] Tratar a ausência de recurso para habilidades como feedback de jogo, sem expor erro técnico de mutação ao jogador.
 - [x] Cobrir em teste a resposta do cliente quando uma habilidade não puder ser usada por recursos insuficientes.
+- [x] Implementar regeneração gradual de MP e energia enquanto o personagem estiver em repouso, sem alterar a movimentação congelada.
+- [x] Redesenhar as barras de vida em campo de personagem e monstros com nome, contorno escuro, preenchimento colorido e leitura compacta inspirada na referência.
+- [x] Cobrir a regra de regeneração em repouso por testes e validar visualmente as novas barras em desktop e mobile.
+- [x] Comprovar o fluxo ponta a ponta de início de repouso, ticks graduais persistidos, interrupção ao agir e recuperação de MP e energia.
+- [x] Expor e executar testes específicos da regra de regeneração, incluindo limites máximos e ausência de tick antes do intervalo mínimo.
+- [x] Adicionar uma prova integrada do ciclo de repouso que una estado do mundo, transição persistida, tick completo e snapshot atualizado.
+- [x] Cobrir a interrupção do ciclo de repouso com a limpeza persistida dos marcadores de tempo ao personagem voltar a agir.
+- [x] Executar teste de serviço para `setRestState` e `getGameSnapshot` com persistência simulada de início, ticks e limpeza dos timestamps.
+- [x] Testar a integração do sinal `status.isResting` emitido pelo mundo até o disparo da sincronização do HUD e a atualização de recursos.
+- [x] Exercitar o componente real `GameOverlay` com evento `vale:status`, mutação de repouso, refetch e snapshot de recursos recuperados.
+- [x] Testar a ponte do `GameCanvas` que consome `vale:status` e atualiza a prop de status entregue ao HUD.

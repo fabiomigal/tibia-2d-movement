@@ -3,6 +3,9 @@ import { cities, gameCharacters, gameItems, gameNpcs, gameQuests, gameSkills, gr
 import { ARCHETYPES, capacityForLevel, damageAfterResistance, inventoryWeight, levelFromXp, REGIONS, WORLD_MONSTER_SPAWNS, type ArchetypeKey, type DamageElement, type MonsterTemplate } from "@shared/game";
 import { MONSTERS, SKILLS } from "./gameCatalog";
 import { getDb } from "./db";
+import { resolveRestRegeneration } from "@shared/restRegeneration";
+import { resolveRestStatePersistence } from "./restStatePersistence";
+import { resolveRestCycle } from "./restCycle";
 
 const PROFILE_KEY = "vale-ambar-demo";
 const MAX_SLOTS = 50;
@@ -59,6 +62,51 @@ async function ensureCharacter() {
 
 async function loadCharacter(): Promise<CharacterRow> { return ensureCharacter(); }
 
+async function applyRestRegeneration(character: CharacterRow): Promise<CharacterRow> {
+  const next = resolveRestCycle({
+    mp: character.mp,
+    maxMp: character.maxMp,
+    energy: character.energy,
+    maxEnergy: character.maxEnergy,
+    requestedRest: Boolean(character.restStartedAt),
+    isDead: character.isDead,
+    restStartedAtMs: character.restStartedAt?.getTime() ?? null,
+    lastResourceRegenAtMs: character.lastResourceRegenAt?.getTime() ?? null,
+    nowMs: Date.now(),
+  });
+  if (!next.ticks) return character;
+  const db = await requireDb();
+  const nextTickAt = next.lastResourceRegenAtMs ? new Date(next.lastResourceRegenAtMs) : null;
+  await db.update(gameCharacters).set({ mp: next.mp, energy: next.energy, lastResourceRegenAt: nextTickAt, updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));
+  return { ...character, mp: next.mp, energy: next.energy, lastResourceRegenAt: nextTickAt };
+}
+
+async function leaveRest(character: CharacterRow): Promise<CharacterRow> {
+  const recovered = await applyRestRegeneration(character);
+  if (!recovered.restStartedAt) return recovered;
+  const db = await requireDb();
+  await db.update(gameCharacters).set({ restStartedAt: null, lastResourceRegenAt: null, updatedAt: new Date() }).where(eq(gameCharacters.id, recovered.id));
+  return { ...recovered, restStartedAt: null, lastResourceRegenAt: null };
+}
+
+export async function setRestState(resting: boolean) {
+  let character = await loadCharacter();
+  character = await applyRestRegeneration(character);
+  const transition = resolveRestStatePersistence({
+    resting,
+    isDead: character.isDead,
+    hasRestStartedAt: Boolean(character.restStartedAt),
+    now: new Date(),
+  });
+  if (transition.kind === "clear") {
+    await leaveRest(character);
+  } else if (transition.kind === "start") {
+    const db = await requireDb();
+    await db.update(gameCharacters).set({ restStartedAt: transition.restStartedAt, lastResourceRegenAt: transition.lastResourceRegenAt, updatedAt: transition.restStartedAt }).where(eq(gameCharacters.id, character.id));
+  }
+  return getGameSnapshot();
+}
+
 async function ensureQuestSeed(characterId: number) {
   const db = await requireDb();
   const existing = await db.select().from(gameQuests).where(eq(gameQuests.characterId, characterId)).limit(1);
@@ -92,7 +140,7 @@ async function encounterForMonster(character: CharacterRow, monster: MonsterTemp
 export async function getGameSnapshot() {
   const db = await requireDb();
   await ensureWorldCatalog();
-  const character = await loadCharacter();
+  const character = await applyRestRegeneration(await loadCharacter());
   await ensureQuestSeed(character.id);
   await restoreExpiredEncounters(character);
   const [items, skills, hunt, quests, drops, encounters] = await Promise.all([
@@ -110,7 +158,7 @@ function skillForKey(skillKey: string | undefined) { return SKILLS.find((skill) 
 
 export async function resolveCombat(monsterKey: string, skillKey?: string) {
   const db = await requireDb();
-  const character = await loadCharacter();
+  const character = await leaveRest(await loadCharacter());
   if (character.isDead) throw new Error("Você está caído. Reviva antes de lutar.");
   const monster = MONSTERS.find((entry) => entry.key === monsterKey);
   if (!monster) throw new Error("Criatura não encontrada.");
@@ -156,7 +204,7 @@ export async function resolveCombat(monsterKey: string, skillKey?: string) {
 
 export async function reviveCharacter() {
   const db = await requireDb(); const character = await loadCharacter();
-  await db.update(gameCharacters).set({ hp: character.maxHp, mp: character.maxMp, energy: character.maxEnergy, gold: Math.floor(character.gold * 0.975), xp: Math.floor(character.xp * 0.97), isDead: false, currentRegion: "wind-road", floor: 0, positionX: -4, positionZ: -2, updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));
+  await db.update(gameCharacters).set({ hp: character.maxHp, mp: character.maxMp, energy: character.maxEnergy, gold: Math.floor(character.gold * 0.975), xp: Math.floor(character.xp * 0.97), isDead: false, currentRegion: "wind-road", floor: 0, positionX: -4, positionZ: -2, restStartedAt: null, lastResourceRegenAt: null, updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));
   return getGameSnapshot();
 }
 

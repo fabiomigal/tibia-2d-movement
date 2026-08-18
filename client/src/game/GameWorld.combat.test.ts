@@ -13,6 +13,25 @@ class TestDoubleClick extends Event {
   }
 }
 
+class TestOffscreenCanvas {
+  constructor(public width: number, public height: number) {}
+
+  getContext() {
+    return {
+      canvas: this,
+      clearRect: () => undefined,
+      fillText: () => undefined,
+      strokeText: () => undefined,
+      font: "",
+      textAlign: "center",
+      textBaseline: "middle",
+      lineWidth: 0,
+      strokeStyle: "",
+      fillStyle: "",
+    };
+  }
+}
+
 function createTestWindow() {
   return Object.assign(new EventTarget(), {
     setInterval: () => 1,
@@ -27,6 +46,7 @@ describe("GameWorld — ataque básico por duplo clique", () => {
     const target = createTestWindow();
     vi.stubGlobal("window", target);
     vi.stubGlobal("fetch", () => Promise.reject(new Error("recursos externos desabilitados no teste")));
+    vi.stubGlobal("OffscreenCanvas", TestOffscreenCanvas);
 
     const engine = new NullEngine({ renderWidth: 1280, renderHeight: 720 });
     const scene = new Scene(engine);
