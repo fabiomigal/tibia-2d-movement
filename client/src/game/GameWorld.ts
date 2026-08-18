@@ -2,6 +2,7 @@
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import type { Scene } from "@babylonjs/core/scene";
@@ -11,6 +12,7 @@ import { DemoPilot } from "./DemoPilot";
 import { MovementInput } from "./MovementInput";
 import { Player } from "./Player";
 import type { GameStatus, MovementSource, WorldBounds } from "./types";
+import { dispatchHotspotFromActionKey, dispatchHotspotFromWorldPointer } from "./worldHotspotPipeline";
 
 const assets = {
   fieldFallback: "/manus-storage/vale-ambar-field-fallback_07dc91d6.png",
@@ -24,6 +26,10 @@ const worldBounds: WorldBounds = {
   minZ: -16.4,
   maxZ: 16.4,
 };
+
+type LandmarkKind = "npc" | "portal" | "stairs" | "monster";
+type LandmarkInteraction = { id: string; kind: LandmarkKind; label: string; x: number; z: number; radius: number; monsterKey?: string };
+type CreatureAgent = { interaction: LandmarkInteraction; body: Mesh; marker: Mesh; home: Vector2; phase: number; state: "idle" | "chase" | "attack" | "return" | "dead"; respawnAt: number; attackCooldown: number };
 
 export class GameWorld {
   private readonly collision = new CollisionWorld(worldBounds);
@@ -40,8 +46,39 @@ export class GameWorld {
   }> = [];
   private textureRetryTimer: number | null = null;
   private hudTimer = 0;
+  private landmarkInteractions: LandmarkInteraction[] = [];
+  private creatureAgents: CreatureAgent[] = [];
+  private nearbyLandmarkId: string | null = null;
+  private nearbyHighlight: Mesh | null = null;
+  private readonly onWorldPointerDown = (event: PointerEvent) => {
+    const bounds = this.canvas.getBoundingClientRect();
+    dispatchHotspotFromWorldPointer<LandmarkInteraction>({
+      target: window,
+      event,
+      bounds,
+      pick: (x, y) => this.scene.pick(x, y, (mesh) => Boolean((mesh.metadata as { valeInteraction?: LandmarkInteraction } | undefined)?.valeInteraction)),
+    });
+  };
+  private readonly onWorldInteractionKey = (event: KeyboardEvent) => {
+    dispatchHotspotFromActionKey({
+      target: window,
+      event,
+      nearbyId: this.nearbyLandmarkId,
+      interactions: this.landmarkInteractions,
+    });
+  };
+  private readonly onCreatureDefeated = (event: Event) => {
+    const monsterKey = (event as CustomEvent<{ monsterKey?: string }>).detail?.monsterKey;
+    const creature = this.creatureAgents.find((entry) => entry.interaction.monsterKey === monsterKey);
+    if (!creature) return;
+    creature.state = "dead";
+    creature.respawnAt = performance.now() + 8_000;
+    creature.body.isVisible = false;
+    creature.body.isPickable = false;
+    creature.marker.isVisible = false;
+  };
 
-  constructor(private readonly scene: Scene, canvas: HTMLCanvasElement, isDemo: boolean) {
+  constructor(private readonly scene: Scene, private readonly canvas: HTMLCanvasElement, isDemo: boolean) {
     this.createWorldSurface();
     this.createWaterway();
     this.createFieldMottling();
@@ -49,6 +86,7 @@ export class GameWorld {
     this.createRouteStrokes();
     this.createObstacles();
     this.createFieldDetails();
+    this.createWorldLandmarks();
     this.createForegroundFoliage();
 
     this.player = new Player(scene, new Vector2(-4.5, -2.5));
@@ -60,6 +98,9 @@ export class GameWorld {
     this.tryLoadGeneratedTextures();
     this.textureRetryTimer = window.setInterval(() => this.tryLoadGeneratedTextures(), 12_000);
     window.addEventListener("resize", this.onResize);
+    window.addEventListener("vale:creature-defeated", this.onCreatureDefeated);
+    window.addEventListener("keydown", this.onWorldInteractionKey);
+    canvas.addEventListener("pointerdown", this.onWorldPointerDown, { capture: true, passive: false });
   }
 
   update(deltaSeconds: number) {
@@ -72,7 +113,9 @@ export class GameWorld {
     }
 
     this.player.update(deltaSeconds, continuousVector, this.collision, source);
+    this.updateCreatureAgents(deltaSeconds);
     this.cameraController.update(deltaSeconds, this.player.position);
+    this.updateNearbyLandmark();
 
     this.hudTimer -= deltaSeconds;
     if (this.hudTimer <= 0) {
@@ -83,8 +126,12 @@ export class GameWorld {
 
   dispose() {
     this.input.dispose();
+    this.nearbyHighlight?.dispose();
     if (this.textureRetryTimer !== null) window.clearInterval(this.textureRetryTimer);
     window.removeEventListener("resize", this.onResize);
+    window.removeEventListener("vale:creature-defeated", this.onCreatureDefeated);
+    window.removeEventListener("keydown", this.onWorldInteractionKey);
+    this.canvas.removeEventListener("pointerdown", this.onWorldPointerDown, true);
   }
 
   private readonly onResize = () => this.cameraController.resize();
@@ -103,12 +150,12 @@ export class GameWorld {
 
     const paintedField = MeshBuilder.CreateGround("painted-field", { width: 48, height: 34, subdivisions: 2 }, this.scene);
     paintedField.position.y = 0.006;
-    paintedField.material = this.texturedMaterial("painted-field-material", assets.fieldFallback, "#657748", 1, 1, 0.92);
+    paintedField.material = this.texturedMaterial("painted-field-material", assets.fieldFallback, "#657748", 1, 1, 0.56);
     paintedField.isPickable = false;
 
     const grass = MeshBuilder.CreateGround("walkable-grass", { width: 48, height: 34, subdivisions: 2 }, this.scene);
     grass.position.y = 0.018;
-    grass.material = this.texturedMaterial("grass-material", assets.grass, "#718856", 16, 12, 0.32);
+    grass.material = this.texturedMaterial("grass-material", assets.grass, "#718856", 16, 12, 0.66);
     grass.isPickable = true;
   }
 
@@ -136,6 +183,20 @@ export class GameWorld {
     water.position.set(x, 0.052, z);
     water.material = this.texturedMaterial(`${name}-material`, assets.water, "#4C8D91", width / 2, height / 2, 0.38);
     water.isPickable = false;
+
+    const reedMaterial = this.colorMaterial(`${name}-reed-material`, "#789253", 0.08, 0.88);
+    const reeds = [
+      [-width * 0.38, -height * 0.34], [-width * 0.16, height * 0.37], [width * 0.28, -height * 0.27], [width * 0.37, height * 0.18],
+    ];
+    reeds.forEach(([offsetX, offsetZ], index) => {
+      const reed = MeshBuilder.CreateDisc(`${name}-reed-${index}`, { radius: 0.22, tessellation: 5 }, this.scene);
+      reed.position.set(x + offsetX, 0.062, z + offsetZ);
+      reed.rotation.x = Math.PI / 2;
+      reed.scaling.set(0.6, 1.9, 1);
+      reed.rotation.z = index % 2 ? 0.35 : -0.28;
+      reed.material = reedMaterial;
+      reed.isPickable = false;
+    });
   }
 
   private createRouteStrokes() {
@@ -159,14 +220,14 @@ export class GameWorld {
 
   private createFieldMottling() {
     const patches = [
-      [-16, 4, 1.6, 0.72, "#4B673C", 0.08, -0.25],
-      [-7, 11, 1.8, 0.68, "#829159", 0.06, 0.1],
-      [4.5, 11.4, 2.2, 0.72, "#4E6A43", 0.07, -0.18],
-      [13, 3.4, 1.7, 0.65, "#829159", 0.06, 0.26],
-      [7.4, -10.3, 2.1, 0.7, "#4E6A43", 0.07, 0.08],
-      [-3.5, -12.8, 1.45, 0.65, "#829159", 0.06, 0.24],
-      [19, -7.2, 1.35, 0.68, "#4B673C", 0.08, -0.12],
-      [-20, -1.6, 1.3, 0.7, "#829159", 0.06, 0.25],
+      [-16, 4, 1.6, 0.72, "#4B673C", 0.045, -0.25],
+      [-7, 11, 1.8, 0.68, "#829159", 0.035, 0.1],
+      [4.5, 11.4, 2.2, 0.72, "#4E6A43", 0.04, -0.18],
+      [13, 3.4, 1.7, 0.65, "#829159", 0.035, 0.26],
+      [7.4, -10.3, 2.1, 0.7, "#4E6A43", 0.04, 0.08],
+      [-3.5, -12.8, 1.45, 0.65, "#829159", 0.035, 0.24],
+      [19, -7.2, 1.35, 0.68, "#4B673C", 0.045, -0.12],
+      [-20, -1.6, 1.3, 0.7, "#829159", 0.035, 0.25],
     ] as const;
 
     patches.forEach(([x, z, radius, depth, color, alpha, rotation], index) => {
@@ -218,19 +279,25 @@ export class GameWorld {
   }
 
   private createBoulder(x: number, z: number, radius: number) {
+    const shadow = MeshBuilder.CreateDisc(`boulder-shadow-${x}`, { radius: radius * 1.1, tessellation: 20 }, this.scene);
+    shadow.position.set(x + radius * 0.18, 0.021, z + radius * 0.24);
+    shadow.rotation.x = Math.PI / 2;
+    shadow.scaling.set(1.18, 0.58, 1);
+    shadow.material = this.colorMaterial(`boulder-shadow-mat-${x}`, "#2B4435", 0.03, 0.26);
+    shadow.isPickable = false;
     const moss = MeshBuilder.CreateDisc(`boulder-moss-${x}`, { radius: radius * 1.12, tessellation: 24 }, this.scene);
     moss.position.set(x, 0.025, z);
     moss.rotation.x = Math.PI / 2;
     moss.material = this.colorMaterial(`boulder-moss-mat-${x}`, "#597457", 0.12);
     moss.isPickable = false;
 
-    const boulder = MeshBuilder.CreateSphere(`boulder-${x}`, { diameter: radius * 1.9, segments: 12 }, this.scene);
+    const boulder = MeshBuilder.CreateIcoSphere(`boulder-${x}`, { radius: radius * 0.94, subdivisions: 2 }, this.scene);
     boulder.position.set(x, radius * 0.48, z);
     boulder.scaling.y = 0.64;
     boulder.material = this.colorMaterial(`boulder-mat-${x}`, "#667B83", 0.08);
     boulder.isPickable = false;
 
-    const mossCap = MeshBuilder.CreateSphere(`boulder-cap-${x}`, { diameter: radius * 1.42, segments: 10 }, this.scene);
+    const mossCap = MeshBuilder.CreateIcoSphere(`boulder-cap-${x}`, { radius: radius * 0.7, subdivisions: 2 }, this.scene);
     mossCap.position.set(x - radius * 0.12, radius * 0.72, z - radius * 0.1);
     mossCap.scaling.set(1, 0.24, 0.72);
     mossCap.material = this.colorMaterial(`boulder-cap-mat-${x}`, "#789057", 0.14, 0.86);
@@ -263,7 +330,7 @@ export class GameWorld {
 
   private createTree(x: number, z: number, radius: number) {
     const shadow = MeshBuilder.CreateDisc(`tree-shadow-${x}`, { radius: radius * 1.12, tessellation: 28 }, this.scene);
-    shadow.position.set(x, 0.03, z);
+    shadow.position.set(x + radius * 0.18, 0.03, z + radius * 0.23);
     shadow.rotation.x = Math.PI / 2;
     shadow.scaling.z = 0.72;
     shadow.material = this.colorMaterial(`tree-shadow-mat-${x}`, "#27483A", 0.04, 0.24);
@@ -274,17 +341,19 @@ export class GameWorld {
     trunk.material = this.colorMaterial(`tree-trunk-mat-${x}`, "#785C3B", 0.03);
     trunk.isPickable = false;
 
-    const foliage = MeshBuilder.CreateSphere(`tree-foliage-${x}`, { diameter: radius * 2.1, segments: 16 }, this.scene);
-    foliage.position.set(x, 1.35, z);
-    foliage.scaling.y = 0.55;
-    foliage.material = this.colorMaterial(`tree-foliage-mat-${x}`, "#416A4B", 0.12);
-    foliage.isPickable = false;
-
-    const crown = MeshBuilder.CreateSphere(`tree-crown-${x}`, { diameter: radius * 1.5, segments: 12 }, this.scene);
-    crown.position.set(x - radius * 0.24, 1.67, z - radius * 0.12);
-    crown.scaling.set(1.15, 0.33, 0.84);
-    crown.material = this.colorMaterial(`tree-crown-mat-${x}`, "#5C824E", 0.12);
-    crown.isPickable = false;
+    const foliageMaterials = [
+      this.colorMaterial(`tree-foliage-deep-${x}`, "#355C41", 0.1),
+      this.colorMaterial(`tree-foliage-mid-${x}`, "#4E784B", 0.12),
+      this.colorMaterial(`tree-foliage-light-${x}`, "#739653", 0.14),
+    ];
+    const crowns = [[0, 1.28, 0, 1], [-0.42, 1.42, -0.17, 0.67], [0.45, 1.4, 0.14, 0.62], [-0.1, 1.66, -0.43, 0.48]] as const;
+    crowns.forEach(([offsetX, height, offsetZ, scale], index) => {
+      const foliage = MeshBuilder.CreateIcoSphere(`tree-crown-${x}-${index}`, { radius: radius * scale, subdivisions: 2 }, this.scene);
+      foliage.position.set(x + offsetX * radius, height, z + offsetZ * radius);
+      foliage.scaling.y = 0.38;
+      foliage.material = foliageMaterials[index % foliageMaterials.length];
+      foliage.isPickable = false;
+    });
     this.collision.addCircle(new Vector2(x, z), radius);
   }
 
@@ -311,6 +380,178 @@ export class GameWorld {
       detail.material = material;
       detail.isPickable = false;
     });
+  }
+
+  /** Marcos de conteúdo não selecionáveis: preservam o núcleo congelado de deslocamento. */
+  private createWorldLandmarks() {
+    this.createMerchantCamp(-6.8, 5.8);
+    this.createPortal(16.2, 4.6, "portal-ruinas", "#769A94");
+    this.createStairway(11.8, -1.9);
+    this.createMonsterSighting(2.2, 5.6, "sighting-boar", "#B99064", 0.7, "field-boar", "Javali do Campo");
+    this.createMonsterSighting(7.5, -7.8, "sighting-goblin", "#82965C", 0.63, "wind-goblin", "Goblin da Estrada");
+  }
+
+  private createMerchantCamp(x: number, z: number) {
+    const canopy = MeshBuilder.CreateCylinder("merchant-canopy", { height: 0.32, diameterTop: 2.05, diameterBottom: 1.55, tessellation: 6 }, this.scene);
+    canopy.position.set(x, 1.14, z);
+    canopy.material = this.colorMaterial("merchant-canopy-material", "#7B5740", 0.1);
+    canopy.isPickable = false;
+    [-0.68, 0.68].forEach((offset, index) => {
+      const pole = MeshBuilder.CreateCylinder(`merchant-pole-${index}`, { height: 1.25, diameter: 0.1, tessellation: 6 }, this.scene);
+      pole.position.set(x + offset, 0.62, z + 0.18);
+      pole.material = this.colorMaterial(`merchant-pole-material-${index}`, "#60442E", 0.04);
+      pole.isPickable = false;
+    });
+    const traveler = MeshBuilder.CreateSphere("merchant-selene", { diameter: 0.44, segments: 10 }, this.scene);
+    traveler.position.set(x, 0.42, z - 0.22);
+    traveler.scaling.y = 1.7;
+    traveler.material = this.colorMaterial("merchant-selene-material", "#D6AD70", 0.12);
+    this.registerLandmark(traveler, { id: "selene", kind: "npc", label: "Selene · Mercadora", x, z, radius: 1.45 });
+    const lamp = MeshBuilder.CreateSphere("merchant-lamp", { diameter: 0.25, segments: 8 }, this.scene);
+    lamp.position.set(x + 0.86, 0.68, z - 0.14);
+    lamp.material = this.colorMaterial("merchant-lamp-material", "#F2B84B", 0.55);
+    lamp.isPickable = false;
+  }
+
+  private createPortal(x: number, z: number, name: string, color: string) {
+    const outer = MeshBuilder.CreateTorus(`${name}-outer`, { diameter: 1.65, thickness: 0.15, tessellation: 24 }, this.scene);
+    outer.position.set(x, 0.2, z);
+    outer.rotation.x = Math.PI / 2;
+    outer.material = this.colorMaterial(`${name}-outer-material`, color, 0.48, 0.92);
+    outer.isPickable = false;
+    const inner = MeshBuilder.CreateDisc(`${name}-inner`, { radius: 0.61, tessellation: 24 }, this.scene);
+    inner.position.set(x, 0.051, z);
+    inner.rotation.x = Math.PI / 2;
+    inner.material = this.colorMaterial(`${name}-inner-material`, color, 0.18, 0.42);
+    this.registerLandmark(inner, { id: name, kind: "portal", label: "Portal das Ruínas", x, z, radius: 1.35 });
+    [0, Math.PI * 0.67, Math.PI * 1.34].forEach((angle, index) => {
+      const rune = MeshBuilder.CreateBox(`${name}-rune-${index}`, { width: 0.16, height: 0.08, depth: 0.34 }, this.scene);
+      rune.position.set(x + Math.cos(angle) * 0.9, 0.14, z + Math.sin(angle) * 0.9);
+      rune.rotation.y = angle;
+      rune.material = this.colorMaterial(`${name}-rune-material-${index}`, "#F2B84B", 0.38);
+      rune.isPickable = false;
+    });
+  }
+
+  private createStairway(x: number, z: number) {
+    const material = this.colorMaterial("stairway-material", "#7D8790", 0.07);
+    [0, 1, 2, 3].forEach((step) => {
+      const block = MeshBuilder.CreateBox(`stair-step-${step}`, { width: 1.28 - step * 0.08, height: 0.15, depth: 0.35 }, this.scene);
+      block.position.set(x + step * 0.13, 0.075 + step * 0.075, z - step * 0.26);
+      block.material = material;
+      block.isPickable = false;
+    });
+    const torch = MeshBuilder.CreateSphere("stairway-torch", { diameter: 0.22, segments: 8 }, this.scene);
+    torch.position.set(x - 0.82, 0.54, z - 0.42);
+    torch.material = this.colorMaterial("stairway-torch-material", "#F2B84B", 0.72);
+    this.registerLandmark(torch, { id: "stairway", kind: "stairs", label: "Escadaria antiga", x, z, radius: 1.25 });
+  }
+
+  private createMonsterSighting(x: number, z: number, name: string, color: string, scale: number, monsterKey: string, label: string) {
+    const shadow = MeshBuilder.CreateDisc(`${name}-shadow`, { radius: scale * 0.85, tessellation: 16 }, this.scene);
+    shadow.position.set(x + 0.12, 0.025, z + 0.16);
+    shadow.rotation.x = Math.PI / 2;
+    shadow.scaling.z = 0.6;
+    shadow.material = this.colorMaterial(`${name}-shadow-material`, "#263F31", 0.02, 0.32);
+    shadow.isPickable = false;
+    const body = MeshBuilder.CreateSphere(`${name}-body`, { diameter: scale * 1.45, segments: 10 }, this.scene);
+    body.position.set(x, scale * 0.38, z);
+    body.scaling.set(1.2, 0.72, 0.85);
+    body.material = this.colorMaterial(`${name}-body-material`, color, 0.12);
+    const interaction: LandmarkInteraction = { id: name, kind: "monster", label, x, z, radius: 1.4, monsterKey };
+    this.registerLandmark(body, interaction);
+    const marker = MeshBuilder.CreateTorus(`${name}-target-marker`, { diameter: scale * 1.85, thickness: 0.045, tessellation: 20 }, this.scene);
+    marker.position.set(x, 0.045, z);
+    marker.rotation.x = Math.PI / 2;
+    marker.material = this.colorMaterial(`${name}-target-marker-material`, "#F2B84B", 0.42, 0.68);
+    marker.isPickable = false;
+    this.creatureAgents.push({ interaction, body, marker, home: new Vector2(x, z), phase: this.creatureAgents.length * 1.7, state: "idle", respawnAt: 0, attackCooldown: 0 });
+  }
+
+  private registerLandmark(mesh: Mesh, interaction: LandmarkInteraction) {
+    mesh.isPickable = true;
+    mesh.metadata = { ...(mesh.metadata as Record<string, unknown> | undefined), valeInteraction: interaction };
+    this.landmarkInteractions.push(interaction);
+  }
+
+  private updateNearbyLandmark() {
+    const nearest = this.landmarkInteractions.find((entry) => Vector2.Distance(this.player.position, new Vector2(entry.x, entry.z)) <= entry.radius) ?? null;
+    if (nearest?.id === this.nearbyLandmarkId) return;
+    this.nearbyLandmarkId = nearest?.id ?? null;
+    this.nearbyHighlight?.dispose();
+    this.nearbyHighlight = null;
+    if (nearest) {
+      const ring = MeshBuilder.CreateTorus(`hotspot-highlight-${nearest.id}`, { diameter: nearest.radius * 1.7, thickness: 0.065, tessellation: 24 }, this.scene);
+      ring.position.set(nearest.x, 0.12, nearest.z);
+      ring.rotation.x = Math.PI / 2;
+      ring.material = this.colorMaterial(`hotspot-highlight-material-${nearest.id}`, "#F2B84B", 0.72, 0.92);
+      ring.isPickable = false;
+      this.nearbyHighlight = ring;
+    }
+    window.dispatchEvent(new CustomEvent<LandmarkInteraction | null>("vale:world-proximity", { detail: nearest }));
+  }
+
+  private updateCreatureAgents(deltaSeconds: number) {
+    const now = performance.now();
+    for (const creature of this.creatureAgents) {
+      if (creature.state === "dead") {
+        if (now < creature.respawnAt) continue;
+        creature.state = "return";
+        creature.body.isVisible = true;
+        creature.body.isPickable = true;
+        creature.marker.isVisible = true;
+        creature.body.position.x = creature.home.x;
+        creature.body.position.z = creature.home.y;
+        creature.marker.position.x = creature.home.x;
+        creature.marker.position.z = creature.home.y;
+        creature.interaction.x = creature.home.x;
+        creature.interaction.z = creature.home.y;
+      }
+
+      const current = new Vector2(creature.body.position.x, creature.body.position.z);
+      const toPlayer = this.player.position.subtract(current);
+      const distanceToPlayer = toPlayer.length();
+      const toHome = creature.home.subtract(current);
+      const distanceToHome = toHome.length();
+      creature.attackCooldown = Math.max(0, creature.attackCooldown - deltaSeconds);
+
+      let direction = Vector2.Zero();
+      let speed = 0;
+      if (distanceToPlayer < 3.9 && distanceToHome < 7.2) {
+        if (distanceToPlayer <= 1.18) {
+          creature.state = "attack";
+          if (creature.attackCooldown === 0) {
+            creature.attackCooldown = 2.4;
+            window.dispatchEvent(new CustomEvent("vale:creature-attack", { detail: { label: creature.interaction.label } }));
+          }
+        } else {
+          creature.state = "chase";
+          direction = toPlayer.normalize();
+          speed = 1.25;
+        }
+      } else if (distanceToHome > 0.15) {
+        creature.state = "return";
+        direction = toHome.normalize();
+        speed = 0.95;
+      } else {
+        creature.state = "idle";
+        creature.phase += deltaSeconds * 0.9;
+        direction = new Vector2(Math.cos(creature.phase), Math.sin(creature.phase));
+        speed = 0.18;
+      }
+
+      if (speed) {
+        const next = current.add(direction.scale(speed * deltaSeconds));
+        const bounded = new Vector2(Math.min(worldBounds.maxX - 0.5, Math.max(worldBounds.minX + 0.5, next.x)), Math.min(worldBounds.maxZ - 0.5, Math.max(worldBounds.minZ + 0.5, next.y)));
+        creature.body.position.x = bounded.x;
+        creature.body.position.z = bounded.y;
+        creature.marker.position.x = bounded.x;
+        creature.marker.position.z = bounded.y;
+        creature.interaction.x = bounded.x;
+        creature.interaction.z = bounded.y;
+      }
+      creature.marker.scaling.setAll(creature.state === "attack" ? 1.32 : creature.state === "chase" ? 1.12 : 1);
+    }
   }
 
   private createForegroundFoliage() {
@@ -384,6 +625,8 @@ export class GameWorld {
       movement,
       speed: this.player.isMoving() ? this.player.speed : 0,
       hint,
+      position: [this.player.position.x, this.player.position.y],
+      nearbyHotspot: this.landmarkInteractions.find((entry) => entry.id === this.nearbyLandmarkId) ?? null,
     };
     window.dispatchEvent(new CustomEvent<GameStatus>("vale:status", { detail }));
   }

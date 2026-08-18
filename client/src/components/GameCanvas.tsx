@@ -6,13 +6,14 @@ import { useEffect, useRef, useState } from "react";
 import { Engine } from "@babylonjs/core/Engines/engine";
 import { createGameScene, type GameHandle } from "@/game/scene";
 import type { GameStatus } from "@/game/types";
-
-const logoUrl = "/manus-storage/vale-ambar-logo_c80bfacc.png";
+import GameOverlay from "./GameOverlay";
 
 const initialStatus: GameStatus = {
   movement: "Aguardando comando",
   speed: 0,
   hint: "WASD, setas, clique ou toque no terreno",
+  position: [-4.5, -2.5],
+  nearbyHotspot: null,
 };
 
 function MobileJoystick() {
@@ -85,6 +86,7 @@ export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const startedRef = useRef(false);
   const [status, setStatus] = useState<GameStatus>(initialStatus);
+  const [worldReady, setWorldReady] = useState(false);
 
   useEffect(() => {
     const onStatus = (event: Event) => {
@@ -100,6 +102,7 @@ export default function GameCanvas() {
     const canvas = canvasRef.current;
     if (!canvas || startedRef.current) return;
     startedRef.current = true;
+    setWorldReady(false);
 
     const engine = new Engine(canvas, true, {
       preserveDrawingBuffer: true,
@@ -108,6 +111,7 @@ export default function GameCanvas() {
     });
     let handle: GameHandle | null = null;
     let disposed = false;
+    let renderedFirstFrame = false;
 
     createGameScene(engine, canvas)
       .then((sceneHandle) => {
@@ -116,7 +120,15 @@ export default function GameCanvas() {
           return;
         }
         handle = sceneHandle;
-        engine.runRenderLoop(() => sceneHandle.scene.render());
+        engine.runRenderLoop(() => {
+          sceneHandle.scene.render();
+          if (!renderedFirstFrame) {
+            renderedFirstFrame = true;
+            requestAnimationFrame(() => {
+              if (!disposed) setWorldReady(true);
+            });
+          }
+        });
       })
       .catch((error) => {
         console.error("Não foi possível iniciar a cena do Vale de Âmbar.", error);
@@ -138,35 +150,17 @@ export default function GameCanvas() {
     <main className="game-shell" aria-label="Vale de Âmbar, campo de testes de movimentação">
       <canvas ref={canvasRef} className="game-canvas" tabIndex={0} />
 
-      <section className="hud hud--top" aria-live="polite">
-        <div className="world-plaque">
-          <div className="world-plaque__mark-frame" aria-hidden="true">
-            <img className="world-plaque__mark" src={logoUrl} alt="" />
-            <span className="world-plaque__route" />
-          </div>
-          <div>
-            <p className="world-plaque__eyebrow">CAMPO DE MOVIMENTO</p>
-            <h1>Vale de Âmbar</h1>
-            <p className="world-plaque__state">
-              <span className="status-dot" />
-              {status.movement}
-              <b>{Math.round(status.speed * 10) / 10} u/s</b>
-            </p>
-          </div>
+      {worldReady ? (
+        <>
+          <GameOverlay status={status} />
+          <MobileJoystick />
+        </>
+      ) : (
+        <div className="world-loading" role="status" aria-live="polite">
+          <i aria-hidden="true" />
+          <span>Preparando o campo de Âmbar…</span>
         </div>
-      </section>
-
-      <aside className="hud hud--bottom" aria-label="Instruções de controle">
-        <div className="control-hint">
-          <span className="control-hint__icon">↗</span>
-          <p>
-            <strong>Defina o rumo.</strong>
-            <span>{status.hint}</span>
-          </p>
-        </div>
-      </aside>
-
-      <MobileJoystick />
+      )}
     </main>
   );
 }

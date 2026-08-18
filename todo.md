@@ -1,0 +1,30 @@
+# Expansão — Documento Mestre
+
+- [x] Extrair todos os requisitos funcionais e visuais do documento mestre anexado.
+- [x] Registrar os módulos atuais de movimentação e câmera como superfície bloqueada contra alterações.
+- [x] Modelar personagem, mundo, combate, inventário, idle, UI e persistência sem acoplar alterações ao núcleo de movimento.
+- [x] Estruturar dados persistentes para personagem local de desenvolvimento, progressão, itens, skills, regiões e sessões de caça.
+- [x] Implementar mundo explorável com regiões, portais, escadas, NPCs, criaturas, drops e minimapa.
+- [x] Implementar combate elemental, IA de criaturas, morte, revive, efeitos e progressão.
+- [x] Implementar inventário, capacidade, equipamentos, raridades, mercador, painel de loot e auto-poções.
+- [x] Implementar modo idle com sessão de caça, turnos, recompensas e progresso offline.
+- [x] Implementar popups e atalhos de personagem, inventário, equipamento, skills, cidade, mapa e teleporte.
+- [x] Validar os novos fluxos em navegador e mobile, preservando os controles existentes.
+- [ ] Compilar, testar e entregar um checkpoint da expansão.
+- [x] Implementar hotspots de proximidade para portal, escada e NPC, com feedback visual e acionamento por clique, toque ou interação.
+- [x] Implementar IA local de criaturas com estados ocioso, perseguição, alcance de ataque, retorno e morte, integrada ao canvas.
+- [x] Adicionar painéis e atalhos dedicados para equipamentos, cidade e teleporte, com estados de sucesso e erro.
+- [x] Tornar o minimapa explicitamente reativo à posição e à região do personagem.
+- [x] Conectar o revive a um fluxo visível do cliente com resultado e falha informados.
+- [x] Exibir destaque visual inequívoco para hotspots próximos além da mensagem contextual.
+- [x] Exibir estados explícitos de sucesso e erro nas ações de equipamento, cidade e teleporte.
+- [x] Comprovar e testar o disparo de interação de hotspot por clique, toque e tecla de ação.
+- [x] Variar a arte e os marcadores do minimapa de acordo com a região atual.
+- [x] Oferecer um caminho de erro explícito para ações indisponíveis no painel de cidade.
+- [x] Separar o pacote do motor gráfico da entrada principal para reduzir o custo inicial de carregamento em mobile.
+- [x] Adicionar testes automatizados para a decisão de interação por ponteiro e toque, além da tecla de ação.
+- [x] Tornar os marcadores do minimapa dependentes da região atual e validar essa variação em código.
+- [x] Exibir um estado de abertura até a cena do mundo concluir seu primeiro quadro renderizado, evitando um canvas vazio transitório.
+- [x] Adicionar uma verificação integrada do evento emitido por clique e toque sobre hotspots do mundo.
+- [x] Extrair e testar o pipeline de interação do mundo com pick de mesh, metadata de hotspot, ponteiro, toque e emissão de evento.
+- [x] Testar o caminho completo da tecla de ação até a emissão do evento de hotspot.

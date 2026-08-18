@@ -1,0 +1,593 @@
+Documento Mestre de Reconstrução — Idle
+RPG MMORPG (Estilo Priston Tale +
+Mecânica Tibia)
+  Objetivo deste documento: permitir que um novo chat do Manus reconstrua
+  integralmente o jogo descrito aqui, sem perder qualquer mecânica, convenção de
+  código, dado de seed ou decisão de design já implementada. Ele foi gerado a partir do
+  estado real do projeto idle-rpg-game (checkpoint f8282907 ).
+Autor: Manus AI | Data: 17/08/2026 | Versão do jogo documentada: checkpoint f8282907
+
+1. Visão geral do produto
+O jogo é um MMORPG de browser com dois modos de gameplay sobre o mesmo mundo
+persistente: um modo idle (farm automático e offline, tRPC sobre REST) e um modo tile-
+game ao vivo (movimento em tempo real por WebSocket, estilo Tibia/Priston Tale,
+renderizado com PixiJS). Todos os dados de mundo, combate e inventário são server-
+authoritative; o cliente nunca decide o resultado de um golpe, a validade de um
+movimento ou a posse de um item.
+O universo tem 11 regiões de 75x75 tiles interligadas por 8 portais (teleporte ao pisar no
+tile) e um calabouço com 2 andares (Z=0 e Z=1) ligados por escadas. O jogador pode
+morrer, perder 2,5% do gold e 3% da XP, e reviver na cidade. O combate é elemental com 7
+tipos de dano e resistências por monstro. O inventário tem capacidade por peso e por
+slots, com bloqueio de coleta excedente e painel Guardar/Descartar.
+1.1 Pilares de design já implementados
+ Pilar                         Estado                         Resumo
+                                                              Cardinais + diagonais; corner
+ Movimento Tibia em 8 direções Completo                       blocking (os 2 tiles cardeais do
+                                                              diagonal precisam ser andáveis
+                                                              e livres); custo de diagonal 1.4x
+                                                              A* 8-conectado no servidor
+                                                              ( server/world/pathfinding.ts ) e no
+ Pathfinding                   Completo                       cliente
+                                                              ( client/src/net/localPathfind.ts ),
+                                                              com corner blocking em ambos
+                                   Máquina de estados idle →
+                                   patrol → detect → chase → attack →
+IA de monstros          Completo   flee → return-to-spawn ; sight
+                                   range 9; perda de alvo por
+                                   tempo (6s) ou distância;
+                                   regeneração ao voltar ao spawn
+                                   7 tipos de dano; fórmula Tibia
+Combate elemental       Completo    final = raw * (2 - resistance) ; skills
+                                   e monstros com afinidades por
+                                   tema regional
+                                   Peso por item, capacidade 50 +
+Inventário/capacidade   Completo   25 × nível , bloqueio de
+                                   coleta/compra excedente,
+                                   indicador de peso no minimapa
+                                   Broadcast WS filtrado por
+Campo de visão (FOV)    Completo   andar (Z) e raio de viewport;
+                                   state inclui campo self com o
+                                   próprio jogador
+                                   WebSocket /api/ws com
+                                   protocolo numerado
+                                   (join/move/ack/nack/state/corr
+Rede em tempo real      Completo   ection), dead reckoning client-
+                                   side com reconciliação por
+                                   ACK, fallback tRPC quando WS
+                                   fechado
+                                   PixiJS v8 (WebGL) com tileset
+                                   por região, culling, câmera
+                                   lerp, zoom 0.7x fixo,
+                                   spritesheets animados
+Renderização            Completo   (idle/walk/attack/death),
+                                   screen shake, flashes de
+                                   impacto, números de dano
+                                   flutuantes coloridos por
+                                   elemento
+Penalidade de morte     Completo   Revive na cidade com −2,5%
+                                   gold e −3% XP (autoritativo)
+                                   8 portais entre as regiões;
+Portais e escadas       Completo   subida/descida de andar ao
+                                   pisar em escadas
+Testes                  Completo   ~249 testes vitest (tsc limpo),
+                                   incluindo integração WS
+2. Stack técnica (configuração exata)
+ Camada                      Tecnologia                      Observação
+                                                             Página do jogo é tela cheia /tile-
+                             React 19 + Tailwind 4 +         game ; demais telas
+ Frontend                    shadcn/ui + wouter              (personagem, inventário,
+                                                             magias etc.) abrem como
+                                                             popups sobre o jogo
+                                                             Código todo em
+ Motor gráfico               PixiJS v8 (WebGL)                client/src/game/pixiGame.ts (uma
+                                                             classe PixiGame )
+                                                              server/routers.ts central +
+ Backend                     Express 4 + tRPC 11 + superjson server/wsGameServer.ts para o
+                                                             WebSocket
+                                                             Schema em drizzle/schema.ts ;
+ Banco                       MySQL/TiDB via Drizzle ORM      migrations numeradas 0000–
+                                                             0008
+                             Manus OAuth                     Sem código customizado de
+ Auth                        ( protectedProcedure injeta     sessão
+                              ctx.user )
+                                                             Suite server-side; flaky em
+                                                             threads por singletons
+ Testes                      Vitest 2.1.4                    compartilhados — rodar pnpm
+                                                             exec vitest run --pool forks se
+                                                             algum teste falhar
+                                                             intermitentemente
+                                                             Sempre usar manus-upload-file --
+ Assets estáticos            S3 Manus                        webdev <arquivo> → URL /manus-
+                                                             storage/<nome>.png . Nunca
+                                                             armazenar mídia no repositório
+
+Comandos de validação padrão do projeto:
+  Bash
+  cd /home/ubuntu/idle-rpg-game
+  pnpm exec tsc --noEmit             # 0 erros
+  pnpm exec vitest run             # suíte completa (~249 testes)
+  pnpm exec vitest run --pool forks <arquivo>   # teste flaky isolado
+
+
+
+
+3. Arquitetura do servidor
+O servidor é dividido em quatro camadas. A camada tRPC ( server/routers.ts , ~1500 linhas)
+expõe os routers auth , character , hunt , merchant , city , tile e teleport . A camada mundo
+( server/world/ ) contém o motor autoritativo: tileStore (grid 75x75 multi-Z por região,
+ocupação por entidade, canMove ), monsterStore (IA e respawns), playerStore , movement
+(movePlayer com cooldowns e modificadores haste/paralyze), pathfinding (A*), viewport
+(FOV por região/Z), regionMaps (definição das 11 regiões e portais) e stores auxiliares (chat,
+corpses, campos, eventos, quests, partidos). A camada WebSocket ( server/wsGameServer.ts )
+processa join/move/stop/leave com validação de sequência (ack/nack), mantém sessão com
+posição viva e faz broadcast regional a cada 80ms. A camada de serviços ( server/services/ )
+concentra regras de negócio: statService (fórmulas de atributo e ataque), huntService
+(turnos de combate idle), characterService (estado completo do personagem),
+ merchantService (comércio), cityService , autoPotService , respecService .
+3.1 Regras de ouro do backend (não violar)
+ 1. Todo efeito de jogo passa por procedimento tRPC ou mensagem WS validada. O
+    cliente envia apenas intenções; o servidor decide.
+ 2. Movimento é validado por tileStore.canMove — reasons possíveis: OUT_OF_BOUNDS ,
+     NOT_WALKABLE , BLOCKED_BY_WALL , BLOCKED_BY_CREATURE , BLOCKED_BY_PLAYER ,
+     INVALID_FLOOR .
+ 3. Coletar/lootar passa por monsterStore / tileStore : drops no chão são entidades de tile
+    com owner temporário; coleta exige distância ≤ 2 tiles + capacidade de inventário
+    suficiente (peso e slots).
+ 4. Anti-cheat: violationTracker no wsGameServer registra movimentos inválidos e chuta a
+    conexão após limiar.
+ 5. Singletons: tileStore , monsterStore , modifierRegistry e stores de WebSocket são
+    singletons em memória — os testes de integração precisam de afterEach com
+     tileStore.reset() / monsterStore.reset() e entityId únicos por teste ( let nextId = -1 ).
+3.2 Estrutura de arquivos essencial
+  Plain Text
+server/
+  routers.ts             — tRPC (tile.monsters, tile.aiTick, tile.monsterAttack,
+                           tile.revive, tile.teleport, hunt.turn, merchant.*)
+  wsGameServer.ts        — servidor WS: sessão, validação de sequência,
+                           dead reckoning (envio de ack/nack/correction),
+                           broadcast FOV (z + VIEWPORT_RADIUS), cadáveres
+  world/tileStore.ts     — grid por região, canMove (corner blocking Tibia),
+                           occupancy (entidade→tile e tile→entidades)
+  world/monsterStore.ts — IA (estados, threatTable, lastSeenAt), respawns por
+                           template.respawnMs, MONSTER_TEMPLATES (roster com
+                           resistances por região)
+  world/movement.ts      — movePlayer com cooldown/velocidade, pathFor
+  world/pathfinding.ts — A* 8-conectado (default diagonal) com canto bloqueado
+  world/viewport.ts      — getWorldState com filtro por Z e VIEWPORT_RADIUS=7
+  world/regionMaps.ts    — SERVER_TILESETS (mapas 75x75 por código de tile),
+                           SERVER_SPAWNS, SERVER_PORTALS, generateRegionGrid
+  world/combat2.ts       — utilitários de combate do tile game
+  services/statService.ts      — calculateAttack (fórmulas de dano + elemento)
+  services/huntService.ts      — huntTurn (combate idle autoritativo)
+  services/characterService.ts— getCharacterFullState (com capacity/weight)
+shared/
+  wsProtocol.ts    — Direction (8 sentidos), DIRECTION_DELTA, OPPOSITE,
+                     DIR_COST, WsMsgClient/WsMsgServer (interfaces)
+  tibia.ts         — TIBIA_CONFIG, TargetState, classifyClick,
+                     getAttackPosition/isInAttackRange, shouldRepursue
+  elemental.ts     — DamageType, ELEMENT_COLOR/LABEL, elementMultiplier,
+                     applyElementalDamage, characterResistances
+  inventoryCapacity.ts — CAPACITY_BASE=50, CAPACITY_PER_LEVEL=25,
+                     capacityForLevel, itemWeight (fallback por slot),
+                     totalInventoryWeight
+  tileRegions.ts — enum de regiões no client
+  const.ts / types.ts — constantes gerais e tipos do modo idle
+client/src/
+  pages/TileGameScreen.tsx — tela do jogo: refs espelho para o Pixi, D-pad,
+                     teclas (WASD, setas, combinações geram diagonais, 300ms
+                     → sprint automático), click-to-move classificado por
+                     TargetState (Tibia), popups, HUD
+  game/pixiGame.ts — classe única do motor: tileset, câmera lerp (lerp 0.32),
+                     sprites animados, efeitos (dano flutuante, flash, shake,
+                     alvo com contorno vermelho pulsante), interações canvas
+  net/wsClient.ts    — cliente WS reconectável com fila de sequência
+  net/deadReckoning.ts — predição local + reconciliação por ACK/snapshot
+  net/localPathfind.ts — A* 8-conectado client-side (BFS de terreno +
+                     monstros no mask para perseguição)
+4. Protocolo WebSocket (contrato exato)
+O endpoint é /api/ws (conexão só com cookie de sessão válida; sem cookie o socket é
+destruído). O protocolo é numerado: cada mensagem enviada carrega seq e o servidor
+responde com ack <seq> (válido) ou nack <seq> (inválido — cliente corrige para a posição
+autoritativa no próximo broadcast).
+Cliente → servidor ( WsMsgClient ):
+ type                          campos                              comportamento
+                                                                   Spawna/atrela a sessão à
+                                                                   entidade; servidor valida
+ join                          x, y, z                             posição andável (spawn
+                                                                   default da região se inválida);
+                                                                   state inicial é enviado com
+                                                                   campo self
+                                                                    dir ∈ Direction
+                                                                   (north/south/east/west/northe
+ move                          dir                                 ast/northwest/southeast/south
+                                                                   west); servidor valida por
+                                                                    canMove incluindo corner
+                                                                   blocking em diagonais
+ stop                          —                                   Cancela fila de movimento do
+                                                                   jogador
+ leave                         —                                   Remove a entidade da região e
+                                                                   fecha a sessão
+
+Servidor → cliente ( WsMsgServer ):
+ type                                         conteúdo
+ welcome                                      entityId negativo do jogador, região
+ ack / nack                                   seq confirmada/rejeitada
+                                              broadcast regional a cada ~80ms: { players[],
+ state                                        monsters[], corpses[], fields[], self } — filtrado por
+                                              Z e raio VIEWPORT_RADIUS (7) ao redor de
+                                              cada jogador; self traz o próprio jogador
+ correction                                   posição autoritativa (após nack ou
+                                              divergência)
+  kicked                                                violações de anti-cheat excedidas
+
+O state do broadcast inclui em cada monstro: id, spriteKey, x, y, z, hp, maxHp, animState, dead,
+respawnAt, resistances? . O payload de tile.monsters (tRPC) também filtra por z do jogador e,
+quando x/y são informados, por uma janela de 12x12 ao redor.
+4.1 Dead reckoning no cliente
+O NetClient ( wsClient.ts ) mantém fila de movimentos em voo. Cada move enviado recebe
+ ack / nack ; o DeadReckoning ( deadReckoning.ts ) reconcilia a posição predita com snapshots
+do servidor. O pathfinding local ( localPathfind.ts ) é A 8-conectado* com o mesmo corner
+blocking do servidor — isso garante que caminhos preditos são sempre válidos do lado
+autoritativo. A fila de caminho é substituída ao clicar em novo alvo (cancelamento): clicar
+em monstro vivo fora do alcance inicia perseguição (walkable mask inclui monstros); clicar
+no chão interrompe o combate e anda até o ponto.
+
+5. Mundo e regiões
+As 11 regiões têm mapas gerados de forma determinística no cliente e idênticos no
+servidor (mesma semente: soma dos charCodes da regionKey — wind-road: 901, bamboo-
+forest: 1328, elders-ruins: 1245, cursed-graveyard: 1656, ancient-dungeon: 1535, oasis: 543, desert-island:
+1327, ghost-forest: 1253, frozen-land: 1120, valley-of-despair: 1700, volcano: 754 ). No servidor,
+ generateRegionGrid em server/world/regionMaps.ts rederiva o mesmo mapa (walkability
+centralizada).
+Geometria do mapa 75x75: faixa de caminho em cruz (linhas/colunas 21–22,
+complementadas por y=17..25 e x=17..25), diagonais dos cantos ao centro, borda fechada
+por muro e ~300 obstáculos + ~150 decorações distribuídos pela semente. Tiles são
+codificados por número (0 grama, 1 terra/caminho, 2 árvore/obstáculo, 3 decoração, 4
+flor/decor).
+ Região                     Tema                        Monstros                   Elemento dominante
+                                                        representativos            dos monstros
+                                                        Coelho, Cogumelo
+ wind-road                  Estrada inicial             Andarilho, Javali,         neutro/físico
+                                                        Zeldi, Goblin
+ bamboo-forest              Floresta de bambu           Arqueiro Maligno,          físico
+                                                        Guerreiro Maligno
+ elders-ruins            Ruínas                Golem de Ruína,           físico
+                                               Aranha
+                                               Esqueleto, Esqueleto
+ cursed-graveyard        Cemitério             Guerreiro, Zumbi,         sagrado/morte
+                                               Lorde Crânio
+ ancient-dungeon         Calabouço (Z=0 e Z=1) Caveirão,
+                                               Ghost
+                                                          Wraith,        morte (fraco a sagrado)
+                                               Escorpião, Caranguejo
+ oasis                   Deserto com oásis     de Areia, Lagarto do      terra
+                                               Deserto, Serpente das
+                                               Dunas
+ desert-island           Ilha deserta          Cobra da Areia,           terra
+                                               Morcego Amaldiçoado
+ ghost-forest            Floresta assombrada Árvore
+                                               Morcego
+                                                      Assombrada,        morte/sagrado
+ frozen-land             Terra congelada       Urso de Gelo, Lobo        gelo (fraco a fogo)
+                                               Gélido, Raposa Ártica
+                                               Doom Knight,
+ valley-of-despair       Vale do desespero     Decapitador, Titan,       físico forte
+                                               Minotauro
+                                               Imp, Salamandra           fogo (imune/resistente
+ volcano                 Vulcão                Flamejante, Golem de      a fogo, fraco a gelo)
+                                               Lava
+
+Portais: 8 no total, conectando as 5 regiões vizinhas de Ricarten (Ricarten = região central
+ wind-road ; portais para desert-island, ghost-forest, frozen-land, valley-of-despair, volcano;
+cada portal tem src na borda do mapa e teleportDst registrado). O tile teleport é andável;
+pisar nele aplica o teleporte autoritativo (estilo Tibia).
+Escadas do calabouço: stairsUp em (37,37,z0) → destino (37,37,z1); stairsDown em
+(37,37,z1) → (37,37,z0). O estilo de subida é por origem: ao dar um passo saindo do tile de
+escada, o jogador muda de andar.
+
+6. Sistema de combate
+6.1 Modo idle (hunt)
+ huntService.huntTurn(characterId, monsterId, skillId?) executa um turno autoritativo: rola o
+ataque do jogador (fórmula de statService.calculateAttack ), aplica elemento, aplica HP do
+monstro no DB, rola o contra-ataque do monstro ( monsterAiAttack ), processa morte (XP,
+gold, loot via lootRoller ), e retorna { playerAttack, monsterAttack, playerHp, xpGained, goldGained,
+lootItems?, monsterKilled } . O parâmetro skillId opcional define o tipo de dano pelo
+ skills.element do banco (default physical ).
+6.2 Modo tile (ao vivo)
+O ataque do jogador no tile game chama hunt.turn (via tRPC) com o mesmo fluxo
+autoritativo; o ataque do monstro em tempo real vem do tile.aiTick (tick de IA por região,
+chamado a cada ~200ms pelo cliente quando há monstros próximos), cujo campo attacks
+agora inclui damageType ("physical" por padrão) e resistances dos monstros. O dano visual
+mostrado ao jogador no contra-ataque usa o HP local do cliente (o HP real é sincronizado
+pelo retorno do hunt turn e pelo state do WS).
+6.3 Fórmulas e constantes de combate
+ • statService.calculateAttack(atkStats, defStats, { damageType, defender.resistances }) retorna {
+    rawDamage, damageType, elementMultiplier } com piso de dano 1 e a fórmula elemental da
+   seção 6.4.
+ • Critico: chance derivada dos atributos (ver gameLogic.test.ts para as taxas exatas; o
+   cliente exibe "💥CRIT!").
+ • Dano do monstro (idle e tile): roll uniforme [atkMin, atkMax] do template.
+ • IA de ataque: monstro adjacente ao alvo ataca a cada cooldown de ataque (constante
+    MONSTER_ATTACK_COOLDOWN_MS em monsterStore.ts ), só em attack state, respeitando
+    sight para entrar em chase .
+6.4 Sistema elemental (shared/elemental.ts)
+  Plain Text
+  type DamageType = "physical" | "fire" | "ice" | "energy" | "earth" | "holy" | "d
+
+
+Escala de resistência Tibia-style: 1.0 = neutro (100% do dano), 0.0 = vulnerável (+100%),
+2.0 = imunidade (0%), com dano mínimo garantido de 1. A fórmula é final = raw *
+elementMultiplier(resistance) , onde elementMultiplier(res) = max(0, 2 - res) — na prática aceita-se o
+chão 1 depois da multiplicação.
+ Elemento                          Cor (hex)                          Rótulo PT
+ physical                        #d0d0d0 (cinza-claro)            Físico
+ fire                            #ff6a00 (laranja)                Fogo
+ ice                             #7fd4ff (azul-gelo)              Gelo
+ energy                          #d864ff (roxo)                   Energia
+ earth                           #8bc34a (verde-terra)            Terra
+ holy                            #ffd700 (dourado)                Sagrado
+ death                           #9b59b6 (púrpura)                Morte
+
+Afinidades regionais (seed em MONSTER_TEMPLATES de monsterStore.ts + boss Lord das
+Trevas em regionMaps.ts ): criaturas do vulcão são resistentes/imunes a fogo e vulneráveis
+a gelo; as de frozen-land são o oposto; mortos-vivos (skeleton, zombie, wraith, ghost, skull-
+lord) são resistentes a death e vulneráveis a holy; criaturas do deserto/oásis são fortes em
+earth; imp e salamandra são fire. O exato conjunto por monstro está nas linhas de
+ MONSTER_TEMPLATES — sempre consultar o arquivo ao reconstruir.
+6.5 Skills elementais (banco)
+Coluna skills.element (varchar(12), default 'physical') criada na migration 0008. Valores
+aplicados no DB: Fireball → fire, Ice Shield → ice, Thunder → energy, Arcane Missile → holy,
+Quick Shot → physical, Eagle Eye → earth; skills iniciais 1–3 (Power Strike/Iron Skin/War
+Cry, Fighter) → physical.
+
+7. IA dos monstros (Tibia-style)
+Máquina de estados em monsterStore.aiTick(region, playerPositions, now) :
+ Estado                          Transição para                   Condição
+                                                                  timeout de movimento
+ idle                            patrol                           ( MONSTER_MOVE_INTERVAL_MS )
+                                                                  e alvo de patrulha escolhido
+                                                                  vê jogador / distancia >
+ patrol                          detect / return                   MONSTER_ROAM_RANGE (5) do
+                                                                  home
+ detect                          chase                            jogador entra em sight
+                                                                  ( MONSTER_SIGHT_RANGE = 9)
+ chase                           attack / flee / return          adjacente / HP baixo / alvo
+                                                                 perdido
+ attack                          chase / flee / return           alvo se afasta / HP baixo / alvo
+                                                                 perdido
+ flee                            return                          distância segura ou HP crítico
+ return                          idle                            chega ao home (regenera HP
+                                                                 completo)
+
+Perda de alvo: distância > sight ou tempo desde lastSeenAt > MONSTER_LOST_TARGET_MS
+(6000ms). Troca de alvo entre jogadores usa threatTable (dano recebido). Movimento da IA
+usa o mesmo pathfinding 8-direcional com corner blocking do jogador. Respawns: por
+spawn, com template.respawnMs ?? default (boss = 3x default); monstro morto vira cadáver
+( corpseStore ) e é removido do grid.
+
+8. Inventário, capacidade e economia
+ • Capacidade: capacity = 50 + 25 × nível ( shared/inventoryCapacity.ts ). Cada item tem weight
+   (migration 0007: items.weight INT DEFAULT 0 , com UPDATE de defaults por slot: poção 1,
+   anel/colar/luvas/botas 2, capacete/escudo/armadura 4, arma 5; itens de drop regional
+   com pesos 1–4).
+ • Bloqueios: coleta de drop no chão (tile game) e compra do mercador checam peso +
+   slots (limite 50 slots); retorno de erro com painel Guardar/Descartar quando o loot não
+   cabe.
+ • Mercador (city/merchant): vende itens de qualidade baixa, compra itens do jogador
+   (venda múltipla); popup de confirmação ao vender item lendário; buyFromMerchant
+   valida capacidade antes de entregar.
+ • Drops regionais: loot tables por região/monstro ( server/seedRegionDrops.ts +
+    regionDrops.test.ts ) — materiais de craft e amuletos específicos de cada área.
+ • Drops no chão (tile game): monstro morto spawna itens no mapa na posição da morte
+   (offset em grade 3x3); clique auxiliar → coleta se dentro da distância e capacidade.
+ • Auto-loot e auto-pot ( autoPotService ): poções de vida/energia/mana disparadas
+   automaticamente sob limiares configuráveis.
+ • Raridades de itens: cores por raridade (comum cinza, incomum verde, raro azul, épico
+   roxo, lendário dourado) — aplicar no render da lista de inventário e no tooltip.
+ • Morte: tile.revive na cidade aplica −2,5% gold e −3% XP (autoritativo) com tela "Você
+    morreu" estilizada.
+
+9. Renderizador PixiJS (client/src/game/pixiGame.ts)
+Uma única classe PixiGame com Application PixiJS v8. Convenções críticas (não alterar sem
+revalidar tudo):
+ • Matemática de câmera: stagePos = worldPos × ZOOM + cameraPos ; cameraPos = -
+    (playerWorldPos × ZOOM − viewportCenter) ; camera segue com lerp 0.32; zoom fixo 0.7.
+ • Tiles: 48px; texturas construídas por região via buildTileTextures a partir de
+     s.tileset.sprites + sheets; carregamento individual tolerante a falha (lote Assets.load
+    rejeita se um item falha — nunca usar lote); scaleMode = "nearest" para eliminar halos
+    escuros de pixel art.
+ • Entidades: spritesheets de frames 96×96, escalados para 64px de exibição com âncora
+    centro-inferior; estados idle / walk / attack / death por sheet; ataque dura 300ms (4
+    frames × 75ms), morte 900ms + fade 600ms.
+ • Efeitos: números de dano flutuantes (1s, ease-out) com cor por elemento e rótulo;
+    crítico dourado maior com "!", miss cinza; flash de impacto + partículas na posição do
+    alvo; screen shake ~220ms; alvo com contorno vermelho pulsante.
+ • Ponte com React: o PixiGame recebe um getter de estado único (deps vazios no
+    mount) que lê refs espelho do TileGameScreen — nunca closures estaladas; estados
+    mutáveis do jogo vivem em refs, não em state, para evitar recriação do getter.
+ • Estado global via window: __PIXI_SHEETS , __PIXI_SHEETS_ATTACK ,
+     __PIXI_SHEETS_DEATH (maps spriteKey→URL), __PIXI_PROC_MONSTERS (array com
+     spriteUrl ), __PIXI_TRAIL_TILE — injetados pelo TileGameScreen a partir das constantes
+     SHEETS/SHEETS_ATTACK/SHEETS_DEATH .
+ • Tileset: o state do jogo traz tileset.sprites: Record<number, url> por região; o mapa é
+    gerado com o mesmo PRNG (mulberry32) e semente do servidor — walkableMask local
+    bate com a walkability autoritativa.
+9.1 Assets do jogo (URLs /manus-storage — não expiram com o
+projeto)
+Tiles por região (tilesets completos estão mapeados em TileGameScreen.tsx , constante
+ REGION_TILESETS ): wind-road ( tile-windroad-grass_a64417dc , tile-windroad-dirt_fdc2596d , tile-
+windroad-tree_1273a59d , tile-windroad-flower_026f3e0f ), bamboo ( tile-bamboo-grass_03aea60c ,
+ tile-bamboo-dirt_2af973ce , tile-bamboo-tree_63fcf11f ), elders-ruins ( tile-ruins-ground_a1a1ae81 ,
+ tile-ruins-stone_fdac65ba , tile-ruins-pillar_802444c5 , tile-ruins-rock_f56844e1 ), desert ( tile-desert-
+sand_63a8dc0e , tile-desert-crack_d3109c30 , tile-desert-cactus_d636a199 , tile-desert-
+rock_514bb49b ); demais tilesets regionais seguem o mesmo padrão tile-<tema>-
+<tipo>_<hash>.png .
+Sprite sheets de entidades:
+ spriteKey                 idle                  ataque                       morte
+ player                    sheet-player_a8ef4a91 sheet-player-
+                                                 attack_f02da79f
+                                                                              sheet-player-fighter-
+                                                                              death_aaeeaab1
+ boar                      sheet-boar_69d8ca1d sheet-boar-
+                                                 attack_79a472e8
+                                                                              sheet-monster-boar-
+                                                                              death_bce8677d
+ goblin                    sheet-goblin_a1386966 sheet-goblin-
+                                                 attack_10c11920
+                                                                              sheet-monster-goblin-
+                                                                              death_aceaab0e
+ wolf                      sheet-wolf_19d54c9c sheet-wolf-
+                                                 attack_fb1a2933
+                                                                              sheet-monster-wolf-
+                                                                              death_129c3590
+                           sheet-                   sheet-skeleton-           sheet-monster-
+ skeleton                  skeleton_8da74fd7        attack_5ea802c4           skeleton-
+                                                                              death_65eb5da5
+ skeleton-warrior          sheet-skeleton-          —                         —
+                           warrior_25b2639a
+ skeleton-archer           sheet-skeleton-          —                         —
+                           archer_a36608c8
+ evil-warrior              sheet-evil-              sheet-evil-warrior-       —
+                           warrior_68571d16         attack_534f3ea7
+ evil-archer               sheet-evil-              sheet-evil-archer-        —
+                           archer_a9bc490b          attack_eabb1e3d
+ spider                    sheet-                   —                         —
+                           spider_678d7bac
+ zombie                    sheet-                   —                         —
+                           zombie_e432d543
+ demon                     sheet-                   —                         —
+                           demon_c01403e5
+
+Sprites de monstro adicionais (usados pelo catálago PROC_MONSTERS do modo idle):
+monster-arctic-fox_9b165fa9, monster-cursed-bat_fa3dbd44, monster-cyclops_41ef644d,
+monster-decapitator_dd4eb941, monster-desert-lizard_8f32ccbe, monster-doom-
+knight_48d8f8d2, monster-dune-serpent_82a1af43, monster-evil-archer_63b1b712,
+monster-evil-warrior_00fed7ee, monster-fire-imp_7fb6db08, monster-flame-
+salamander_f310e667, monster-frost-wolf_a399cfa2, monster-ghost_63dc48c0, monster-
+goblin-leader_310a48ca, monster-haunted-tree_2b2310a0, monster-ice-bear_0ac41d63,
+monster-imp_193a1bcb, monster-lava-golem_1e527dd7, monster-minigue_360ecf94,
+monster-mushroom_3e0de948, monster-rabbit_353be67b, monster-ruin-golem_36faeda9,
+monster-sand-crab_a3f511dc, monster-scorpion_6a1ccebb, monster-skeleton-
+warrior_b5769b40, monster-skull-lord_8fe138b7, monster-spider_e3291282, monster-
+titan_c412bea6, monster-wraith_519acf35, monster-zeldi_0233452b, monster-
+zombie_0f3fb0db.
+
+10. Banco de dados (Drizzle — migrations 0000–0008)
+Aplicar migrations na ordem, sempre via pnpm drizzle-kit generate + webdev_execute_sql com
+o SQL gerado.
+ #                                              Conteúdo
+                                                Tabelas fundacionais: users , characters
+ 0000                                           (stats, nível, XP, gold, HP/MP/energia, região
+                                                idle), items (template de itens),
+                                                 characterItems (inventário), skills
+                                                Evoluções do modo idle: equipamentos,
+ 0001–0006                                      mercador, cidade/NPCs, quests, partidos,
+                                                eventos de mundo, chat
+ 0007                                            items.weight INT DEFAULT 0 + UPDATE de pesos
+                                                por slot (capacidade de inventário)
+ 0008                                            skills.element VARCHAR(12) DEFAULT 'physical'
+                                                (combate elemental)
+
+Tabelas principais e papéis: users (auth), characters (estado persistente, incluindo posição
+idle e penalidade de morte), items / characterItems (inventário com peso), skills (com
+element), monsters (templates do modo idle — hunt), merchantItems (catálogo do
+mercador), cities / npcs (cidades e NPCs), quests , parties , worldEvents , chatMessages . Não
+há colunas element / resistances na tabela monsters — as resistências do modo tile vêm dos
+templates em memória ( MONSTER_TEMPLATES ), e o modo idle as resolve por
+nome/spriteKey do monstro contra esses templates (helper resistancesForSpriteKey ).
+Seeds importantes: skills elementais (Fireball fire, Ice Shield ice, Thunder energy, Arcane
+Missile holy, Quick Shot physical, Eagle Eye earth); pesos de itens por slot; drops regionais
+por monstro.
+
+11. Mecânica de controle e UX do tile game
+O TileGameScreen é tela cheia (o app monta /tile-game como rota principal; personagem,
+inventário, equipamentos, magias, cidade, mapas e teleporte abrem como popups sobre o
+jogo, acionáveis também por atalhos: C, I, E, K, T, M, B). Controles:
+  • D-pad 3×3 (canto inferior esquerdo) gera as 8 direções; o centro "Usar Joystick"
+    alterna.
+  • Teclado: WASD/setas; combinações (W+A etc.) geram diagonais; teclas de atalho F1–F4
+    para poções; números/letras para skills.
+  • Sprint automático: após 300ms segurando direção (teclado, D-pad ou toque), a
+    velocidade dobra — implementado via modificadores haste/paralyze no movement.ts .
+  • Click-to-move: classificado por TargetState de shared/tibia.ts — chão = andar; monstro
+    = andar até posição de ataque (adjacente, 8 sentidos) e atacar; drop = andar até o item
+    e abrir detalhes (Descartar/Guardar); cadáver = coletar loot; NPC/portal = interagir.
+    Clique no monstro vivo fora do alcance inicia perseguição contínua ( shouldRepursue ); o
+    ataque interrompe o movimento; o movimento interrompe o auto-ataque.
+  • Minimapa temático: cores por terreno no canto superior direito, com nome da região,
+    botão de teleporte e indicador de peso ( Peso: x/y ).
+  • Interações de item: clicar no item da mochila compara com o equipado e oferece
+    usar/vender/jogar fora; raridade com cor; venda múltipla no mercador com
+    confirmação para lendários.
+
+12. Regras de balanceamento e progressão
+ • Nível/XP: curva por level (tabela em gameLogic.test.ts / statService ); morte = −3% XP do
+   total atual.
+ • Atributos: força/destreza/vitalidade/energia/inteligência (Fighter/Mage/Archer) com
+   fórmulas de ataque/defesa em statService.ts ; crítico derivado de atributos.
+ • Combate: dano físico base ATK − DEF/2 (simplificado — conferir fórmula exata em
+    calculateAttack ), elemental multiplica depois.
+ • HP/MP/energia: barras vermelha (vida), verde (energia), azul (mana); auto-pot sob
+   limiares 10–90% (clamp).
+ • Monstros: HP/atkMin/atkMax/respawnMs/sight/aggroRange por template; nível
+   mínimo por mapa (check no teleporte/portal).
+ • Gold: ganho por kill + venda; −2,5% ao morrer.
+
+
+13. Testes (suíte de referência)
+Arquivos: server/gameLogic.test.ts (52), server/world.test.ts (regiões, canMove, escadas,
+portais, movePlayer, IA), server/monsterAi.test.ts (11), server/net/net.test.ts (15 — 8-way +
+corner blocking client), server/ws.integration.test.ts (WS real), server/elemental.test.ts (16),
+ server/inventoryCapacity.test.ts (6), server/teleportRouter.test.ts , server/chat.test.ts ,
+ server/killLoot.integration.test.ts , server/regionDrops.test.ts , server/hunt-merchant.test.ts ,
+ server/antiCheat.test.ts , server/advancedCombat.test.ts , server/players.test.ts ,
+ server/exploration.test.ts , server/teleport.test.ts , server/tibiaModules.test.ts ,
+ server/auth.logout.test.ts .
+Flaky conhecido: singletons compartilhados entre threads do vitest — usar --pool forks . O
+teste de patrulha da IA aceita fightState ∈ {patrol, idle} e valida patrolTarget apenas quando
+presente (ele é limpo no tick de chegada ao ponto).
+
+14. Armadilhas conhecidas (lições aprendidas —
+reutilizar)
+ 1. Pixi assets: nunca carregar sheets em lote ( Assets.load([...]) rejeita se um 404 falhar e
+    corrompe o cache); carregar URL a URL com .catch(() => undefined) . Atribuir textura antes
+    de definir width/height do sprite (senão escala NaN → invisível).
+ 2. Getter do Pixi: criar uma vez com deps vazias e ler refs espelho; states em closure
+    estalam e o sprite "congela" no centro.
+ 3. Seeds de mapa: o PRNG do cliente e o do servidor devem derivar a mesma semente
+    (soma de charCodes da regionKey) — divergência gera walkableMask local inválido e
+    acks/nacks em cascata.
+ 4. Canto bloqueado: diagonais exigem os 2 tiles cardeais andáveis e livres de entidades
+    — aplicar tanto em canMove quanto no pathfinding (servidor e cliente), senão o cliente
+    prediz caminho que o servidor rejeita.
+ 5. Timestamps em testes de IA: usar Date.now() + i * 2000 em loops de tick; Date.now() não
+    avança entre chamadas síncronas e a perda de alvo por tempo nunca dispara.
+ 6. EntityId: negativos para jogadores (hash do openId, -(abs(hash) % 9e8 + 1) com >>> 0 ); o
+    cliente sincroniza myId via welcome.
+7. FOV: o state do WS inclui self ; testes de integração devem ler a posição inicial de
+    state.self (não assumir spawn default).
+8. tsx watch: após edições em arquivos do mundo, o dev server pode rethrow um erro
+   antigo antes do reload — reconfirmar com tsc .
+
+15. Roteiro de reconstrução sugerido para um novo chat
+1. Criar projeto webdev com template fullstack (db, server, user); ler este documento
+   inteiro.
+2. Schema + migrations 0000–0008 na ordem; seeds de skills elementais, pesos de itens e
+   drops regionais.
+3. shared/ primeiro (wsProtocol, tibia, elemental, inventoryCapacity) — é o contrato
+   servidor/cliente.
+4. server/world/ : tileStore → regionMaps → pathfinding → movement → viewport →
+   monsterStore → playerStore.
+5. server/wsGameServer.ts + router tile.* em routers.ts .
+6. Serviços (statService, huntService, characterService, merchantService, cityService,
+   autoPotService).
+7. Frontend: TileGameScreen (refs espelho + bridge) → pixiGame.ts (motor) → net
+   (wsClient, deadReckoning, localPathfind).
+8. Telas popup (personagem, inventário, equipamentos, magias, cidade, mapas,
+   teleporte) e minimapa.
+9. Assets: regenerar spritesheets próprios no estilo medieval/Priston Tale via geração de
+   imagem (96×96 por frame, 4 frames por estado) e tiles 48×48 por região; subir com
+    manus-upload-file --webdev e atualizar os maps
+    SHEETS/SHEETS_ATTACK/SHEETS_DEATH/REGION_TILESETS .
+10.Testes em cada fase; tsc limpo e suíte completa estável antes de checkpoint.
+
