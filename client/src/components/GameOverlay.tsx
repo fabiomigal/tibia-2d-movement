@@ -150,7 +150,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       if (event.key.toLowerCase() === "b") setPanel("quests");
       if (event.key.toLowerCase() === "g") setPanel("city");
       if (event.key.toLowerCase() === "p") setPanel("teleport");
-      if (/^F[1-4]$/.test(event.key)) setSelectedSkill(data?.skills.find((skill) => skill.hotkey === event.key)?.key);
+      if (/^F[1-6]$/.test(event.key)) setSelectedSkill(data?.skills.find((skill) => skill.hotkey === event.key)?.key);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -190,8 +190,8 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       if (detail?.label) setNotice(`${detail.label} se aproxima. Prepare uma habilidade ou afaste-se.`);
     };
     const onAttackReady = (event: Event) => {
-      const monsterKey = (event as CustomEvent<{ monsterKey?: string }>).detail?.monsterKey;
-      if (monsterKey) combat.mutate({ monsterKey, skillKey: selectedSkill });
+      const detail = (event as CustomEvent<{ monsterKey?: string; defaultAttack?: boolean }>).detail;
+      if (detail?.monsterKey) combat.mutate({ monsterKey: detail.monsterKey, skillKey: detail.defaultAttack ? undefined : selectedSkill });
     };
     const onOpenLootChest = (event: Event) => {
       const chestKey = (event as CustomEvent<{ chestKey?: string }>).detail?.chestKey;
@@ -262,6 +262,15 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
         <button className="action-key" onClick={() => setPanel("quests")}><ScrollText size={18}/><span>B</span><b>Missões</b></button>
         <button className="action-key" onClick={() => setPanel("city")}><MapPin size={18}/><span>G</span><b>Cidade</b></button>
         <button className="action-key" onClick={() => setPanel("teleport")}><Sparkles size={18}/><span>P</span><b>Portal</b></button>
+      </section>
+
+      <section className="skill-bar" aria-label="Barra de habilidades">
+        <span className="skill-bar__label"><Zap size={13}/> HABILIDADES</span>
+        <div className="skill-bar__slots">
+          {data.skills.map((skill, index) => <button className={`skill-slot ${activeSkill?.key === skill.key ? "skill-slot--active" : ""}`} key={skill.id} onClick={() => { setSelectedSkill(skill.key); setNotice(`${skill.name} preparada para o próximo ataque.`); }} title={`${skill.name}: ${skill.description}`}>
+            <i style={{ background: ELEMENT_COLOR[skill.element] }}><Sparkles size={15}/></i><b>{index + 1}</b><span>{skill.hotkey ?? `F${index + 1}`}</span>
+          </button>)}
+        </div>
       </section>
 
       <section className="combat-console" aria-label="Console de combate">

@@ -19,6 +19,9 @@ import { dispatchHotspotFromActionKey, dispatchHotspotFromWorldPointer } from ".
 import { resolveAttackApproach } from "./targeting";
 import { hasFiniteScreenCoordinates, toRenderableCombatFloatPosition, type CombatFloatEvent } from "./combatFloatEvents";
 import { resolveCombatFloatWorldAnchor } from "./combatFloatPipeline";
+import { createDefaultAttackRequest, resolveDefaultAttackFlow, resolveDefaultAttackFromDoubleClick } from "./defaultAttack";
+import { getTargetIndicatorStyle } from "./targetIndicator";
+import { COMBAT_VISUAL_HEIGHTS } from "./combatVisualLayout";
 
 const assets = {
   fieldFallback: "/manus-storage/vale-ambar-field-fallback_07dc91d6.png",
@@ -60,6 +63,8 @@ export class GameWorld {
   private readonly playerHealthBar: HealthBar;
   private playerHealth = { hp: 1, maxHp: 1 };
   private activeAttackTarget: string | null = null;
+  private selectedAttackTarget: string | null = null;
+  private activeAttackUsesDefault = false;
   private nearbyLandmarkId: string | null = null;
   private nearbyHighlight: Mesh | null = null;
   private readonly onWorldPointerDown = (event: PointerEvent) => {
@@ -76,6 +81,23 @@ export class GameWorld {
   private readonly onWorldContextMenu = (event: MouseEvent) => {
     const bounds = this.canvas.getBoundingClientRect();
     this.openLootChestFromPointer(event as PointerEvent, bounds);
+  };
+  private readonly onWorldDoubleClick = (event: MouseEvent) => {
+    if (event.button !== 0) return;
+    const bounds = this.canvas.getBoundingClientRect();
+    const pick = this.scene.pick(event.clientX - bounds.left, event.clientY - bounds.top, (mesh) => {
+      const interaction = (mesh.metadata as { valeInteraction?: LandmarkInteraction } | undefined)?.valeInteraction;
+      return interaction?.kind === "monster";
+    });
+    const interaction = (pick?.pickedMesh?.metadata as { valeInteraction?: LandmarkInteraction } | undefined)?.valeInteraction;
+    if (!interaction?.monsterKey) return;
+    event.preventDefault();
+    const attackFlow = resolveDefaultAttackFromDoubleClick(
+      { kind: "monster", monsterKey: interaction.monsterKey, x: interaction.x, z: interaction.z },
+      { x: this.player.position.x, z: this.player.position.y },
+    );
+    if (!attackFlow) return;
+    window.dispatchEvent(new CustomEvent("vale:attack-target", { detail: attackFlow.request }));
   };
   private readonly onWorldInteractionKey = (event: KeyboardEvent) => {
     dispatchHotspotFromActionKey({
@@ -104,12 +126,15 @@ export class GameWorld {
       if (!creature) continue;
       creature.hp = state.hp;
       creature.maxHp = state.maxHp;
-      this.updateHealthBar(creature.healthBar, creature.body.position.x, 1.08, creature.body.position.z, state.hp, state.maxHp, creature.state !== "dead");
+      this.updateHealthBar(creature.healthBar, creature.body.position.x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, creature.body.position.z, state.hp, state.maxHp, creature.state !== "dead");
     }
   };
   private readonly onAttackTarget = (event: Event) => {
-    const monsterKey = (event as CustomEvent<{ monsterKey?: string }>).detail?.monsterKey;
-    if (monsterKey) this.activeAttackTarget = monsterKey;
+    const detail = (event as CustomEvent<{ monsterKey?: string; defaultAttack?: boolean }>).detail;
+    if (!detail?.monsterKey) return;
+    this.activeAttackTarget = detail.monsterKey;
+    this.selectedAttackTarget = detail.monsterKey;
+    this.activeAttackUsesDefault = detail.defaultAttack === true;
   };
   private readonly onLootChests = (event: Event) => {
     const chests = (event as CustomEvent<Array<{ chestKey: string; x: number; z: number }>>).detail ?? [];
@@ -139,7 +164,7 @@ export class GameWorld {
     this.createForegroundFoliage();
 
     this.player = new Player(scene, new Vector2(-4.5, -2.5));
-    this.playerHealthBar = this.createHealthBar("player-health", "#D65752", 0.92);
+    this.playerHealthBar = this.createHealthBar("player-health", "#D65752", 1.02);
     this.cameraController = new CameraController(scene, worldBounds);
     this.cameraController.update(1, this.player.position);
     this.input = new MovementInput(canvas, (x, y) => this.pickWorldPosition(canvas, x, y), (target) => this.player.setTarget(target));
@@ -156,6 +181,7 @@ export class GameWorld {
     window.addEventListener("keydown", this.onWorldInteractionKey);
     canvas.addEventListener("pointerdown", this.onWorldPointerDown, { capture: true, passive: false });
     canvas.addEventListener("contextmenu", this.onWorldContextMenu, { capture: true });
+    canvas.addEventListener("dblclick", this.onWorldDoubleClick, { capture: true });
   }
 
   update(deltaSeconds: number) {
@@ -168,7 +194,7 @@ export class GameWorld {
     }
 
     this.player.update(deltaSeconds, continuousVector, this.collision, source);
-    this.updateHealthBar(this.playerHealthBar, this.player.position.x, 1.16, this.player.position.y, this.playerHealth.hp, this.playerHealth.maxHp, true);
+    this.updateHealthBar(this.playerHealthBar, this.player.position.x, COMBAT_VISUAL_HEIGHTS.playerHealthBar, this.player.position.y, this.playerHealth.hp, this.playerHealth.maxHp, true);
     this.updateCreatureAgents(deltaSeconds);
     this.updateTargetedAttack();
     this.cameraController.update(deltaSeconds, this.player.position);
@@ -197,6 +223,7 @@ export class GameWorld {
     window.removeEventListener("keydown", this.onWorldInteractionKey);
     this.canvas.removeEventListener("pointerdown", this.onWorldPointerDown, true);
     this.canvas.removeEventListener("contextmenu", this.onWorldContextMenu, true);
+    this.canvas.removeEventListener("dblclick", this.onWorldDoubleClick, true);
   }
 
   private readonly onResize = () => this.cameraController.resize();
@@ -602,7 +629,7 @@ export class GameWorld {
     marker.material = this.colorMaterial(`${name}-target-marker-material`, "#F2B84B", 0.42, 0.68);
     marker.isPickable = false;
     const healthBar = this.createHealthBar(`${name}-health`, "#C74E4A", 0.78);
-    this.updateHealthBar(healthBar, x, 1.08, z, 1, 1, true);
+    this.updateHealthBar(healthBar, x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, z, 1, 1, true);
     this.creatureAgents.push({ interaction, body, marker, healthBar, hp: 1, maxHp: 1, home: new Vector2(x, z), phase: this.creatureAgents.length * 1.7, state: "idle", respawnAt: 0, attackCooldown: 0 });
   }
 
@@ -690,21 +717,32 @@ export class GameWorld {
         creature.interaction.x = bounded.x;
         creature.interaction.z = bounded.y;
       }
-      this.updateHealthBar(creature.healthBar, creature.body.position.x, 1.08, creature.body.position.z, creature.hp, creature.maxHp, true);
-      creature.marker.scaling.setAll(creature.state === "attack" ? 1.32 : creature.state === "chase" ? 1.12 : 1);
+      this.updateHealthBar(creature.healthBar, creature.body.position.x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, creature.body.position.z, creature.hp, creature.maxHp, true);
+      const selected = creature.interaction.monsterKey === this.selectedAttackTarget;
+      const markerMaterial = creature.marker.material as StandardMaterial;
+      const indicator = getTargetIndicatorStyle(selected, creature.state);
+      const markerColor = Color3.FromHexString(indicator.color);
+      markerMaterial.diffuseColor = markerColor;
+      markerMaterial.emissiveColor = markerColor.scale(indicator.glow);
+      creature.marker.scaling.setAll(indicator.scale);
     }
   }
 
   private updateTargetedAttack() {
     if (!this.activeAttackTarget) return;
     const creature = this.creatureAgents.find((entry) => entry.interaction.monsterKey === this.activeAttackTarget);
-    if (!creature || creature.state === "dead") { this.activeAttackTarget = null; return; }
+    if (!creature || creature.state === "dead") { this.activeAttackTarget = null; this.activeAttackUsesDefault = false; return; }
     const creaturePosition = new Vector2(creature.body.position.x, creature.body.position.z);
-    const action = resolveAttackApproach({ x: this.player.position.x, z: this.player.position.y }, { x: creaturePosition.x, z: creaturePosition.y });
+    const playerPosition = { x: this.player.position.x, z: this.player.position.y };
+    const action = this.activeAttackUsesDefault
+      ? resolveDefaultAttackFlow(this.activeAttackTarget, playerPosition, { x: creaturePosition.x, z: creaturePosition.y }).approach
+      : resolveAttackApproach(playerPosition, { x: creaturePosition.x, z: creaturePosition.y });
     if (action.kind === "attack") {
       const monsterKey = this.activeAttackTarget;
+      const defaultAttack = this.activeAttackUsesDefault;
       this.activeAttackTarget = null;
-      window.dispatchEvent(new CustomEvent("vale:attack-target-ready", { detail: { monsterKey } }));
+      this.activeAttackUsesDefault = false;
+      window.dispatchEvent(new CustomEvent("vale:attack-target-ready", { detail: { monsterKey, defaultAttack } }));
       return;
     }
     this.player.setTarget(new Vector2(action.destination.x, action.destination.z));

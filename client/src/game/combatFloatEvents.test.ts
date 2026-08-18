@@ -29,11 +29,22 @@ describe("createCombatFloatEvents", () => {
     expect(toRenderableCombatFloatPosition(Number.NaN, 360, 1280, 720, 640, 360)).toBeNull();
   });
 
+  it("mantém os números dentro da área visível da camada mesmo perto das bordas", () => {
+    expect(toRenderableCombatFloatPosition(-80, -40, 1280, 720, 640, 360)).toEqual({ x: 42, y: 32.4 });
+    expect(toRenderableCombatFloatPosition(1400, 820, 1280, 720, 640, 360)).toEqual({ x: 598, y: 327.6 });
+  });
+
   it("percorre dano do combate até a posição renderizável do alvo no mundo", () => {
     const [damageEvent] = createCombatFloatEvents({ monsterKey: "field-boar", damage: 42, critical: false, counterDamage: 0, counterCritical: false, healing: 0 });
     const anchor = resolveCombatFloatWorldAnchor(damageEvent, { x: -4.5, z: -2.5 }, [{ key: "field-boar", x: 3, z: 5 }]);
-    expect(anchor).toEqual({ x: 3, y: 1.58, z: 5 });
+    expect(anchor).toEqual({ x: 3, y: 1.96, z: 5 });
     expect(toRenderableCombatFloatPosition(384, 216, 1280, 720, 640, 360)).toEqual({ x: 192, y: 108 });
+  });
+
+  it("projeta dano sofrido e cura acima da barra de vida do personagem", () => {
+    const events = createCombatFloatEvents({ monsterKey: "field-boar", damage: 0, critical: false, counterDamage: 11, counterCritical: false, healing: 35 });
+    expect(resolveCombatFloatWorldAnchor(events[0], { x: -4.5, z: -2.5 }, [])).toEqual({ x: -4.5, y: 2.12, z: -2.5 });
+    expect(resolveCombatFloatWorldAnchor(events[1], { x: -4.5, z: -2.5 }, [])).toEqual({ x: -4.5, y: 2.12, z: -2.5 });
   });
 
   it("aceita na camada HTML apenas indicadores com estilos de posição finitos", () => {
@@ -44,7 +55,7 @@ describe("createCombatFloatEvents", () => {
   it("encadeia combate, âncora, projeção e recepção da camada HTML sem NaN", () => {
     const [event] = createCombatFloatEvents({ monsterKey: "field-boar", damage: 42, critical: true, counterDamage: 0, counterCritical: false, healing: 0 });
     const anchor = resolveCombatFloatWorldAnchor(event, { x: -4.5, z: -2.5 }, [{ key: "field-boar", x: 3, z: 5 }]);
-    expect(anchor).toEqual({ x: 3, y: 1.58, z: 5 });
+    expect(anchor).toEqual({ x: 3, y: 1.96, z: 5 });
     const screen = toRenderableCombatFloatPosition(384, 216, 1280, 720, 640, 360);
     const floats = appendRenderableCombatFloat([], { id: "combat-1", ...screen, value: event.value, kind: event.kind, lifetime: 0.82 });
     expect(floats).toEqual([{ id: "combat-1", x: 192, y: 108, value: 42, kind: "critical", lifetime: 0.82 }]);

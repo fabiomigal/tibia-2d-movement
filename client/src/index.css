@@ -75,7 +75,7 @@ textarea {
 
 .combat-float-layer {
   position: absolute;
-  z-index: 8;
+  z-index: 30;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
@@ -86,17 +86,18 @@ textarea {
   transform: translate(-50%, -100%);
   color: #fff8e8;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1rem, 2.5vw, 1.55rem);
+  font-size: clamp(1.35rem, 3.6vw, 2.25rem);
   font-weight: 800;
   letter-spacing: 0.04em;
   line-height: 1;
-  text-shadow: 0 2px 0 #15251e, 1px 0 0 #15251e, -1px 0 0 #15251e, 0 0 12px rgba(255, 248, 232, 0.4);
+  -webkit-text-stroke: 0.7px rgba(13, 27, 19, 0.94);
+  text-shadow: 0 3px 0 #15251e, 2px 0 0 #15251e, -2px 0 0 #15251e, 0 0 18px rgba(255, 248, 232, 0.78), 0 7px 12px rgba(0,0,0,0.5);
   will-change: transform, opacity;
-  animation: combat-float-rise 0.82s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  animation: combat-float-rise 1.18s cubic-bezier(0.23, 1, 0.32, 1) forwards;
 }
 
-.combat-float--critical { color: #ff554f; text-shadow: 0 2px 0 #3b1517, 1px 0 0 #3b1517, -1px 0 0 #3b1517, 0 0 12px rgba(255, 85, 79, 0.55); }
-.combat-float--heal { color: #69d47a; text-shadow: 0 2px 0 #17351f, 1px 0 0 #17351f, -1px 0 0 #17351f, 0 0 12px rgba(105, 212, 122, 0.55); }
+.combat-float--critical { color: #ff554f; text-shadow: 0 3px 0 #3b1517, 2px 0 0 #3b1517, -2px 0 0 #3b1517, 0 0 18px rgba(255, 85, 79, 0.8), 0 7px 12px rgba(0,0,0,0.5); }
+.combat-float--heal { color: #69d47a; text-shadow: 0 3px 0 #17351f, 2px 0 0 #17351f, -2px 0 0 #17351f, 0 0 18px rgba(105, 212, 122, 0.8), 0 7px 12px rgba(0,0,0,0.5); }
 
 @keyframes combat-float-rise {
   from { opacity: 1; transform: translate(-50%, -68%) scale(0.9); }
@@ -536,6 +537,15 @@ textarea {
 .rpg-minimap > button { display: flex; gap: 0.2rem; align-items: center; width: 100%; margin-top: 0.35rem; padding: 0; border: 0; background: transparent; color: #f2c55a; font-size: 0.56rem; font-weight: 900; cursor: pointer; }
 
 .rpg-actions { right: clamp(0.85rem, 2.2vw, 1.65rem); bottom: clamp(0.85rem, 2.2vw, 1.65rem); display: flex; gap: 0.36rem; pointer-events: auto; }
+.skill-bar { position: absolute; z-index: 11; bottom: clamp(0.85rem, 2.2vw, 1.65rem); left: 50%; display: flex; gap: 0.46rem; align-items: center; max-width: calc(100vw - 23rem); padding: 0.4rem 0.52rem; transform: translateX(-50%); border: 1px solid rgba(246,223,160,0.36); background: rgba(17,38,29,0.9); box-shadow: 0 12px 30px rgba(4,11,8,0.32); pointer-events: auto; backdrop-filter: blur(10px); }
+.skill-bar__label { display: flex; gap: 0.24rem; align-items: center; color: #f2c45c; font-size: 0.49rem; font-weight: 900; letter-spacing: 0.08em; }
+.skill-bar__slots { display: flex; gap: 0.3rem; }
+.skill-slot { position: relative; display: grid; width: 2.7rem; height: 2.7rem; place-items: center; border: 1px solid rgba(245,224,169,0.25); background: rgba(255,255,255,0.035); color: #f4ecd6; cursor: pointer; transition: transform 130ms var(--ease-out, ease-out), border-color 130ms var(--ease-out, ease-out), background 130ms var(--ease-out, ease-out); }
+.skill-slot:hover, .skill-slot--active { border-color: #f2b84b; background: rgba(242,184,75,0.15); transform: translateY(-2px); }
+.skill-slot:active { transform: scale(0.96); }
+.skill-slot i { display: grid; width: 1.58rem; height: 1.58rem; place-items: center; color: #1b2c23; }
+.skill-slot b { position: absolute; top: 0.14rem; left: 0.2rem; color: #f7e6ae; font-size: 0.48rem; }
+.skill-slot span { position: absolute; right: 0.16rem; bottom: 0.14rem; color: #c8d2bd; font-size: 0.42rem; font-weight: 900; }
 .action-key { position: relative; display: grid; width: 3.12rem; height: 3.12rem; place-items: center; border: 1px solid rgba(246,223,160,0.36); background: rgba(24,45,35,0.91); color: #e8d49d; box-shadow: 0 10px 24px rgba(4,11,8,0.25); cursor: pointer; transition: transform 130ms var(--ease-out, ease-out), border-color 130ms ease; }
 .action-key:hover { border-color: #f2b84b; transform: translateY(-2px); }
 .action-key:active { transform: scale(0.96); }
@@ -560,7 +570,7 @@ textarea {
 .combat-console__empty, .combat-console__dead { margin: 0; padding: 0.72rem; color: #b8c7b3; font-size: 0.62rem; line-height: 1.45; }
 .combat-console__dead button { display: inline-flex; gap: 0.32rem; align-items: center; margin-top: 0.34rem; padding: 0.38rem 0.45rem; border: 1px solid rgba(242,184,75,0.55); background: rgba(242,184,75,0.12); color: #ffe6a4; cursor: pointer; }
 
-.rpg-notice { bottom: 1rem; left: 50%; display: flex; gap: 0.42rem; align-items: center; max-width: min(33rem, 46vw); padding: 0.44rem 0.68rem; transform: translateX(-50%); border: 1px solid rgba(245,226,174,0.2); background: rgba(18,36,29,0.86); box-shadow: 0 9px 25px rgba(0,0,0,0.2); backdrop-filter: blur(7px); }
+.rpg-notice { bottom: 4.75rem; left: 50%; display: flex; gap: 0.42rem; align-items: center; max-width: min(33rem, 46vw); padding: 0.44rem 0.68rem; transform: translateX(-50%); border: 1px solid rgba(245,226,174,0.2); background: rgba(18,36,29,0.86); box-shadow: 0 9px 25px rgba(0,0,0,0.2); backdrop-filter: blur(7px); }
 .rpg-notice p { margin: 0; color: #d9e0ce; font-size: 0.58rem; font-weight: 800; }
 .world-loading { position: absolute; inset: 0; z-index: 8; display: grid; gap: 0.55rem; place-content: center; background: linear-gradient(145deg, rgba(12,31,24,0.78), rgba(18,44,31,0.42)); color: #ead9a1; font-family: Cinzel, Georgia, serif; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-align: center; text-transform: uppercase; pointer-events: none; }.world-loading i { width: 1.8rem; height: 1.8rem; justify-self: center; border: 2px solid rgba(242,184,75,0.22); border-top-color: #f2b84b; border-radius: 50%; animation: world-loader-spin 850ms linear infinite; }@keyframes world-loader-spin { to { transform: rotate(360deg); } }@media (prefers-reduced-motion: reduce) { .world-loading i { animation: none; } }
 
@@ -623,8 +633,9 @@ textarea {
   .ground-loot { right: 0.65rem; bottom: 6.2rem; min-width: 10.6rem; }.ground-loot header { font-size: 0.48rem; }.ground-loot button { padding: 0.34rem; font-size: 0.62rem; }
   .rpg-minimap { top: max(0.65rem, env(safe-area-inset-top)); right: max(0.65rem, env(safe-area-inset-right)); width: 5.6rem; padding: 0.3rem; }.rpg-minimap__heading { display: none; }.rpg-minimap__map { height: 4.3rem; }.rpg-minimap > button { justify-content: center; font-size: 0.44rem; }.rpg-minimap > button svg { display: none; }
   .rpg-actions { right: max(0.65rem, env(safe-area-inset-right)); bottom: max(0.65rem, env(safe-area-inset-bottom)); gap: 0.25rem; }.action-key { width: 2.46rem; height: 2.46rem; }.action-key svg { width: 15px; }.action-key b { bottom: 0.12rem; font-size: 0.4rem; }.action-key span { font-size: 0.36rem; }
-  .combat-console { right: max(0.65rem, env(safe-area-inset-right)); bottom: 3.58rem; width: 12.2rem; }.combat-targets { max-height: 6.7rem; }.monster-target { padding: 0.34rem; }.monster-target b { font-size: 0.54rem; }.monster-target small { font-size: 0.43rem; }.combat-console header { padding: 0.34rem; font-size: 0.43rem; }.combat-console header b { display: none; }.combat-console footer { display: none; }
-  .rpg-notice { bottom: 8rem; left: 0.65rem; max-width: 13rem; padding: 0.34rem 0.42rem; transform: none; }.rpg-notice p { font-size: 0.48rem; }
+  .skill-bar { right: max(0.65rem, env(safe-area-inset-right)); bottom: calc(max(0.65rem, env(safe-area-inset-bottom)) + 3.02rem); left: 7.4rem; justify-content: flex-start; max-width: none; padding: 0.24rem 0.3rem; transform: none; }.skill-bar__label { display: none; }.skill-bar__slots { gap: 0.16rem; }.skill-slot { width: 1.78rem; height: 1.78rem; }.skill-slot i { width: 1.08rem; height: 1.08rem; }.skill-slot b { top: 0.08rem; left: 0.11rem; font-size: 0.36rem; }.skill-slot span { right: 0.1rem; bottom: 0.08rem; font-size: 0.32rem; }
+  .combat-console { right: max(0.65rem, env(safe-area-inset-right)); bottom: 7rem; width: 12.2rem; }.combat-targets { max-height: 6.7rem; }.monster-target { padding: 0.34rem; }.monster-target b { font-size: 0.54rem; }.monster-target small { font-size: 0.43rem; }.combat-console header { padding: 0.34rem; font-size: 0.43rem; }.combat-console header b { display: none; }.combat-console footer { display: none; }
+  .rpg-notice { top: 6.5rem; bottom: auto; left: 0.65rem; max-width: 13rem; padding: 0.34rem 0.42rem; transform: none; }.rpg-notice p { font-size: 0.48rem; }
   .damage-toast { top: 27%; min-width: 9.5rem; padding: 0.4rem; }.damage-toast b { font-size: 0.8rem; }.damage-toast span { font-size: 0.47rem; }
   .rpg-panel { top: 50%; left: 0.65rem; width: calc(100vw - 1.3rem); max-height: calc(100dvh - 1.3rem); }.rpg-panel__body { max-height: calc(100dvh - 4.45rem); }.rpg-panel--wide { width: calc(100vw - 1.3rem); }
 }

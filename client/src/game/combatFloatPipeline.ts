@@ -1,4 +1,5 @@
 import type { CombatFloatEvent } from "./combatFloatEvents";
+import { COMBAT_VISUAL_HEIGHTS } from "./combatVisualLayout";
 
 export type CombatFloatWorldAnchor = { x: number; y: number; z: number };
 
@@ -10,7 +11,7 @@ export function resolveCombatFloatWorldAnchor(
   player: { x: number; z: number },
   monsters: readonly CombatFloatMonsterAnchor[],
 ): CombatFloatWorldAnchor | null {
-  if (event.target === "player") return { x: player.x, y: 1.65, z: player.z };
+  if (event.target === "player") return { x: player.x, y: COMBAT_VISUAL_HEIGHTS.playerFloat, z: player.z };
   const monster = monsters.find((entry) => entry.key === event.monsterKey);
-  return monster ? { x: monster.x, y: 1.58, z: monster.z } : null;
+  return monster ? { x: monster.x, y: COMBAT_VISUAL_HEIGHTS.monsterFloat, z: monster.z } : null;
 }

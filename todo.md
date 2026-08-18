@@ -46,3 +46,17 @@
 - [x] Testar o descarte de coordenadas não finitas antes da camada HTML de números flutuantes.
 - [x] Cobrir de forma integrada o caminho do resultado de combate até um indicador renderizável sem coordenadas inválidas.
 - [x] Exercitar o pipeline completo de evento de combate, âncora de mundo e emissão em coordenadas renderizáveis.
+- [x] Criar uma barra de habilidades acessível no HUD de combate.
+- [x] Fazer o duplo clique sobre uma criatura iniciar a aproximação e o ataque padrão.
+- [x] Reposicionar as barras de vida acima do personagem e das criaturas.
+- [x] Destacar em vermelho a criatura selecionada como alvo de ataque.
+- [x] Reforçar a leitura dos números de dano no campo em desktop e mobile.
+- [x] Evitar a sobreposição do aviso de estado com a barra de habilidades.
+- [x] Garantir que a barra de habilidades permaneça acessível sem colisão com os atalhos em telas mobile.
+- [ ] Confirmar a ausência do erro histórico de resolução do módulo de feedback de combate no servidor de desenvolvimento.
+- [ ] Validar o duplo clique da criatura até a aproximação e o ataque padrão por um fluxo de ponta a ponta.
+- [ ] Registrar a verificação visual específica das barras de vida, do anel vermelho de alvo e dos números de dano em campo.
+- [ ] Criar uma prova integrada do manipulador real de duplo clique até a emissão do ataque padrão pronto.
+- [ ] Cobrir em testes as alturas das barras de vida, o anel vermelho selecionado e o evento de dano renderizável.
+- [ ] Capturar uma prévia temporária das três categorias de dano, do alvo vermelho e das barras de vida elevadas.
+- [x] Limitar as coordenadas dos números flutuantes à área visível do canvas e cobrir as bordas em teste automatizado.

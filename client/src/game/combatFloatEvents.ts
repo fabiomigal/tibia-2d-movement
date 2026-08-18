@@ -36,7 +36,14 @@ export function toRenderableCombatFloatPosition(
     !Number.isFinite(layerWidth) || !Number.isFinite(layerHeight) ||
     canvasWidth <= 0 || canvasHeight <= 0 || layerWidth <= 0 || layerHeight <= 0
   ) return null;
-  return { x: (projectedX / canvasWidth) * layerWidth, y: (projectedY / canvasHeight) * layerHeight };
+  const x = (projectedX / canvasWidth) * layerWidth;
+  const y = (projectedY / canvasHeight) * layerHeight;
+  const horizontalInset = Math.min(42, layerWidth * 0.08);
+  const verticalInset = Math.min(46, layerHeight * 0.09);
+  return {
+    x: Math.min(layerWidth - horizontalInset, Math.max(horizontalInset, x)),
+    y: Math.min(layerHeight - verticalInset, Math.max(verticalInset, y)),
+  };
 }
 
 /** Valida o payload recebido pela camada HTML antes de aplicá-lo a estilos CSS. */
