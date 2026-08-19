@@ -57,7 +57,12 @@ describe("GameWorld — ataque básico por duplo clique", () => {
     }) as unknown as HTMLCanvasElement;
     const world = new GameWorld(scene, canvas, false);
     const boar = scene.getMeshByName("sighting-boar-body");
+    const playerSprite = scene.getMeshByName("player-zao-sprite");
+    const legacyPlayer = scene.getMeshByName("player-cloak");
     expect(boar).toBeTruthy();
+    expect(boar?.isVisible).toBe(false);
+    expect(playerSprite?.isVisible).toBe(true);
+    expect(legacyPlayer?.isEnabled()).toBe(false);
     vi.spyOn(scene, "pick").mockReturnValue({ pickedMesh: boar } as never);
 
     const targets: unknown[] = [];
@@ -75,6 +80,14 @@ describe("GameWorld — ataque básico por duplo clique", () => {
     gameInternals.player.position.copyFromFloats(boar!.position.x - 0.4, boar!.position.z);
     world.update(0);
     expect(ready).toEqual([{ monsterKey: "field-boar", defaultAttack: true }]);
+
+    const internals = world as unknown as { creatureAgents: Array<{ body: { isVisible: boolean }; sprite: { mesh: { isVisible: boolean } }; state: string; respawnAt: number }> };
+    const respawningBoar = internals.creatureAgents.find((creature) => creature.body === boar)!;
+    respawningBoar.state = "dead";
+    respawningBoar.respawnAt = 0;
+    world.update(0);
+    expect(respawningBoar.body.isVisible).toBe(false);
+    expect(respawningBoar.sprite.mesh.isVisible).toBe(true);
 
     world.dispose();
     scene.dispose();

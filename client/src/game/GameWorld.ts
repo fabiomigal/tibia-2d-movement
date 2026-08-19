@@ -24,6 +24,7 @@ import { resolveDefaultAttackFlow } from "./defaultAttack";
 import { dispatchDefaultAttackFromDoubleClick } from "./combatTargetPipeline";
 import { getTargetIndicatorStyle } from "./targetIndicator";
 import { COMBAT_VISUAL_HEIGHTS } from "./combatVisualLayout";
+import { AnimatedSpriteActor, type SpriteActorKind, type SpriteAction } from "./spriteAnimation";
 
 const assets = {
   fieldFallback: "/manus-storage/vale-ambar-field-fallback_07dc91d6.png",
@@ -41,7 +42,7 @@ const worldBounds: WorldBounds = {
 type LandmarkKind = "npc" | "portal" | "stairs" | "monster";
 type LandmarkInteraction = { id: string; kind: LandmarkKind; label: string; x: number; z: number; radius: number; monsterKey?: string };
 type HealthBar = { rail: Mesh; fill: Mesh; label: Mesh; labelTexture: DynamicTexture; width: number; fillWidth: number; text: string };
-type CreatureAgent = { interaction: LandmarkInteraction; body: Mesh; marker: Mesh; healthBar: HealthBar; hp: number; maxHp: number; home: Vector2; phase: number; state: "idle" | "chase" | "attack" | "return" | "dead"; respawnAt: number; attackCooldown: number };
+type CreatureAgent = { interaction: LandmarkInteraction; body: Mesh; sprite: AnimatedSpriteActor; marker: Mesh; healthBar: HealthBar; hp: number; maxHp: number; home: Vector2; phase: number; state: "idle" | "chase" | "attack" | "return" | "dead"; respawnAt: number; attackCooldown: number };
 type LootChest = { chestKey: string; x: number; z: number; body: Mesh; lid: Mesh; glow: Mesh };
 
 export class GameWorld {
@@ -63,6 +64,7 @@ export class GameWorld {
   private creatureAgents: CreatureAgent[] = [];
   private readonly lootChests = new Map<string, LootChest>();
   private readonly playerHealthBar: HealthBar;
+  private readonly playerSprite: AnimatedSpriteActor;
   private playerHealth = { hp: 1, maxHp: 1 };
   private activeAttackTarget: string | null = null;
   private selectedAttackTarget: string | null = null;
@@ -116,6 +118,9 @@ export class GameWorld {
     creature.respawnAt = performance.now() + 8_000;
     creature.body.isVisible = false;
     creature.body.isPickable = false;
+    creature.sprite.play("death");
+    creature.sprite.setVisible(true);
+    creature.sprite.mesh.isPickable = false;
     creature.marker.isVisible = false;
     this.setHealthBarVisible(creature.healthBar, false);
   };
@@ -125,6 +130,7 @@ export class GameWorld {
     for (const state of detail?.monsters ?? []) {
       const creature = this.creatureAgents.find((entry) => entry.interaction.monsterKey === state.key);
       if (!creature) continue;
+      if (state.hp < creature.hp) creature.sprite.play("hit");
       creature.hp = state.hp;
       creature.maxHp = state.maxHp;
       this.updateHealthBar(creature.healthBar, creature.body.position.x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, creature.body.position.z, state.hp, state.maxHp, creature.state !== "dead");
@@ -165,6 +171,10 @@ export class GameWorld {
     this.createForegroundFoliage();
 
     this.player = new Player(scene, new Vector2(-4.5, -2.5));
+    this.playerSprite = new AnimatedSpriteActor(scene, "adventurer", "player-zao", 1.44);
+    ["player-cloak", "player-mantle", "player-head", "player-facing", "player-shadow"].forEach((name) => {
+      scene.getMeshByName(name)?.setEnabled(false);
+    });
     this.playerHealthBar = this.createHealthBar("player-health", "Aventureiro de Âmbar", "#4FDD69", 1.46);
     this.cameraController = new CameraController(scene, worldBounds);
     this.cameraController.update(1, this.player.position);
@@ -195,6 +205,7 @@ export class GameWorld {
     }
 
     this.player.update(deltaSeconds, continuousVector, this.collision, source);
+    this.playerSprite.update(deltaSeconds, this.player.position.x, 0.48, this.player.position.y, this.player.isMoving() ? "walk" : "idle");
     this.updateHealthBar(this.playerHealthBar, this.player.position.x, COMBAT_VISUAL_HEIGHTS.playerHealthBar, this.player.position.y, this.playerHealth.hp, this.playerHealth.maxHp, true);
     this.updateCreatureAgents(deltaSeconds);
     this.updateTargetedAttack();
@@ -215,6 +226,8 @@ export class GameWorld {
     this.playerHealthBar.fill.dispose();
     this.playerHealthBar.label.dispose();
     this.playerHealthBar.labelTexture.dispose();
+    this.playerSprite.dispose();
+    this.creatureAgents.forEach((creature) => creature.sprite.dispose());
     this.lootChests.forEach((chest) => { chest.body.dispose(); chest.lid.dispose(); chest.glow.dispose(); });
     if (this.textureRetryTimer !== null) window.clearInterval(this.textureRetryTimer);
     window.removeEventListener("resize", this.onResize);
@@ -654,8 +667,13 @@ export class GameWorld {
     body.position.set(x, scale * 0.38, z);
     body.scaling.set(1.2, 0.72, 0.85);
     body.material = this.colorMaterial(`${name}-body-material`, color, 0.12);
+    body.isVisible = false;
     const interaction: LandmarkInteraction = { id: name, kind: "monster", label, x, z, radius: 1.4, monsterKey };
-    this.registerLandmark(body, interaction);
+    body.metadata = { ...(body.metadata as Record<string, unknown> | undefined), valeInteraction: interaction };
+    const kind: SpriteActorKind = monsterKey === "field-boar" ? "boar" : "goblin";
+    const sprite = new AnimatedSpriteActor(this.scene, kind, name, scale * 2.3);
+    sprite.update(0, x, scale * 0.66, z, "idle");
+    this.registerLandmark(sprite.mesh, interaction);
     const marker = MeshBuilder.CreateTorus(`${name}-target-marker`, { diameter: scale * 1.85, thickness: 0.045, tessellation: 20 }, this.scene);
     marker.position.set(x, 0.045, z);
     marker.rotation.x = Math.PI / 2;
@@ -663,7 +681,7 @@ export class GameWorld {
     marker.isPickable = false;
     const healthBar = this.createHealthBar(`${name}-health`, label, "#4FDD69", 1.14);
     this.updateHealthBar(healthBar, x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, z, 1, 1, true);
-    this.creatureAgents.push({ interaction, body, marker, healthBar, hp: 1, maxHp: 1, home: new Vector2(x, z), phase: this.creatureAgents.length * 1.7, state: "idle", respawnAt: 0, attackCooldown: 0 });
+    this.creatureAgents.push({ interaction, body, sprite, marker, healthBar, hp: 1, maxHp: 1, home: new Vector2(x, z), phase: this.creatureAgents.length * 1.7, state: "idle", respawnAt: 0, attackCooldown: 0 });
   }
 
   private registerLandmark(mesh: Mesh, interaction: LandmarkInteraction) {
@@ -695,8 +713,10 @@ export class GameWorld {
       if (creature.state === "dead") {
         if (now < creature.respawnAt) continue;
         creature.state = "return";
-        creature.body.isVisible = true;
+        creature.body.isVisible = false;
         creature.body.isPickable = true;
+        creature.sprite.setVisible(true);
+        creature.sprite.mesh.isPickable = true;
         creature.marker.isVisible = true;
         creature.hp = creature.maxHp;
         this.setHealthBarVisible(creature.healthBar, true);
@@ -750,6 +770,8 @@ export class GameWorld {
         creature.interaction.x = bounded.x;
         creature.interaction.z = bounded.y;
       }
+      const spriteAction: SpriteAction = creature.state === "attack" ? "attack" : creature.state === "chase" || creature.state === "return" ? "walk" : "idle";
+      creature.sprite.update(deltaSeconds, creature.body.position.x, 0.5, creature.body.position.z, spriteAction);
       this.updateHealthBar(creature.healthBar, creature.body.position.x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, creature.body.position.z, creature.hp, creature.maxHp, true);
       const selected = creature.interaction.monsterKey === this.selectedAttackTarget;
       const markerMaterial = creature.marker.material as StandardMaterial;

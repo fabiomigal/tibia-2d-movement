@@ -77,3 +77,10 @@
 - [x] Testar a ponte do `GameCanvas` que consome `vale:status` e atualiza a prop de status entregue ao HUD.
 - [x] Integrar o projeto Vale de Âmbar a um repositório privado do GitHub do usuário.
 - [x] Confirmar o envio do histórico local e informar o endereço do repositório remoto.
+- [x] Catalogar os spritesheets Zao fornecidos e mapear ações, direções, FPS e criaturas correspondentes.
+- [x] Preparar e publicar os assets de sprite fora do diretório do projeto para uso no web app.
+- [x] Substituir os visuais atuais por sprites animados do aventureiro, goblin e javali sem alterar movimentação ou câmera.
+- [x] Cobrir a seleção de frames em teste e validar animações do jogo em desktop e mobile.
+- [x] Ocultar de forma definitiva os meshes visuais legados do jogador e das criaturas, mantendo apenas suportes lógicos invisíveis para interação.
+- [x] Cobrir o respawn de criaturas para garantir que somente sprites animados permaneçam visíveis após a morte.
+- [x] Validar que o jogador renderiza somente via sprite Zao, sem sobreposição do modelo anterior.
