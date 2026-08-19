@@ -14,6 +14,7 @@ import GameOverlay from "./GameOverlay";
 const initialStatus: GameStatus = {
   movement: "Aguardando comando",
   isResting: true,
+  region: "bamboo-forest",
   speed: 0,
   hint: "WASD, setas, clique ou toque no terreno",
   position: [-4.5, -2.5],

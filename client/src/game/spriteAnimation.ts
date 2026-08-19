@@ -62,7 +62,7 @@ export class AnimatedSpriteActor {
 
   constructor(private readonly scene: Scene, readonly kind: SpriteActorKind, name: string, size: number) {
     this.mesh = MeshBuilder.CreatePlane(`${name}-sprite`, { width: size, height: size }, scene);
-    this.mesh.rotation.x = Math.PI / 2;
+    this.mesh.rotation.x = -Math.PI / 2;
     this.mesh.isPickable = false;
     this.material = new StandardMaterial(`${name}-sprite-material`, scene);
     this.material.diffuseColor = Color3.White();

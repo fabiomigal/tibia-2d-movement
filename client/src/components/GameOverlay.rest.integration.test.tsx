@@ -35,7 +35,7 @@ vi.mock("@/lib/trpc", () => {
 
 import GameOverlay from "./GameOverlay";
 
-const restingStatus = { movement: "Aguardando comando", isResting: true, speed: 0, hint: "teste", position: [0, 0] as [number, number], nearbyHotspot: null, monsters: [] };
+const restingStatus = { movement: "Aguardando comando", isResting: true, region: "bamboo-forest" as const, speed: 0, hint: "teste", position: [0, 0] as [number, number], nearbyHotspot: null, monsters: [] };
 const movingStatus = { ...restingStatus, movement: "Destino", isResting: false, speed: 1 };
 
 describe("GameOverlay — ciclo de repouso integrado", () => {

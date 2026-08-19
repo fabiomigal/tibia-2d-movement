@@ -259,9 +259,10 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   }, [selectedSkill, attemptCombat]);
 
   const character = data?.character ?? FALLBACK_CHARACTER;
-  const region = useMemo(() => REGIONS.find((entry) => entry.key === character.currentRegion) ?? REGIONS[0], [character.currentRegion]);
-  const minimapMarkerTheme = getMinimapMarkerTheme(character.currentRegion);
-  const nearbyMonsters = DEMO_MONSTERS.filter((monster) => monster.region === character.currentRegion);
+  const activeRegionKey = status.region ?? character.currentRegion;
+  const region = useMemo(() => REGIONS.find((entry) => entry.key === activeRegionKey) ?? REGIONS[0], [activeRegionKey]);
+  const minimapMarkerTheme = getMinimapMarkerTheme(activeRegionKey);
+  const nearbyMonsters = DEMO_MONSTERS.filter((monster) => monster.region === activeRegionKey);
   const activeSkill = data?.skills.find((skill) => skill.key === selectedSkill) ?? data?.skills.find((skill) => skill.equipped) ?? data?.skills[0];
   const lootChests = useMemo(() => groupLootChests(data?.drops ?? []), [data?.drops]);
   const selectedChest = lootChests.find((chest) => chest.chestKey === selectedChestKey) ?? null;

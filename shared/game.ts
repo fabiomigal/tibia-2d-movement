@@ -30,8 +30,8 @@ export const ELEMENT_COLOR: Record<DamageElement, string> = {
 };
 
 export const REGIONS = [
-  { key: "wind-road", name: "Estrada do Vento", level: 1, theme: "Campo inicial" },
-  { key: "bamboo-forest", name: "Floresta de Bambu", level: 4, theme: "Bosque físico" },
+  { key: "wind-road", name: "Estrada dos Ventos", level: 1, theme: "Portal norte e trilhas de pedra" },
+  { key: "bamboo-forest", name: "Cidade de Âmbar", level: 4, theme: "Praça, rio e muralhas" },
   { key: "elders-ruins", name: "Ruínas Anciãs", level: 7, theme: "Pedra e aranhas" },
   { key: "cursed-graveyard", name: "Cemitério Amaldiçoado", level: 10, theme: "Mortos-vivos" },
   { key: "ancient-dungeon", name: "Calabouço Antigo", level: 14, theme: "Dois andares" },

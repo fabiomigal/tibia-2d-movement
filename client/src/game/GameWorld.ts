@@ -25,6 +25,7 @@ import { dispatchDefaultAttackFromDoubleClick } from "./combatTargetPipeline";
 import { getTargetIndicatorStyle } from "./targetIndicator";
 import { COMBAT_VISUAL_HEIGHTS } from "./combatVisualLayout";
 import { AnimatedSpriteActor, type SpriteActorKind, type SpriteAction } from "./spriteAnimation";
+import { createZaoInitialMaps, resolveZaoSubarea } from "./zaoMapLayout";
 
 const assets = {
   fieldFallback: "/manus-storage/vale-ambar-field-fallback_07dc91d6.png",
@@ -167,6 +168,7 @@ export class GameWorld {
     this.createRouteStrokes();
     this.createObstacles();
     this.createFieldDetails();
+    createZaoInitialMaps(this.scene, this.collision);
     this.createWorldLandmarks();
     this.createForegroundFoliage();
 
@@ -369,9 +371,8 @@ export class GameWorld {
   }
 
   private createWaterway() {
-    this.createWaterPatch("water-south", -18.25, -8.3, 4.1, 15.4);
-    this.createWaterPatch("water-bend", -14.7, -1, 4, 3);
-    this.createWaterPatch("water-east", -11.7, -0.25, 3.5, 2.2);
+    // A camada Zao já desenha rios e margens. Mantemos apenas estas colisões
+    // históricas para preservar o comportamento de navegação congelado.
     this.collision.addRectangle(-20.3, -16.2, -16, -0.6);
     this.collision.addRectangle(-16.7, -12.7, -2.5, 0.5);
     this.collision.addRectangle(-13.45, -9.95, -1.35, 0.85);
@@ -593,7 +594,8 @@ export class GameWorld {
 
   /** Marcos de conteúdo não selecionáveis: preservam o núcleo congelado de deslocamento. */
   private createWorldLandmarks() {
-    this.createMerchantCamp(-6.8, 5.8);
+    this.createMerchantCamp(-2.6, -2.35);
+    this.createCityGuide(-8.35, -3.25);
     this.createPortal(16.2, 4.6, "portal-ruinas", "#769A94");
     this.createStairway(11.8, -1.9);
     this.createMonsterSighting(2.2, 5.6, "sighting-boar", "#B99064", 0.7, "field-boar", "Javali do Campo");
@@ -605,21 +607,33 @@ export class GameWorld {
     canopy.position.set(x, 1.14, z);
     canopy.material = this.colorMaterial("merchant-canopy-material", "#7B5740", 0.1);
     canopy.isPickable = false;
+    canopy.isVisible = false;
     [-0.68, 0.68].forEach((offset, index) => {
       const pole = MeshBuilder.CreateCylinder(`merchant-pole-${index}`, { height: 1.25, diameter: 0.1, tessellation: 6 }, this.scene);
       pole.position.set(x + offset, 0.62, z + 0.18);
       pole.material = this.colorMaterial(`merchant-pole-material-${index}`, "#60442E", 0.04);
       pole.isPickable = false;
+      pole.isVisible = false;
     });
     const traveler = MeshBuilder.CreateSphere("merchant-selene", { diameter: 0.44, segments: 10 }, this.scene);
     traveler.position.set(x, 0.42, z - 0.22);
     traveler.scaling.y = 1.7;
     traveler.material = this.colorMaterial("merchant-selene-material", "#D6AD70", 0.12);
+    traveler.visibility = 0.001;
     this.registerLandmark(traveler, { id: "selene", kind: "npc", label: "Selene · Mercadora", x, z, radius: 1.45 });
     const lamp = MeshBuilder.CreateSphere("merchant-lamp", { diameter: 0.25, segments: 8 }, this.scene);
     lamp.position.set(x + 0.86, 0.68, z - 0.14);
     lamp.material = this.colorMaterial("merchant-lamp-material", "#F2B84B", 0.55);
     lamp.isPickable = false;
+    lamp.isVisible = false;
+  }
+
+  private createCityGuide(x: number, z: number) {
+    const guide = MeshBuilder.CreateSphere("city-guide-arden", { diameter: 0.45, segments: 8 }, this.scene);
+    guide.position.set(x, 0.38, z);
+    guide.visibility = 0.001;
+    guide.material = this.colorMaterial("city-guide-arden-material", "#6A7891", 0.08);
+    this.registerLandmark(guide, { id: "arden", kind: "npc", label: "Arden · Batedor", x, z, radius: 1.4 });
   }
 
   private createPortal(x: number, z: number, name: string, color: string) {
@@ -873,6 +887,7 @@ export class GameWorld {
     const detail: GameStatus = {
       movement,
       isResting: !this.player.isMoving() && source !== "Rota demo",
+      region: resolveZaoSubarea(this.player.position.x, this.player.position.y),
       speed: this.player.isMoving() ? this.player.speed : 0,
       hint,
       position: [this.player.position.x, this.player.position.y],

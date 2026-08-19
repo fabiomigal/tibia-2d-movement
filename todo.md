@@ -84,3 +84,15 @@
 - [x] Ocultar de forma definitiva os meshes visuais legados do jogador e das criaturas, mantendo apenas suportes lógicos invisíveis para interação.
 - [x] Cobrir o respawn de criaturas para garantir que somente sprites animados permaneçam visíveis após a morte.
 - [x] Validar que o jogador renderiza somente via sprite Zao, sem sobreposição do modelo anterior.
+- [x] Corrigir a orientação vertical dos sprites Zao no mundo.
+- [x] Catalogar e publicar os tiles, estruturas e props Zao necessários para a cidade inicial e a Estrada dos Ventos.
+- [x] Implementar a Cidade de Âmbar como área inicial navegável com praça, rio, ponte, construções e NPCs.
+- [x] Implementar a Estrada dos Ventos com estrada de pedra, rio, ponte, muralhas, torres, portal norte e elementos naturais.
+- [x] Criar transição navegável entre cidade e estrada, preservando os módulos congelados de movimento e câmera.
+- [x] Cobrir os layouts, transições e orientação de sprites em testes e validar visualmente em desktop e mobile.
+- [x] Alinhar os nomes da região inicial e da estrada no HUD aos novos mapas Zao integrados.
+- [x] Posicionar NPCs interativos da Cidade de Âmbar no layout Zao e validar sua presença no campo.
+- [x] Testar explicitamente a transição navegável entre Cidade de Âmbar e Estrada dos Ventos no layout Zao.
+- [x] Determinar a subárea Zao a partir da posição do jogador e atualizar o HUD dinamicamente entre cidade e estrada.
+- [x] Substituir os mosaicos esticados por backdrops completos Zao na escala correta para Cidade de Âmbar e Estrada dos Ventos.
+- [x] Adicionar um teste integrado de navegação e colisão que comprove a travessia real entre Cidade de Âmbar e Estrada dos Ventos no mapa contínuo.
