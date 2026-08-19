@@ -102,3 +102,12 @@
 - [x] Cobrir a geometria compartilhada, as colisões e a projeção do minimapa com testes automatizados.
 - [x] Validar visualmente a escala, a orientação, o minimapa e a navegação em desktop e mobile.
 - [x] Registrar evidência verificável da validação visual final do mundo e do minimapa em desktop e mobile.
+- [x] Documentar a fronteira entre o protótipo atual e o novo subsistema independente de mapas em tiles.
+- [x] Definir contratos versionados para assets, tiles, camadas, objetos, entidades, eventos e colisões.
+- [x] Adicionar contrato e validação explícitos para NPCs, criaturas e pontos de surgimento no documento de mapa versionado.
+- [x] Implementar um renderizador de mapa 2D em grade, com camadas e culling de viewport, isolado da câmera e movimentação congeladas.
+- [x] Criar editor visual de mapas com paleta de assets, pintura, seleção, propriedades, colisão e importação/exportação JSON.
+- [x] Permitir edição real de propriedades de tile e objeto selecionados, incluindo interação, rotação e metadados.
+- [x] Cobrir a interface do editor e os fluxos de importação JSON válidos e inválidos com testes automatizados.
+- [x] Pesquisar e catalogar assets legalmente reutilizáveis, com licença, fonte e atribuição no manifesto.
+- [x] Criar um mapa de demonstração em tiles, validar os dados e preservar a compatibilidade do jogo em desktop e mobile.
