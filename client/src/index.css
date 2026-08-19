@@ -519,6 +519,10 @@ textarea {
 .rpg-minimap__map--zao { --minimap-land-a: #506d48; --minimap-land-b: #354f37; --minimap-land-c: #6a7f4d; isolation: isolate; }
 .rpg-minimap__map--wind-road { --minimap-land-a: #687443; --minimap-land-b: #46572f; --minimap-land-c: #8a8952; }
 .rpg-minimap__map::before { position: absolute; inset: 0; opacity: 0.6; background-image: linear-gradient(35deg, transparent 43%, rgba(192,166,87,0.78) 44% 47%, transparent 48%), radial-gradient(ellipse at 20% 20%, rgba(52,82,56,0.7) 0 12%, transparent 13%), radial-gradient(ellipse at 78% 72%, rgba(60,89,54,0.6) 0 15%, transparent 16%); filter: hue-rotate(var(--minimap-hue)); content: ""; }
+.rpg-minimap__map--wind-road { --minimap-land-a: #9a895e; --minimap-land-b: #5d6f4c; --minimap-land-c: #b09b67; --minimap-water-tone: #2e7d83; --minimap-path-tone: #e2c483; }
+.rpg-minimap__map--wind-road .minimap-water--one { top: 0; right: 42%; bottom: auto; left: auto; width: 8%; height: 58%; }
+.rpg-minimap__map--wind-road .minimap-water--two { top: 62%; right: 42%; bottom: auto; left: auto; width: 8%; height: 38%; }
+.rpg-minimap__map--wind-road .minimap-path { top: 48%; left: 4%; width: 92%; transform: none; }
 .rpg-minimap__map--bamboo-forest { --minimap-land-a: #437a54; --minimap-land-b: #265a44; --minimap-land-c: #6e9a5c; --minimap-water-tone: #2d7080; --minimap-hue: 18deg; }
 .rpg-minimap__map--elders-ruins { --minimap-land-a: #657068; --minimap-land-b: #454f4c; --minimap-land-c: #8e866c; --minimap-path-tone: #c0a27d; --minimap-hue: -28deg; }
 .rpg-minimap__map--cursed-graveyard, .rpg-minimap__map--ghost-forest { --minimap-land-a: #554d68; --minimap-land-b: #333842; --minimap-land-c: #66627d; --minimap-water-tone: #4c5874; --minimap-path-tone: #a89b70; --minimap-hue: 86deg; }
