@@ -46,6 +46,8 @@ export const ZAO_WORLD_BOUNDS = {
 export const REGIONS = [
   { key: "wind-road", name: "Estrada dos Ventos", level: 1, theme: "Portal norte e trilhas de pedra" },
   { key: "bamboo-forest", name: "Cidade de Âmbar", level: 4, theme: "Praça, rio e muralhas" },
+  { key: "amber-inn", name: "Estalagem do Âmbar", level: 5, theme: "Salão, lareira e quartos de viagem" },
+  { key: "moon-sanctuary", name: "Santuário da Lua", level: 6, theme: "Bosque enevoado e ruínas silenciosas" },
   { key: "elders-ruins", name: "Ruínas Anciãs", level: 7, theme: "Pedra e aranhas" },
   { key: "cursed-graveyard", name: "Cemitério Amaldiçoado", level: 10, theme: "Mortos-vivos" },
   { key: "ancient-dungeon", name: "Calabouço Antigo", level: 14, theme: "Dois andares" },
@@ -58,6 +60,14 @@ export const REGIONS = [
 ] as const;
 
 export type RegionKey = (typeof REGIONS)[number]["key"];
+export const MONSTER_RESPAWN_DELAY_MS = 2_000;
+
+export const WORLD_PORTALS = [
+  { id: "portal-inn-entry", label: "Porta da Estalagem", from: "bamboo-forest", to: "amber-inn", x: -9.6, z: -3.3, destination: { x: -18.2, z: 13.9 } },
+  { id: "portal-inn-exit", label: "Saída para a Cidade de Âmbar", from: "amber-inn", to: "bamboo-forest", x: -18.2, z: 13.9, destination: { x: -8.55, z: -3.1 } },
+  { id: "portal-ruins-entry", label: "Portal do Santuário", from: "wind-road", to: "moon-sanctuary", x: 16.2, z: 4.6, destination: { x: 18.2, z: -10.3 } },
+  { id: "portal-ruins-exit", label: "Retorno à Estrada dos Ventos", from: "moon-sanctuary", to: "wind-road", x: 18.2, z: -10.3, destination: { x: 15.2, z: 4.6 } },
+] as const satisfies readonly { id: string; label: string; from: RegionKey; to: RegionKey; x: number; z: number; destination: { x: number; z: number } }[];
 
 export type MonsterTemplate = {
   key: string;
@@ -78,6 +88,9 @@ export type MonsterTemplate = {
 export const WORLD_MONSTER_SPAWNS = [
   { monsterKey: "field-boar", x: 2, z: 6 },
   { monsterKey: "wind-goblin", x: 8, z: -8 },
+  { monsterKey: "bamboo-archer", x: -6.2, z: -6.2 },
+  { monsterKey: "inn-mite", x: -20.2, z: 11.4 },
+  { monsterKey: "moon-wisp", x: 19.2, z: -13.2 },
 ] as const;
 
 export type GameSkill = {

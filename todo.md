@@ -129,3 +129,10 @@
 - [x] Refazer a composição do mapa jogável em tiles com zonas mais legíveis, rotas, água, pontes, estruturas e obstáculos coerentes.
 - [x] Cobrir inventário, efeitos de movimento e novo mapa com testes e validações visuais em desktop e mobile.
 - [x] Testar em integração o fluxo de coleta do baú até a atualização renderizada da Mochila Rápida.
+- [x] Implementar ciclo visual de dia e noite com iluminação, tonalidade ambiental e HUD de estado.
+- [x] Adicionar variações climáticas leves e legíveis, incluindo chuva e névoa, integradas ao ciclo ambiental.
+- [x] Criar interiores exploráveis para casas e definir portais bidirecionais entre áreas externas e internas.
+- [x] Adicionar novos mapas exploráveis conectados por portais, com geometria visual e colisões próprias.
+- [x] Ampliar os spawns de criaturas nos mapas disponíveis e alinhar suas posições ao mundo renderizado.
+- [x] Ajustar o respawn de criaturas para dois segundos após a derrota, no cliente e no estado persistido.
+- [x] Cobrir os novos sistemas ambientais, transições e respawns em testes e validações desktop/mobile.

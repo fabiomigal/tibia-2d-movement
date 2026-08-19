@@ -4,6 +4,8 @@ export const MONSTERS: MonsterTemplate[] = [
   { key: "field-boar", name: "Javali do Campo", region: "wind-road", level: 1, hp: 38, attackMin: 3, attackMax: 7, xp: 18, gold: 7, element: "physical", resistances: {}, color: "#b99064" },
   { key: "wind-goblin", name: "Goblin da Estrada", region: "wind-road", level: 3, hp: 54, attackMin: 5, attackMax: 10, xp: 26, gold: 11, element: "physical", resistances: { earth: 0.7 }, color: "#82965c" },
   { key: "bamboo-archer", name: "Arqueiro Maligno", region: "bamboo-forest", level: 5, hp: 78, attackMin: 8, attackMax: 14, xp: 42, gold: 19, element: "physical", resistances: { earth: 1.25 }, color: "#4c7d62" },
+  { key: "inn-mite", name: "Rato da Estalagem", region: "amber-inn", level: 5, hp: 66, attackMin: 7, attackMax: 12, xp: 34, gold: 14, element: "physical", resistances: { earth: 0.9 }, color: "#9b7b5a" },
+  { key: "moon-wisp", name: "Luz Lunar", region: "moon-sanctuary", level: 6, hp: 82, attackMin: 9, attackMax: 15, xp: 48, gold: 22, element: "holy", resistances: { holy: 1.45, death: 0.55 }, color: "#8ab9c8" },
   { key: "ruin-golem", name: "Golem de Ruína", region: "elders-ruins", level: 8, hp: 118, attackMin: 11, attackMax: 18, xp: 70, gold: 34, element: "earth", resistances: { physical: 1.35, fire: 0.75 }, color: "#7d8790" },
   { key: "grave-wraith", name: "Wraith do Cemitério", region: "cursed-graveyard", level: 12, hp: 144, attackMin: 14, attackMax: 23, xp: 104, gold: 52, element: "death", resistances: { death: 1.7, holy: 0.25 }, color: "#8e6db3" },
   { key: "dune-scorpion", name: "Escorpião das Dunas", region: "oasis", level: 18, hp: 202, attackMin: 20, attackMax: 31, xp: 154, gold: 78, element: "earth", resistances: { earth: 1.55, ice: 0.7 }, color: "#c9954b" },

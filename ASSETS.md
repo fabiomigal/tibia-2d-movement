@@ -1,6 +1,6 @@
 # Assets — Vale de Âmbar
 
-**Art direction:** Mundo de fantasia em vista superior como uma maquete pintada à mão. Relva em oliva, musgo e sálvia; pedra cinza-azulada; água verde-azulada; luz de fim de tarde; silhuetas limpas e sombras curtas. O jogador e o destino usam o Âmbar de Rota como contraste funcional.
+**Art direction:** Mundo de fantasia em vista superior como uma maquete pintada à mão. Relva em oliva, musgo e sálvia; pedra cinza-azulada; água verde-azulada; luz de fim de tarde; silhuetas limpas e sombras curtas. O jogador e o destino usam o Âmbar de Rota como contraste funcional. O ciclo ambiental modula a mesma base para amanhecer âmbar, dia claro, crepúsculo dourado e noite azul-profunda, com chuva fina e névoa baixa criadas proceduralmente em camadas sem novos assets externos.
 
 ## Referência visual
 

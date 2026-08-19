@@ -1,6 +1,6 @@
 import { and, eq, lt } from "drizzle-orm";
 import { cities, gameCharacters, gameItems, gameNpcs, gameQuests, gameSkills, groundDrops, idleHunts, merchantItems, monsterEncounters } from "../drizzle/schema";
-import { ARCHETYPES, capacityForLevel, damageAfterResistance, inventoryWeight, levelFromXp, REGIONS, WORLD_MONSTER_SPAWNS, ZAO_START_POSITION, type ArchetypeKey, type DamageElement, type MonsterTemplate } from "@shared/game";
+import { ARCHETYPES, capacityForLevel, damageAfterResistance, inventoryWeight, levelFromXp, MONSTER_RESPAWN_DELAY_MS, REGIONS, WORLD_MONSTER_SPAWNS, WORLD_PORTALS, ZAO_START_POSITION, type ArchetypeKey, type DamageElement, type MonsterTemplate } from "@shared/game";
 import { MONSTERS, SKILLS } from "./gameCatalog";
 import { getDb } from "./db";
 import { resolveRestRegeneration } from "@shared/restRegeneration";
@@ -184,7 +184,7 @@ export async function resolveCombat(monsterKey: string, skillKey?: string) {
   const progression = defeated ? levelFromXp(character.level, character.xp + monster.xp) : { level: character.level, xp: character.xp };
   const nextMaxHp = character.maxHp + Math.max(0, progression.level - character.level) * 12;
   await db.update(gameCharacters).set({ level: progression.level, xp: progression.xp, gold: character.gold + (defeated ? monster.gold : 0), hp: hpAfterPotion, maxHp: nextMaxHp, mp: Math.max(0, character.mp - skill.manaCost), energy: Math.max(0, character.energy - skill.energyCost), isDead: hpAfterPotion === 0, updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));
-  await db.update(monsterEncounters).set({ hp: monsterHp, maxHp: monster.hp, respawnAt: defeated ? new Date(Date.now() + 8_000) : null }).where(eq(monsterEncounters.id, encounter.id));
+  await db.update(monsterEncounters).set({ hp: monsterHp, maxHp: monster.hp, respawnAt: defeated ? new Date(Date.now() + MONSTER_RESPAWN_DELAY_MS) : null }).where(eq(monsterEncounters.id, encounter.id));
   if (autoPotionUsed && autoPotion) {
     if (autoPotion.quantity > 1) await db.update(gameItems).set({ quantity: autoPotion.quantity - 1 }).where(eq(gameItems.id, autoPotion.id));
     else await db.delete(gameItems).where(eq(gameItems.id, autoPotion.id));
@@ -228,11 +228,12 @@ export async function updateInventory(action: "equip" | "sell" | "discard" | "us
   return { snapshot: await getGameSnapshot(), healing };
 }
 
-export async function travelToRegion(region: string) {
+export async function travelToRegion(region: string, portalId?: string) {
   const db = await requireDb(); const character = await loadCharacter();
   const targetRegion = REGIONS.find((entry) => entry.key === region);
   if (!targetRegion) throw new Error("Portal desconhecido.");
-  if (character.level < targetRegion.level) throw new Error(`O portal exige nível ${targetRegion.level}.`);
+  const validPortal = portalId ? WORLD_PORTALS.find((portal) => portal.id === portalId && portal.to === targetRegion.key) : null;
+  if (!validPortal && character.level < targetRegion.level) throw new Error(`O portal exige nível ${targetRegion.level}.`);
   const unlocked = JSON.parse(character.unlockedRegions) as string[];
   if (!unlocked.includes(targetRegion.key)) unlocked.push(targetRegion.key);
   await db.update(gameCharacters).set({ currentRegion: targetRegion.key, floor: targetRegion.key === "ancient-dungeon" ? 1 : 0, unlockedRegions: JSON.stringify(unlocked), updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));

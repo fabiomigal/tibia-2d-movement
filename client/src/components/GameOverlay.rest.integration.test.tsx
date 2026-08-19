@@ -3,6 +3,7 @@ import React from "react";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { REST_REGENERATION } from "@shared/restRegeneration";
+import { MONSTER_RESPAWN_DELAY_MS } from "@shared/game";
 
 const mocks = vi.hoisted(() => ({
   restMutate: vi.fn(),
@@ -11,6 +12,10 @@ const mocks = vi.hoisted(() => ({
   snapshot: null as Record<string, unknown> | null,
   collectDropMutate: vi.fn(),
   collectDropOptions: null as any,
+  travelMutate: vi.fn(),
+  travelOptions: null as any,
+  combatMutate: vi.fn(),
+  combatOptions: null as any,
 }));
 
 const initialSnapshot = {
@@ -26,7 +31,10 @@ vi.mock("@/lib/trpc", () => {
       game: {
         bootstrap: { useQuery: () => ({ data: mocks.snapshot, refetch: mocks.bootstrapRefetch }) },
         merchant: { useQuery: () => ({ data: [] }) },
-        combat: passiveMutation, inventory: passiveMutation, travel: passiveMutation, idleStart: passiveMutation,
+        combat: { useMutation: (options: unknown) => { mocks.combatOptions = options; return { mutate: mocks.combatMutate }; } },
+        inventory: passiveMutation,
+        travel: { useMutation: (options: unknown) => { mocks.travelOptions = options; return { mutate: mocks.travelMutate }; } },
+        idleStart: passiveMutation,
         idleResume: passiveMutation, revive: passiveMutation,
         collectDrop: { useMutation: (options: unknown) => { mocks.collectDropOptions = options; return { mutate: mocks.collectDropMutate, isPending: false }; } },
         autoPotion: passiveMutation,
@@ -51,6 +59,10 @@ describe("GameOverlay — ciclo de repouso integrado", () => {
     mocks.bootstrapInvalidate.mockReset();
     mocks.collectDropMutate.mockReset();
     mocks.collectDropOptions = null;
+    mocks.travelMutate.mockReset();
+    mocks.travelOptions = null;
+    mocks.combatMutate.mockReset();
+    mocks.combatOptions = null;
   });
 
   afterEach(() => {
@@ -114,5 +126,40 @@ describe("GameOverlay — ciclo de repouso integrado", () => {
     expect(document.body.textContent).toContain("×1");
     expect(document.body.textContent).toContain("+ Essência de Javali");
     expect(document.body.textContent).toContain("Essência de Javali guardado na mochila.");
+  });
+
+  it("viaja pelo portal explícito e publica a posição de entrada do destino", async () => {
+    const received: Array<{ x: number; z: number }> = [];
+    const onPortalTravel = (event: Event) => received.push((event as CustomEvent<{ x: number; z: number }>).detail);
+    window.addEventListener("vale:portal-travel", onPortalTravel);
+    mocks.travelMutate.mockImplementation(async (input: { region: string; portalId?: string }, options?: { onSuccess?: (result: unknown) => Promise<void> }) => {
+      await options?.onSuccess?.({});
+      return input;
+    });
+    render(<GameOverlay status={movingStatus} />);
+
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent("vale:world-interaction", { detail: { kind: "portal", label: "Porta da Estalagem", portalId: "portal-inn-entry" } }));
+    });
+
+    expect(mocks.travelMutate).toHaveBeenCalledWith({ region: "amber-inn", portalId: "portal-inn-entry" }, expect.anything());
+    expect(received).toEqual([{ x: -18.2, z: 13.9 }]);
+    expect(document.body.textContent).toContain("Porta da Estalagem: transição concluída.");
+    window.removeEventListener("vale:portal-travel", onPortalTravel);
+  });
+
+  it("renova o snapshot ao final dos dois segundos de respawn após uma derrota", async () => {
+    render(<GameOverlay status={movingStatus} />);
+    await act(async () => {
+      await mocks.combatOptions?.onSuccess?.({
+        result: { monster: "Javali do Campo", monsterKey: "field-boar", defeated: true, damage: 40, counterDamage: 0, counterCritical: false, healing: 0, element: "physical", critical: false, monsterHp: 0, monsterMaxHp: 38, xpGained: 18, goldGained: 7 },
+        snapshot: { ...initialSnapshot, encounters: [] },
+      });
+    });
+    expect(mocks.bootstrapInvalidate).toHaveBeenCalledTimes(1);
+    act(() => { vi.advanceTimersByTime(MONSTER_RESPAWN_DELAY_MS - 1); });
+    expect(mocks.bootstrapInvalidate).toHaveBeenCalledTimes(1);
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(mocks.bootstrapInvalidate).toHaveBeenCalledTimes(2);
   });
 });

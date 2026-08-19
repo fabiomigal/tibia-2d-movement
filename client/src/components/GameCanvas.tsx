@@ -11,6 +11,7 @@ import type { ScreenCombatFloat } from "@/game/combatFloatEvents";
 import type { GameStatus } from "@/game/types";
 import { ZAO_START_POSITION } from "@shared/game";
 import GameOverlay from "./GameOverlay";
+import { resolveEnvironmentState } from "@/game/environment";
 
 const initialStatus: GameStatus = {
   movement: "Aguardando comando",
@@ -18,6 +19,7 @@ const initialStatus: GameStatus = {
   region: "bamboo-forest",
   speed: 0,
   hint: "WASD, setas, clique ou toque no terreno",
+  environment: resolveEnvironmentState(0),
   position: [ZAO_START_POSITION.x, ZAO_START_POSITION.z],
   nearbyHotspot: null,
   monsters: [],
@@ -96,6 +98,7 @@ export default function GameCanvas() {
   const [status, setStatus] = useState<GameStatus>(initialStatus);
   const [worldReady, setWorldReady] = useState(false);
   const [combatFloats, setCombatFloats] = useState<ScreenCombatFloat[]>([]);
+  const environment = status.environment ?? resolveEnvironmentState(0);
 
   useEffect(() => {
     const onStatus = (event: Event) => {
@@ -172,6 +175,10 @@ export default function GameCanvas() {
   return (
     <main className="game-shell" aria-label="Vale de Âmbar, campo de testes de movimentação">
       <canvas ref={canvasRef} className="game-canvas" tabIndex={0} />
+      <div
+        className={`world-environment world-environment--${environment.phase} world-environment--${environment.weather}`}
+        aria-hidden="true"
+      />
       <div className="combat-float-layer" aria-live="polite" aria-atomic="true">
         {combatFloats.map((entry) => <span key={entry.id} className={`combat-float combat-float--${entry.kind}`} style={{ left: entry.x, top: entry.y, animationDuration: `${entry.lifetime}s` }}>{entry.kind === "heal" ? "+" : "-"}{entry.value}</span>)}
       </div>

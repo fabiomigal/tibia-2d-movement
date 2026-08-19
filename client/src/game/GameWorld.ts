@@ -29,6 +29,9 @@ import { AnimatedSpriteActor, ZAO_SPRITE_SIZE, type SpriteActorKind, type Sprite
 import { createZaoInitialMaps, resolveZaoSubarea } from "./zaoMapLayout";
 import { createZaoTileWorld } from "./zaoTileWorld";
 import { getTileAsset } from "../tilemap/catalog";
+import { resolveEnvironmentState, type EnvironmentState } from "./environment";
+import { createExplorationMaps } from "./explorationMaps";
+import { MONSTER_RESPAWN_DELAY_MS, WORLD_MONSTER_SPAWNS, WORLD_PORTALS } from "@shared/game";
 
 const assets = {
   fieldFallback: "/manus-storage/vale-ambar-field-fallback_07dc91d6.png",
@@ -51,7 +54,7 @@ export function resolveMovementDustEmitRate(isMoving: boolean) {
 }
 
 type LandmarkKind = "npc" | "portal" | "stairs" | "monster";
-type LandmarkInteraction = { id: string; kind: LandmarkKind; label: string; x: number; z: number; radius: number; monsterKey?: string };
+type LandmarkInteraction = { id: string; kind: LandmarkKind; label: string; x: number; z: number; radius: number; monsterKey?: string; portalId?: string };
 type HealthBar = { rail: Mesh; fill: Mesh; label: Mesh; labelTexture: DynamicTexture; width: number; fillWidth: number; text: string };
 type CreatureAgent = { interaction: LandmarkInteraction; body: Mesh; sprite: AnimatedSpriteActor; marker: Mesh; healthBar: HealthBar; hp: number; maxHp: number; home: Vector2; phase: number; state: "idle" | "chase" | "attack" | "return" | "dead"; respawnAt: number; attackCooldown: number };
 type LootChest = { chestKey: string; x: number; z: number; sprite: Mesh; material: StandardMaterial; texture: Texture; glow: Mesh };
@@ -71,6 +74,8 @@ export class GameWorld {
   }> = [];
   private textureRetryTimer: number | null = null;
   private hudTimer = 0;
+  private environmentElapsedMs = 0;
+  private environment: EnvironmentState = resolveEnvironmentState(0);
   private landmarkInteractions: LandmarkInteraction[] = [];
   private creatureAgents: CreatureAgent[] = [];
   private readonly lootChests = new Map<string, LootChest>();
@@ -128,7 +133,7 @@ export class GameWorld {
     const creature = this.creatureAgents.find((entry) => entry.interaction.monsterKey === monsterKey);
     if (!creature) return;
     creature.state = "dead";
-    creature.respawnAt = performance.now() + 8_000;
+    creature.respawnAt = performance.now() + MONSTER_RESPAWN_DELAY_MS;
     creature.body.isVisible = false;
     creature.body.isPickable = false;
     creature.sprite.play("death");
@@ -136,6 +141,12 @@ export class GameWorld {
     creature.sprite.mesh.isPickable = false;
     creature.marker.isVisible = false;
     this.setHealthBarVisible(creature.healthBar, false);
+  };
+  private readonly onPortalTravel = (event: Event) => {
+    const detail = (event as CustomEvent<{ x?: number; z?: number }>).detail;
+    if (typeof detail?.x !== "number" || typeof detail.z !== "number") return;
+    this.player.position.set(detail.x, detail.z);
+    this.nearbyLandmarkId = null;
   };
   private readonly onCombatState = (event: Event) => {
     const detail = (event as CustomEvent<{ player?: { hp: number; maxHp: number }; monsters?: Array<{ key: string; hp: number; maxHp: number }> }>).detail;
@@ -175,6 +186,7 @@ export class GameWorld {
   constructor(private readonly scene: Scene, private readonly canvas: HTMLCanvasElement, isDemo: boolean) {
     createZaoTileWorld(this.scene);
     createZaoInitialMaps(this.scene, this.collision);
+    createExplorationMaps(this.scene, this.collision);
     this.createWorldLandmarks();
     this.createForegroundFoliage();
 
@@ -194,6 +206,7 @@ export class GameWorld {
 
     window.addEventListener("resize", this.onResize);
     window.addEventListener("vale:creature-defeated", this.onCreatureDefeated);
+    window.addEventListener("vale:portal-travel", this.onPortalTravel);
     window.addEventListener("vale:world-combat-state", this.onCombatState);
     window.addEventListener("vale:attack-target", this.onAttackTarget);
     window.addEventListener("vale:loot-chests", this.onLootChests);
@@ -205,6 +218,8 @@ export class GameWorld {
   }
 
   update(deltaSeconds: number) {
+    this.environmentElapsedMs += deltaSeconds * 1_000;
+    this.environment = resolveEnvironmentState(this.environmentElapsedMs);
     const continuousVector = this.input.getContinuousVector();
     let source: MovementSource = continuousVector ? this.input.getSource() : this.player.hasTarget() ? "Destino" : "Aguardando";
 
@@ -243,6 +258,7 @@ export class GameWorld {
     this.lootChests.forEach((chest) => { chest.sprite.dispose(); chest.texture.dispose(); chest.material.dispose(); chest.glow.dispose(); });
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("vale:creature-defeated", this.onCreatureDefeated);
+    window.removeEventListener("vale:portal-travel", this.onPortalTravel);
     window.removeEventListener("vale:world-combat-state", this.onCombatState);
     window.removeEventListener("vale:attack-target", this.onAttackTarget);
     window.removeEventListener("vale:loot-chests", this.onLootChests);
@@ -670,10 +686,20 @@ export class GameWorld {
   private createWorldLandmarks() {
     this.createMerchantCamp(-2.6, -2.35);
     this.createCityGuide(-8.35, -3.25);
-    this.createPortal(16.2, 4.6, "portal-ruinas", "#769A94");
+    WORLD_PORTALS.forEach((portal) => this.createPortal(portal.x, portal.z, portal.id, portal.id.includes("inn") ? "#D19A50" : "#769A94", portal.label));
     this.createStairway(11.8, -1.9);
-    this.createMonsterSighting(2.2, 5.6, "sighting-boar", "#B99064", 0.7, "field-boar", "Javali do Campo");
-    this.createMonsterSighting(7.5, -7.8, "sighting-goblin", "#82965C", 0.63, "wind-goblin", "Goblin da Estrada");
+    const creatures = {
+      "field-boar": { color: "#B99064", scale: 0.7, label: "Javali do Campo" },
+      "wind-goblin": { color: "#82965C", scale: 0.63, label: "Goblin da Estrada" },
+      "bamboo-archer": { color: "#4C7D62", scale: 0.65, label: "Arqueiro Maligno" },
+      "inn-mite": { color: "#9B7B5A", scale: 0.58, label: "Rato da Estalagem" },
+      "moon-wisp": { color: "#8AB9C8", scale: 0.62, label: "Luz Lunar" },
+    } as const;
+    WORLD_MONSTER_SPAWNS.forEach((spawn, index) => {
+      const creature = creatures[spawn.monsterKey];
+      const visualId = spawn.monsterKey === "field-boar" ? "sighting-boar" : spawn.monsterKey === "wind-goblin" ? "sighting-goblin" : `sighting-${spawn.monsterKey}-${index}`;
+      this.createMonsterSighting(spawn.x, spawn.z, visualId, creature.color, creature.scale, spawn.monsterKey, creature.label);
+    });
   }
 
   private createMerchantCamp(x: number, z: number) {
@@ -710,7 +736,7 @@ export class GameWorld {
     this.registerLandmark(guide, { id: "arden", kind: "npc", label: "Arden · Batedor", x, z, radius: 1.4 });
   }
 
-  private createPortal(x: number, z: number, name: string, color: string) {
+  private createPortal(x: number, z: number, name: string, color: string, label: string) {
     const outer = MeshBuilder.CreateTorus(`${name}-outer`, { diameter: 1.65, thickness: 0.15, tessellation: 24 }, this.scene);
     outer.position.set(x, 0.2, z);
     outer.rotation.x = Math.PI / 2;
@@ -720,7 +746,7 @@ export class GameWorld {
     inner.position.set(x, 0.051, z);
     inner.rotation.x = Math.PI / 2;
     inner.material = this.colorMaterial(`${name}-inner-material`, color, 0.18, 0.42);
-    this.registerLandmark(inner, { id: name, kind: "portal", label: "Portal das Ruínas", x, z, radius: 1.35 });
+    this.registerLandmark(inner, { id: name, kind: "portal", label, x, z, radius: 1.35, portalId: name });
     [0, Math.PI * 0.67, Math.PI * 1.34].forEach((angle, index) => {
       const rune = MeshBuilder.CreateBox(`${name}-rune-${index}`, { width: 0.16, height: 0.08, depth: 0.34 }, this.scene);
       rune.position.set(x + Math.cos(angle) * 0.9, 0.14, z + Math.sin(angle) * 0.9);
@@ -964,6 +990,7 @@ export class GameWorld {
       region: resolveZaoSubarea(this.player.position.x, this.player.position.y),
       speed: this.player.isMoving() ? this.player.speed : 0,
       hint,
+      environment: this.environment,
       position: [this.player.position.x, this.player.position.y],
       nearbyHotspot: this.landmarkInteractions.find((entry) => entry.id === this.nearbyLandmarkId) ?? null,
       monsters: this.creatureAgents.filter((entry) => entry.state !== "dead").map((entry) => ({ key: entry.interaction.monsterKey ?? entry.interaction.id, name: entry.interaction.label, x: entry.interaction.x, z: entry.interaction.z, hp: entry.hp, maxHp: entry.maxHp })),

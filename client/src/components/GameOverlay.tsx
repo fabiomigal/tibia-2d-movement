@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Backpack, BookOpen, ChevronRight, CircleDot, Coins, Crosshair, Heart, Map, MapPin, PackageOpen, Pause, Play, RotateCcw, ScrollText, Shield, ShoppingBag, Sparkles, Swords, Target, WandSparkles, X, Zap } from "lucide-react";
-import { ARCHETYPES, ELEMENT_COLOR, ELEMENT_LABEL, REGIONS, type DamageElement } from "@shared/game";
+import { ARCHETYPES, ELEMENT_COLOR, ELEMENT_LABEL, MONSTER_RESPAWN_DELAY_MS, REGIONS, WORLD_PORTALS, type DamageElement } from "@shared/game";
 import { trpc } from "@/lib/trpc";
 import type { GameStatus } from "@/game/types";
 import { getMinimapMarkerTheme } from "../game/minimapTheme";
@@ -113,6 +113,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const [lastCollectedItem, setLastCollectedItem] = useState<string | null>(null);
   const restingRef = useRef(false);
   const lastRestRefreshRef = useRef(0);
+  const respawnRefreshTimersRef = useRef<number[]>([]);
   const merchant = trpc.game.merchant.useQuery(undefined, { enabled: panel === "merchant", retry: 1 });
 
   const refresh = async () => { await utils.game.bootstrap.invalidate(); };
@@ -124,6 +125,11 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       window.dispatchEvent(new CustomEvent("vale:world-combat-state", { detail: { player: result.snapshot.character, monsters: result.snapshot.encounters.map((entry) => ({ key: entry.monsterKey, hp: entry.hp, maxHp: entry.maxHp })) } }));
       if (result.result.defeated) {
         window.dispatchEvent(new CustomEvent("vale:creature-defeated", { detail: { monsterKey: result.result.monsterKey } }));
+        const timer = window.setTimeout(() => {
+          respawnRefreshTimersRef.current = respawnRefreshTimersRef.current.filter((entry) => entry !== timer);
+          void refresh();
+        }, MONSTER_RESPAWN_DELAY_MS);
+        respawnRefreshTimersRef.current.push(timer);
       }
       await refresh();
     },
@@ -139,6 +145,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       notify: setNotice,
     });
   }, [combat, data]);
+  useEffect(() => () => respawnRefreshTimersRef.current.forEach((timer) => window.clearTimeout(timer)), []);
   const inventory = trpc.game.inventory.useMutation({ onSuccess: async (result) => { if (result.healing > 0) window.dispatchEvent(new CustomEvent("vale:floating-combat-text", { detail: { target: "player", kind: "heal", value: result.healing } })); await refresh(); }, onError: (error) => setNotice(error.message) });
   const travel = trpc.game.travel.useMutation({ onError: (error) => setNotice(error.message) });
   const idleStart = trpc.game.idleStart.useMutation({ onSuccess: async () => { setNotice("Caça automática iniciada. Volte mais tarde para resolver o tempo decorrido."); await refresh(); }, onError: (error) => setNotice(error.message) });
@@ -161,6 +168,11 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const questClaim = trpc.game.questClaim.useMutation({ onSuccess: async () => { setNotice("Recompensa recebida. A carta de expedição foi atualizada."); await refresh(); }, onError: (error) => setNotice(error.message) });
   const archetype = trpc.game.archetype.useMutation({ onSuccess: async () => { setNotice("Arquétipo definido. Seus atributos foram recalibrados para a expedição."); await refresh(); }, onError: (error) => setNotice(error.message) });
   const travelTo = (regionKey: string, panelKey: "map" | "teleport") => travel.mutate({ region: regionKey }, { onSuccess: async () => { const message = "Rota confirmada. A carta de expedição foi atualizada."; setNotice(message); setPanelFeedback({ panel: panelKey, tone: "success", message }); await refresh(); }, onError: (error) => { setNotice(error.message); setPanelFeedback({ panel: panelKey, tone: "error", message: error.message }); } });
+  const usePortal = (portalId: string) => {
+    const portal = WORLD_PORTALS.find((entry) => entry.id === portalId);
+    if (!portal) return;
+    travel.mutate({ region: portal.to, portalId: portal.id }, { onSuccess: async () => { window.dispatchEvent(new CustomEvent("vale:portal-travel", { detail: portal.destination })); setNotice(`${portal.label}: transição concluída.`); await refresh(); }, onError: (error) => setNotice(error.message) });
+  };
   const openCityService = (target: "merchant" | "quests", message: string) => {
     setNotice(message);
     setPanelFeedback({ panel: "city", tone: "success", message });
@@ -228,7 +240,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
 
   useEffect(() => {
     const onWorldInteraction = (event: Event) => {
-      const interaction = (event as CustomEvent<{ kind: "npc" | "portal" | "stairs" | "monster"; label: string; monsterKey?: string }>).detail;
+      const interaction = (event as CustomEvent<{ kind: "npc" | "portal" | "stairs" | "monster"; label: string; monsterKey?: string; portalId?: string }>).detail;
       if (!interaction) return;
       if (interaction.kind === "monster" && interaction.monsterKey) {
         setNotice(`Alvo marcado: ${interaction.label}. Aproxime-se para atacar.`);
@@ -236,6 +248,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
         return;
       }
       if (interaction.kind === "npc") { setNotice(`Você conversou com ${interaction.label}.`); setPanel("city"); return; }
+      if (interaction.kind === "portal" && interaction.portalId) { usePortal(interaction.portalId); return; }
       if (interaction.kind === "portal") { setNotice(`${interaction.label} está pronto para viagem.`); setPanel("teleport"); return; }
       setNotice(`${interaction.label}: selecione o andar no mapa de expedição.`);
       setPanel("map");
@@ -268,11 +281,12 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       window.removeEventListener("vale:attack-target-ready", onAttackReady);
       window.removeEventListener("vale:open-loot-chest", onOpenLootChest);
     };
-  }, [selectedSkill, attemptCombat]);
+  }, [selectedSkill, attemptCombat, travel]);
 
   const character = data?.character ?? FALLBACK_CHARACTER;
   const activeRegionKey = status.region ?? character.currentRegion;
   const region = useMemo(() => REGIONS.find((entry) => entry.key === activeRegionKey) ?? REGIONS[0], [activeRegionKey]);
+  const environmentLabel = status.environment?.label ?? "Amanhecer âmbar";
   const minimapMarkerTheme = getMinimapMarkerTheme(activeRegionKey);
   const nearbyMonsters = DEMO_MONSTERS.filter((monster) => monster.region === activeRegionKey);
   const activeSkill = data?.skills.find((skill) => skill.key === selectedSkill) ?? data?.skills.find((skill) => skill.equipped) ?? data?.skills[0];
@@ -305,7 +319,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
             <ResourceBar label="EN" value={character.energy} max={character.maxEnergy} tone="#d6ad4b" icon={<Zap size={12} fill="currentColor" />} />
           </div>
         </div>
-        <div className="location-plaque"><MapPin size={15}/><div><b>{region.name}</b><span>Andar {character.floor + 1} · {region.theme}</span></div></div>
+        <div className="location-plaque"><MapPin size={15}/><div><b>{region.name}</b><span>Andar {character.floor + 1} · {region.theme}</span><small className="environment-status">{environmentLabel}</small></div></div>
       </section>
       <div className="world-brand" aria-label="Vale de Âmbar"><i><span/></i><div><b>VALE DE ÂMBAR</b><small>carta de expedição</small></div></div>
 
