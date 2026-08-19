@@ -3,6 +3,7 @@ import type { TileAssetManifestEntry } from "./model";
 const KENNEY_RPG_SOURCE = "https://opengameart.org/content/rpg-pack-base-set";
 const KENNEY_TINY_DUNGEON_SOURCE = "https://kenney.nl/assets/tiny-dungeon";
 const CC0_LICENSE = "https://creativecommons.org/publicdomain/zero/1.0/";
+const OPEN_GAME_ART_CHEST_SOURCE = "https://opengameart.org/content/treasure-chests-32x32-and-16x16";
 
 function kenneyAsset(input: Omit<TileAssetManifestEntry, "sourceUrl" | "author" | "license" | "licenseUrl" | "attributionRequired" | "attributionText" | "tileWidth" | "tileHeight">): TileAssetManifestEntry {
   return {
@@ -48,6 +49,22 @@ export const TILE_ASSET_MANIFEST: TileAssetManifestEntry[] = [
   kenneyTinyDungeonAsset({ assetId: "explorer", name: "Explorador", category: "character", originalFilename: "tile_0085.png", localFilename: "/manus-storage/tile_0085_d4fc6516.png", previewColor: "#c78e63" }),
   kenneyTinyDungeonAsset({ assetId: "villager", name: "Habitante", category: "character", originalFilename: "tile_0084.png", localFilename: "/manus-storage/tile_0084_af7cbe21.png", previewColor: "#8d5b8f" }),
   kenneyTinyDungeonAsset({ assetId: "goblin", name: "Goblino", category: "character", originalFilename: "tile_0110.png", localFilename: "/manus-storage/tile_0110_3dbf8ff3.png", previewColor: "#c24e46" }),
+  {
+    assetId: "loot_chest",
+    name: "Baú de saque fechado",
+    category: "decoration",
+    sourceUrl: OPEN_GAME_ART_CHEST_SOURCE,
+    author: "Blarumyrran",
+    license: "CC0 1.0 Universal",
+    licenseUrl: CC0_LICENSE,
+    attributionRequired: false,
+    attributionText: "Blarumyrran via OpenGameArt (crédito opcional; registrado por transparência)",
+    originalFilename: "chests_32x32.png (frame fechado)",
+    localFilename: "/manus-storage/loot-chest-closed_7788d04d.png",
+    tileWidth: 32,
+    tileHeight: 32,
+    previewColor: "#9d7148",
+  },
 ];
 
 export const TILE_ASSET_IDS = new Set(TILE_ASSET_MANIFEST.map((asset) => asset.assetId));

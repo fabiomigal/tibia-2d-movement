@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectSpriteDirection, selectSpriteFrame, selectSpriteRowUv } from "./spriteAnimation";
+import { SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteRowUv } from "./spriteAnimation";
 
 describe("seleção de frame dos sprites Zao", () => {
   it("repete apenas ações em loop e preserva o último frame das ações únicas", () => {
@@ -17,5 +17,15 @@ describe("seleção de frame dos sprites Zao", () => {
   it("inverte o eixo V sem trocar a ordem declarada das direções no atlas", () => {
     expect(selectSpriteRowUv("south")).toEqual({ vOffset: 0.25, vScale: -0.25 });
     expect(selectSpriteRowUv("north")).toEqual({ vOffset: 0.75, vScale: -0.25 });
+  });
+
+  it("mantém o plano horizontal virado para a câmera superior", () => {
+    expect(SPRITE_PLANE_ROTATION_X).toBe(Math.PI / 2);
+  });
+
+  it("calibra aventureiro e criaturas para a escala do grid de tiles", () => {
+    expect(ZAO_SPRITE_SIZE).toEqual({ adventurer: 2.55, goblin: 2.18, boar: 2.36 });
+    expect(ZAO_SPRITE_SIZE.adventurer).toBeGreaterThan(2);
+    expect(ZAO_SPRITE_SIZE.boar).toBeGreaterThan(ZAO_SPRITE_SIZE.goblin);
   });
 });

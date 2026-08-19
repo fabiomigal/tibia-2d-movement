@@ -1,14 +1,5 @@
-import { Color3 } from "@babylonjs/core/Maths/math.color";
-import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
-import { Texture } from "@babylonjs/core/Materials/Textures/texture";
-import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import type { Scene } from "@babylonjs/core/scene";
 import type { CollisionWorld } from "./CollisionWorld";
-
-const asset = {
-  cityBackdrop: "/manus-storage/cidade-ambar_cea13ed9.webp",
-  windBackdrop: "/manus-storage/estrada-dos-ventos_88880585.webp",
-} as const;
 
 export type ZaoSubarea = "bamboo-forest" | "wind-road";
 export type ZaoMapFeatureKind = "water" | "road" | "bridge" | "wall" | "structure" | "tower" | "cliff" | "gate";
@@ -113,36 +104,6 @@ export function projectZaoMapPoint(subarea: ZaoSubarea, x: number, z: number) {
   };
 }
 
-function material(scene: Scene, name: string, url: string) {
-  const mat = new StandardMaterial(`${name}-material`, scene);
-  const texture = new Texture(url, scene, false, false, Texture.NEAREST_SAMPLINGMODE);
-  texture.hasAlpha = true;
-  mat.diffuseTexture = texture;
-  mat.emissiveTexture = texture;
-  mat.diffuseColor = Color3.White();
-  mat.emissiveColor = Color3.White();
-  mat.specularColor = Color3.Black();
-  mat.useAlphaFromDiffuseTexture = true;
-  mat.backFaceCulling = false;
-  mat.disableLighting = true;
-  return mat;
-}
-
-function backdrop(scene: Scene, name: string, x: number, z: number, width: number, height: number, url: string) {
-  const mesh = MeshBuilder.CreateGround(name, { width, height, subdivisions: 1 }, scene);
-  mesh.position.set(x, 0.026, z);
-  const mat = material(scene, name, url);
-  if (mat.diffuseTexture instanceof Texture) {
-    mat.diffuseTexture.uScale = 1;
-    mat.diffuseTexture.vScale = 1;
-    mat.diffuseTexture.wrapU = Texture.CLAMP_ADDRESSMODE;
-    mat.diffuseTexture.wrapV = Texture.CLAMP_ADDRESSMODE;
-  }
-  mesh.material = mat;
-  mesh.isPickable = false;
-  return mesh;
-}
-
 function addMapCollision(collision: CollisionWorld) {
   [CITY_FEATURES, WIND_ROAD_FEATURES]
     .flat()
@@ -157,9 +118,7 @@ function addMapCollision(collision: CollisionWorld) {
     });
 }
 
-/** Mapas Zao completos: os fundos, o minimapa e os colisores usam a mesma geometria. */
-export function createZaoInitialMaps(scene: Scene, collision: CollisionWorld) {
-  backdrop(scene, "zao-city-amber-backdrop", -5.2, -3.6, 22.4, 12.6, asset.cityBackdrop);
-  backdrop(scene, "zao-wind-road-backdrop", 5.1, 9.0, 22.4, 12.6, asset.windBackdrop);
+/** Os colisores permanecem derivados da geometria declarativa; a renderização é feita em `zaoTileWorld`. */
+export function createZaoInitialMaps(_scene: Scene, collision: CollisionWorld) {
   addMapCollision(collision);
 }

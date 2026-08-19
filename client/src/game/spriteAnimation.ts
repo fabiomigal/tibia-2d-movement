@@ -7,15 +7,16 @@ import type { Scene } from "@babylonjs/core/scene";
 
 export type SpriteActorKind = "adventurer" | "goblin" | "boar";
 export type SpriteAction = "idle" | "walk" | "attack" | "hit" | "death";
+export const SPRITE_PLANE_ROTATION_X = Math.PI / 2;
 type SpriteDirection = "south" | "east" | "north" | "west";
 
 type SpriteSheet = { url: string; columns: number; fps: number; loop: boolean };
 
-/** Dimensões em unidades de mundo, calibradas para a câmera ortográfica de 16u. */
+/** Alturas em unidades de mundo: 1 tile = 1u; recalibradas para a leitura do novo cenário em grade. */
 export const ZAO_SPRITE_SIZE: Record<SpriteActorKind, number> = {
-  adventurer: 2.12,
-  goblin: 1.82,
-  boar: 2.04,
+  adventurer: 2.55,
+  goblin: 2.18,
+  boar: 2.36,
 };
 
 const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteSheet>>> = {
@@ -74,7 +75,7 @@ export class AnimatedSpriteActor {
 
   constructor(private readonly scene: Scene, readonly kind: SpriteActorKind, name: string, size: number) {
     this.mesh = MeshBuilder.CreatePlane(`${name}-sprite`, { width: size, height: size }, scene);
-    this.mesh.rotation.x = -Math.PI / 2;
+    this.mesh.rotation.x = SPRITE_PLANE_ROTATION_X;
     this.mesh.isPickable = false;
     this.material = new StandardMaterial(`${name}-sprite-material`, scene);
     this.material.diffuseColor = Color3.White();

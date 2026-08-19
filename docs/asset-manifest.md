@@ -12,9 +12,12 @@
 | `bush` / `tree` / `oak` | `rpgTile160.png` / `rpgTile176.png` / `rpgTile195.png` | Floresta | Kenney | CC0 1.0 | [Pacote][1] |
 | `fence` / `fence_long` / `barrel` | `rpgTile181.png` / `rpgTile200.png` / `rpgTile183.png` | Props e ponte | Kenney | CC0 1.0 | [Pacote][1] |
 | `explorer` / `villager` / `goblin` | `tile_0085.png` / `tile_0084.png` / `tile_0110.png` | Personagem, NPC e criatura | Kenney | CC0 1.0 | [Tiny Dungeon][2] |
+| `loot_chest` | `chests_32x32.png` (frame fechado) | Baú de saque em campo | Blarumyrran | CC0 1.0 | [Treasure Chests][3] |
 
 ## Referências
 
 [1] [OpenGameArt — RPG pack: base set](https://opengameart.org/content/rpg-pack-base-set)
 
 [2] [Kenney — Tiny Dungeon](https://kenney.nl/assets/tiny-dungeon)
+
+[3] [OpenGameArt — Treasure Chests 32×32 and 16×16](https://opengameart.org/content/treasure-chests-32x32-and-16x16)

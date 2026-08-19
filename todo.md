@@ -111,3 +111,10 @@
 - [x] Cobrir a interface do editor e os fluxos de importação JSON válidos e inválidos com testes automatizados.
 - [x] Pesquisar e catalogar assets legalmente reutilizáveis, com licença, fonte e atribuição no manifesto.
 - [x] Criar um mapa de demonstração em tiles, validar os dados e preservar a compatibilidade do jogo em desktop e mobile.
+- [x] Remover os backdrops Zao esticados do mundo jogável e substituí-los por um mapa de tiles criado a partir do esquema Cartógrafo.
+- [x] Corrigir a orientação e a escala das sprites de personagem e criaturas no mapa jogável.
+- [x] Adicionar um sprite de baú aos drops físicos no campo, com o mesmo comportamento de saque existente.
+- [x] Cobrir a renderização de tiles, a orientação de sprites e os baús de drop com testes automatizados e validação responsiva.
+- [x] Comprovar por contrato a escala recalibrada de aventureiro, goblin e javali em relação aos tiles do mundo.
+- [x] Testar a criação, abertura, remoção e limpeza do sprite de baú no fluxo real de drops em campo.
+- [x] Testar a sincronização pública de drops pelo evento do mundo até a criação, abertura e limpeza do sprite de baú.

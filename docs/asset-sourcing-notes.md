@@ -14,6 +14,14 @@ A prévia extraída do pacote confirma a presença de variações de gramado, es
 
 Na prévia do editor, a variação inicialmente catalogada para o gramado revelou bordas de terra repetidas. A inspeção de `rpgTile003.png` confirmou um tile de gramado uniforme de 64 × 64 pixels; ele substitui a variação com borda na camada-base do mapa demonstrativo.
 
+## Inspeção para drops em campo
+
+Os props `rpgTile184.png` e `rpgTile188.png` foram inspecionados e identificados respectivamente como barril e porta/janela. Ambos foram descartados para o drop, pois não comunicam baú de saque. O baú será selecionado do mesmo pacote CC0 e publicado separadamente para o mundo Babylon, com fonte e licença registradas no manifesto.
+
+## Sprite de baú para drops
+
+O spritesheet `chests_32x32.png` de **Blarumyrran**, obtido em [OpenGameArt](https://opengameart.org/content/treasure-chests-32x32-and-16x16), foi conferido como conteúdo **CC0**. A folha mede 96 × 160 pixels e organiza frames de 32 × 32 pixels; o primeiro frame fechado será aplicado ao drop em campo. A imagem será tratada como atlas no Babylon, sem depender de qualquer backdrop externo.
+
 ## Referências
 
 [1] [OpenGameArt — RPG pack: base set](https://opengameart.org/content/rpg-pack-base-set)

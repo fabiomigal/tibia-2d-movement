@@ -26,6 +26,8 @@ import { getTargetIndicatorStyle } from "./targetIndicator";
 import { COMBAT_VISUAL_HEIGHTS } from "./combatVisualLayout";
 import { AnimatedSpriteActor, ZAO_SPRITE_SIZE, type SpriteActorKind, type SpriteAction } from "./spriteAnimation";
 import { createZaoInitialMaps, resolveZaoSubarea } from "./zaoMapLayout";
+import { createZaoTileWorld } from "./zaoTileWorld";
+import { getTileAsset } from "../tilemap/catalog";
 
 const assets = {
   fieldFallback: "/manus-storage/vale-ambar-field-fallback_07dc91d6.png",
@@ -44,7 +46,7 @@ type LandmarkKind = "npc" | "portal" | "stairs" | "monster";
 type LandmarkInteraction = { id: string; kind: LandmarkKind; label: string; x: number; z: number; radius: number; monsterKey?: string };
 type HealthBar = { rail: Mesh; fill: Mesh; label: Mesh; labelTexture: DynamicTexture; width: number; fillWidth: number; text: string };
 type CreatureAgent = { interaction: LandmarkInteraction; body: Mesh; sprite: AnimatedSpriteActor; marker: Mesh; healthBar: HealthBar; hp: number; maxHp: number; home: Vector2; phase: number; state: "idle" | "chase" | "attack" | "return" | "dead"; respawnAt: number; attackCooldown: number };
-type LootChest = { chestKey: string; x: number; z: number; body: Mesh; lid: Mesh; glow: Mesh };
+type LootChest = { chestKey: string; x: number; z: number; sprite: Mesh; material: StandardMaterial; texture: Texture; glow: Mesh };
 
 export class GameWorld {
   private readonly collision = new CollisionWorld(worldBounds);
@@ -161,11 +163,7 @@ export class GameWorld {
   };
 
   constructor(private readonly scene: Scene, private readonly canvas: HTMLCanvasElement, isDemo: boolean) {
-    this.createWorldSurface();
-    this.createFieldMottling();
-    this.createPathPatches();
-    this.createRouteStrokes();
-    this.createFieldDetails();
+    createZaoTileWorld(this.scene);
     createZaoInitialMaps(this.scene, this.collision);
     this.createWorldLandmarks();
     this.createForegroundFoliage();
@@ -181,8 +179,6 @@ export class GameWorld {
     this.input = new MovementInput(canvas, (x, y) => this.pickWorldPosition(canvas, x, y), (target) => this.player.setTarget(target));
     this.demoPilot = isDemo ? new DemoPilot() : null;
 
-    this.tryLoadGeneratedTextures();
-    this.textureRetryTimer = window.setInterval(() => this.tryLoadGeneratedTextures(), 12_000);
     window.addEventListener("resize", this.onResize);
     window.addEventListener("vale:creature-defeated", this.onCreatureDefeated);
     window.addEventListener("vale:world-combat-state", this.onCombatState);
@@ -228,8 +224,7 @@ export class GameWorld {
     this.playerHealthBar.labelTexture.dispose();
     this.playerSprite.dispose();
     this.creatureAgents.forEach((creature) => creature.sprite.dispose());
-    this.lootChests.forEach((chest) => { chest.body.dispose(); chest.lid.dispose(); chest.glow.dispose(); });
-    if (this.textureRetryTimer !== null) window.clearInterval(this.textureRetryTimer);
+    this.lootChests.forEach((chest) => { chest.sprite.dispose(); chest.texture.dispose(); chest.material.dispose(); chest.glow.dispose(); });
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("vale:creature-defeated", this.onCreatureDefeated);
     window.removeEventListener("vale:world-combat-state", this.onCombatState);
@@ -326,7 +321,7 @@ export class GameWorld {
     const incoming = new Set(chests.map((chest) => chest.chestKey));
     this.lootChests.forEach((chest, key) => {
       if (incoming.has(key)) return;
-      chest.body.dispose(); chest.lid.dispose(); chest.glow.dispose();
+      chest.sprite.dispose(); chest.texture.dispose(); chest.material.dispose(); chest.glow.dispose();
       this.lootChests.delete(key);
     });
     for (const chest of chests) {
@@ -334,12 +329,28 @@ export class GameWorld {
       const glow = MeshBuilder.CreateDisc(`loot-glow-${chest.chestKey}`, { radius: 0.64, tessellation: 20 }, this.scene);
       glow.position.set(chest.x, 0.04, chest.z); glow.rotation.x = Math.PI / 2;
       glow.material = this.colorMaterial(`loot-glow-material-${chest.chestKey}`, "#F2B84B", 0.55, 0.32); glow.isPickable = false;
-      const body = MeshBuilder.CreateBox(`loot-chest-${chest.chestKey}`, { width: 0.68, height: 0.34, depth: 0.48 }, this.scene);
-      body.position.set(chest.x, 0.22, chest.z); body.material = this.colorMaterial(`loot-chest-material-${chest.chestKey}`, "#7A5131", 0.13);
-      const lid = MeshBuilder.CreateBox(`loot-lid-${chest.chestKey}`, { width: 0.73, height: 0.12, depth: 0.53 }, this.scene);
-      lid.position.set(chest.x, 0.43, chest.z); lid.material = this.colorMaterial(`loot-lid-material-${chest.chestKey}`, "#D6A84B", 0.35);
-      [body, lid].forEach((mesh) => { mesh.isPickable = true; mesh.metadata = { ...(mesh.metadata as Record<string, unknown> | undefined), valeLootChest: chest.chestKey }; });
-      this.lootChests.set(chest.chestKey, { ...chest, body, lid, glow });
+      const asset = getTileAsset("loot_chest");
+      if (!asset) continue;
+      const texture = new Texture(asset.localFilename, this.scene, false, false, Texture.NEAREST_SAMPLINGMODE);
+      texture.hasAlpha = true;
+      texture.wrapU = Texture.CLAMP_ADDRESSMODE;
+      texture.wrapV = Texture.CLAMP_ADDRESSMODE;
+      const material = new StandardMaterial(`loot-chest-material-${chest.chestKey}`, this.scene);
+      material.diffuseTexture = texture;
+      material.emissiveTexture = texture;
+      material.diffuseColor = Color3.White();
+      material.emissiveColor = Color3.White();
+      material.specularColor = Color3.Black();
+      material.useAlphaFromDiffuseTexture = true;
+      material.backFaceCulling = false;
+      material.disableLighting = true;
+      const sprite = MeshBuilder.CreatePlane(`loot-chest-${chest.chestKey}`, { width: 0.92, height: 0.92 }, this.scene);
+      sprite.position.set(chest.x, 0.092, chest.z);
+      sprite.rotation.x = Math.PI / 2;
+      sprite.material = material;
+      sprite.isPickable = true;
+      sprite.metadata = { valeLootChest: chest.chestKey };
+      this.lootChests.set(chest.chestKey, { ...chest, sprite, material, texture, glow });
     }
   }
 
