@@ -40,3 +40,12 @@ Como os tiles de relva, água e props ainda retornavam placeholders SVG, foi inc
 O riacho foi reposicionado para o oeste, em três trechos menores. A área de surgimento e a rota inicial agora permanecem abertas, enquanto água e limites continuam sendo obstáculos claros para o teste de colisão.
 
 As capturas de validação confirmaram que o modo de demonstração desloca o avatar a 5,2 u/s, com anel de destino em Âmbar de Rota, área de movimento livre no centro e obstáculos laterais. Em 375 × 812, a placa de status, joystick e instrução tática permanecem separados e legíveis.
+
+## Referências Zao para a correção de mapa
+
+- A Cidade de Âmbar tem rio vertical na margem leste do núcleo urbano, ponte central, construções compactas, muralhas e afloramentos rochosos que devem bloquear passagem; os eixos de estrada e as pontes devem permanecer transitáveis.
+- A Estrada dos Ventos possui um rio vertical a leste da via principal, duas pontes, paliçadas e torres que delimitam corredores, formações rochosas periféricas e o portal norte. A malha de colisão e o minimapa passarão a compartilhar essa geometria em vez de usar formas decorativas genéricas.
+
+## Calibração da Cidade de Âmbar
+
+- A referência central posiciona o eixo do rio ligeiramente a leste do centro do cenário; a travessia principal ocorre na ponte próxima ao cruzamento central. As casas, mercados, muralhas e falésias passam a ser representados por blocos discretos no minimapa e por retângulos invisíveis na colisão, mantendo as avenidas e a ponte abertas.

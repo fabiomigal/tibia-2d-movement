@@ -11,6 +11,7 @@ import { groupLootChests } from "@/game/lootChestState";
 import { createCombatFloatEvents } from "@/game/combatFloatEvents";
 import { REST_REGENERATION } from "@shared/restRegeneration";
 import { resolveRestSync } from "@/game/restSyncPipeline";
+import { getZaoMapFeatures, projectZaoMapPoint, resolveZaoSubarea } from "@/game/zaoMapLayout";
 
 type PanelKey = "character" | "inventory" | "equipment" | "skills" | "map" | "idle" | "merchant" | "quests" | "city" | "teleport" | "loot" | null;
 type FeedbackPanel = Exclude<PanelKey, null>;
@@ -266,8 +267,14 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const activeSkill = data?.skills.find((skill) => skill.key === selectedSkill) ?? data?.skills.find((skill) => skill.equipped) ?? data?.skills[0];
   const lootChests = useMemo(() => groupLootChests(data?.drops ?? []), [data?.drops]);
   const selectedChest = lootChests.find((chest) => chest.chestKey === selectedChestKey) ?? null;
-  const minimapPlayerStyle = { left: `${Math.min(96, Math.max(4, ((status.position[0] + 23.4) / 46.8) * 100))}%`, top: `${Math.min(96, Math.max(4, ((16.4 - status.position[1]) / 32.8) * 100))}%` };
-  const minimapHotspotStyle = status.nearbyHotspot ? { left: `${Math.min(96, Math.max(4, ((status.nearbyHotspot.x + 23.4) / 46.8) * 100))}%`, top: `${Math.min(96, Math.max(4, ((16.4 - status.nearbyHotspot.z) / 32.8) * 100))}%` } : undefined;
+  const zaoSubarea = resolveZaoSubarea(status.position[0], status.position[1]);
+  const minimapFeatures = getZaoMapFeatures(zaoSubarea);
+  const minimapPlayerPoint = projectZaoMapPoint(zaoSubarea, status.position[0], status.position[1]);
+  const minimapPlayerStyle = { left: `${minimapPlayerPoint.left}%`, top: `${minimapPlayerPoint.top}%` };
+  const minimapHotspotStyle = status.nearbyHotspot ? (() => {
+    const point = projectZaoMapPoint(zaoSubarea, status.nearbyHotspot.x, status.nearbyHotspot.z);
+    return { left: `${point.left}%`, top: `${point.top}%` };
+  })() : undefined;
 
   if (bootstrap.isLoading || !data) {
     return <div className="rpg-loading"><div><Sparkles size={22} /><p>Preparando o códice de Âmbar...</p></div></div>;
@@ -291,9 +298,17 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
 
       <section className="rpg-minimap" aria-label="Minimapa de região">
         <div className="rpg-minimap__heading"><Map size={14}/><span>MAPA LOCAL</span></div>
-        <div className={`rpg-minimap__map rpg-minimap__map--${character.currentRegion}`}>
-          <i className="minimap-water minimap-water--one"/><i className="minimap-water minimap-water--two"/><i className="minimap-path"/>
-          {status.monsters.map((monster) => { const tone = DEMO_MONSTERS.find((entry) => entry.key === monster.key)?.tone ?? "#d58d52"; return <b key={monster.key} className="minimap-monster" style={{ left: `${Math.min(96, Math.max(4, ((monster.x + 23.4) / 46.8) * 100))}%`, top: `${Math.min(96, Math.max(4, ((16.4 - monster.z) / 32.8) * 100))}%`, background: tone }} title={`${monster.name}: ${monster.hp}/${monster.maxHp} HP`}/>; })}
+        <div className={`rpg-minimap__map rpg-minimap__map--zao rpg-minimap__map--${zaoSubarea}`}>
+          {minimapFeatures.map((feature) => {
+            const point = projectZaoMapPoint(zaoSubarea, feature.x, feature.z);
+            const bounds = zaoSubarea === "wind-road" ? { width: 22.4, height: 12.6 } : { width: 22.4, height: 12.6 };
+            return <i key={feature.id} className={`minimap-feature minimap-feature--${feature.kind}`} style={{ left: `${point.left}%`, top: `${point.top}%`, width: `${(feature.width / bounds.width) * 100}%`, height: `${(feature.height / bounds.height) * 100}%`, transform: `translate(-50%, -50%) rotate(${feature.rotation ?? 0}rad)` }} aria-hidden="true"/>;
+          })}
+          {status.monsters.map((monster) => {
+            const tone = DEMO_MONSTERS.find((entry) => entry.key === monster.key)?.tone ?? "#d58d52";
+            const point = projectZaoMapPoint(zaoSubarea, monster.x, monster.z);
+            return <b key={monster.key} className="minimap-monster" style={{ left: `${point.left}%`, top: `${point.top}%`, background: tone }} title={`${monster.name}: ${monster.hp}/${monster.maxHp} HP`}/>;
+          })}
           {status.nearbyHotspot && <b className={`minimap-hotspot minimap-hotspot--${minimapMarkerTheme}`} style={minimapHotspotStyle} title={status.nearbyHotspot.label}/>}<b className={`minimap-player minimap-player--${minimapMarkerTheme}`} style={minimapPlayerStyle} title="Você"/><span className="minimap-compass">N</span>
         </div>
         <button onClick={() => setPanel("map")}>Abrir mapa <ChevronRight size={13}/></button>

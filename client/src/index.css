@@ -516,6 +516,8 @@ textarea {
 }
 .rpg-minimap__heading { display: flex; gap: 0.3rem; align-items: center; margin-bottom: 0.35rem; color: #cbd7b9; font-size: 0.51rem; font-weight: 900; letter-spacing: 0.11em; }
 .rpg-minimap__map { --minimap-land-a: #67824d; --minimap-land-b: #4e7045; --minimap-land-c: #76904f; --minimap-water-tone: #3a6d70; --minimap-path-tone: #d1b365; --minimap-hue: 0deg; position: relative; height: 7.2rem; overflow: hidden; border: 1px solid rgba(255,241,200,0.15); background: linear-gradient(140deg, var(--minimap-land-a), var(--minimap-land-b) 44%, var(--minimap-land-c)); }
+.rpg-minimap__map--zao { --minimap-land-a: #506d48; --minimap-land-b: #354f37; --minimap-land-c: #6a7f4d; isolation: isolate; }
+.rpg-minimap__map--wind-road { --minimap-land-a: #687443; --minimap-land-b: #46572f; --minimap-land-c: #8a8952; }
 .rpg-minimap__map::before { position: absolute; inset: 0; opacity: 0.6; background-image: linear-gradient(35deg, transparent 43%, rgba(192,166,87,0.78) 44% 47%, transparent 48%), radial-gradient(ellipse at 20% 20%, rgba(52,82,56,0.7) 0 12%, transparent 13%), radial-gradient(ellipse at 78% 72%, rgba(60,89,54,0.6) 0 15%, transparent 16%); filter: hue-rotate(var(--minimap-hue)); content: ""; }
 .rpg-minimap__map--bamboo-forest { --minimap-land-a: #437a54; --minimap-land-b: #265a44; --minimap-land-c: #6e9a5c; --minimap-water-tone: #2d7080; --minimap-hue: 18deg; }
 .rpg-minimap__map--elders-ruins { --minimap-land-a: #657068; --minimap-land-b: #454f4c; --minimap-land-c: #8e866c; --minimap-path-tone: #c0a27d; --minimap-hue: -28deg; }
@@ -528,6 +530,14 @@ textarea {
 .minimap-water--one { bottom: 0; left: 0; width: 28%; height: 64%; }
 .minimap-water--two { bottom: 34%; left: 25%; width: 23%; height: 15%; }
 .minimap-path { position: absolute; z-index: 2; top: 51%; left: 28%; width: 62%; height: 3px; transform: rotate(-22deg); background: var(--minimap-path-tone); }
+.minimap-feature { position: absolute; z-index: 1; display: block; transform-origin: center; }
+.minimap-feature--water { background: #2f7180; box-shadow: inset 0 0 0 1px rgba(178,226,218,0.4); }
+.minimap-feature--road { z-index: 2; background: #c1a362; box-shadow: inset 0 0 0 1px rgba(91,72,39,0.28); }
+.minimap-feature--bridge { z-index: 3; background: repeating-linear-gradient(90deg, #d7b36a 0 3px, #805d39 3px 5px); box-shadow: 0 0 0 1px rgba(61,44,28,0.55); }
+.minimap-feature--wall, .minimap-feature--gate { z-index: 4; background: #8f8a73; box-shadow: inset 0 0 0 1px rgba(53,48,41,0.75); }
+.minimap-feature--structure { z-index: 4; background: #6d513b; box-shadow: inset 0 0 0 1px rgba(40,29,21,0.78); }
+.minimap-feature--tower { z-index: 5; border-radius: 50%; background: #b09970; box-shadow: inset 0 0 0 2px #51483d; }
+.minimap-feature--cliff { z-index: 2; background: #475745; clip-path: polygon(0 18%, 27% 0, 70% 9%, 100% 40%, 88% 100%, 18% 91%); opacity: 0.94; }
 .minimap-player { position: absolute; z-index: 3; width: 0.55rem; height: 0.55rem; border: 2px solid #fff4d4; border-radius: 50%; background: #f2b84b; box-shadow: 0 0 0 3px rgba(242,184,75,0.26); transform: translate(-50%, -50%); transition: left 140ms var(--ease-out, ease-out), top 140ms var(--ease-out, ease-out); }
 .minimap-monster { position: absolute; z-index: 3; width: 0.44rem; height: 0.44rem; border: 1px solid rgba(255,242,205,0.86); transform: translate(-50%, -50%) rotate(45deg); box-shadow: 0 0 0 2px rgba(22,34,27,0.52); transition: left 140ms var(--ease-out, ease-out), top 140ms var(--ease-out, ease-out); }
 .minimap-hotspot { position: absolute; z-index: 3; width: 0.76rem; height: 0.76rem; border: 1px solid #fff1b7; border-radius: 50%; background: rgba(242,184,75,0.4); box-shadow: 0 0 0 3px rgba(242,184,75,0.18); transform: translate(-50%, -50%); animation: hotspot-pulse 1.2s ease-in-out infinite; }

@@ -11,6 +11,13 @@ type SpriteDirection = "south" | "east" | "north" | "west";
 
 type SpriteSheet = { url: string; columns: number; fps: number; loop: boolean };
 
+/** Dimensões em unidades de mundo, calibradas para a câmera ortográfica de 16u. */
+export const ZAO_SPRITE_SIZE: Record<SpriteActorKind, number> = {
+  adventurer: 2.12,
+  goblin: 1.82,
+  boar: 2.04,
+};
+
 const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteSheet>>> = {
   adventurer: {
     idle: { url: "/manus-storage/adventurer_idle_f791f566.png", columns: 4, fps: 4, loop: true },
@@ -35,6 +42,11 @@ const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteS
 };
 
 const directionRows: Record<SpriteDirection, number> = { south: 0, east: 1, north: 2, west: 3 };
+
+/** Recorte UV com eixo V invertido para manter o topo do PNG como topo visual no terreno. */
+export function selectSpriteRowUv(direction: SpriteDirection) {
+  return { vOffset: (directionRows[direction] + 1) / 4, vScale: -1 / 4 };
+}
 
 export function selectSpriteFrame(elapsedSeconds: number, fps: number, columns: number, loop: boolean) {
   const rawFrame = Math.max(0, Math.floor(elapsedSeconds * fps));
@@ -95,7 +107,8 @@ export class AnimatedSpriteActor {
     const texture = this.textures.get(this.action);
     if (texture) {
       texture.uOffset = selectSpriteFrame(this.elapsed, sheet.fps, sheet.columns, sheet.loop) / sheet.columns;
-      texture.vOffset = directionRows[this.direction] / 4;
+      const rowUv = selectSpriteRowUv(this.direction);
+      texture.vOffset = rowUv.vOffset;
     }
     this.mesh.position.set(x, y, z);
   }
@@ -132,7 +145,7 @@ export class AnimatedSpriteActor {
       texture.wrapU = Texture.CLAMP_ADDRESSMODE;
       texture.wrapV = Texture.CLAMP_ADDRESSMODE;
       texture.uScale = 1 / sheet.columns;
-      texture.vScale = 1 / 4;
+      texture.vScale = selectSpriteRowUv("south").vScale;
       this.textures.set(action, texture);
     }
     this.material.diffuseTexture = texture;

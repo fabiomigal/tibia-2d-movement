@@ -96,3 +96,9 @@
 - [x] Determinar a subárea Zao a partir da posição do jogador e atualizar o HUD dinamicamente entre cidade e estrada.
 - [x] Substituir os mosaicos esticados por backdrops completos Zao na escala correta para Cidade de Âmbar e Estrada dos Ventos.
 - [x] Adicionar um teste integrado de navegação e colisão que comprove a travessia real entre Cidade de Âmbar e Estrada dos Ventos no mapa contínuo.
+- [x] Corrigir escala e orientação dos sprites Zao no campo sem alterar movimento ou câmera.
+- [x] Derivar o minimapa das geometrias reais da Cidade de Âmbar e da Estrada dos Ventos.
+- [x] Criar colisores invisíveis para rios, muralhas, casas, torres e demais estruturas intransponíveis do layout Zao.
+- [x] Cobrir a geometria compartilhada, as colisões e a projeção do minimapa com testes automatizados.
+- [x] Validar visualmente a escala, a orientação, o minimapa e a navegação em desktop e mobile.
+- [x] Registrar evidência verificável da validação visual final do mundo e do minimapa em desktop e mobile.

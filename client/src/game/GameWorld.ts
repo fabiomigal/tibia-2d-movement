@@ -24,7 +24,7 @@ import { resolveDefaultAttackFlow } from "./defaultAttack";
 import { dispatchDefaultAttackFromDoubleClick } from "./combatTargetPipeline";
 import { getTargetIndicatorStyle } from "./targetIndicator";
 import { COMBAT_VISUAL_HEIGHTS } from "./combatVisualLayout";
-import { AnimatedSpriteActor, type SpriteActorKind, type SpriteAction } from "./spriteAnimation";
+import { AnimatedSpriteActor, ZAO_SPRITE_SIZE, type SpriteActorKind, type SpriteAction } from "./spriteAnimation";
 import { createZaoInitialMaps, resolveZaoSubarea } from "./zaoMapLayout";
 
 const assets = {
@@ -162,18 +162,16 @@ export class GameWorld {
 
   constructor(private readonly scene: Scene, private readonly canvas: HTMLCanvasElement, isDemo: boolean) {
     this.createWorldSurface();
-    this.createWaterway();
     this.createFieldMottling();
     this.createPathPatches();
     this.createRouteStrokes();
-    this.createObstacles();
     this.createFieldDetails();
     createZaoInitialMaps(this.scene, this.collision);
     this.createWorldLandmarks();
     this.createForegroundFoliage();
 
     this.player = new Player(scene, new Vector2(-4.5, -2.5));
-    this.playerSprite = new AnimatedSpriteActor(scene, "adventurer", "player-zao", 1.44);
+    this.playerSprite = new AnimatedSpriteActor(scene, "adventurer", "player-zao", ZAO_SPRITE_SIZE.adventurer);
     ["player-cloak", "player-mantle", "player-head", "player-facing", "player-shadow"].forEach((name) => {
       scene.getMeshByName(name)?.setEnabled(false);
     });
@@ -207,7 +205,7 @@ export class GameWorld {
     }
 
     this.player.update(deltaSeconds, continuousVector, this.collision, source);
-    this.playerSprite.update(deltaSeconds, this.player.position.x, 0.48, this.player.position.y, this.player.isMoving() ? "walk" : "idle");
+    this.playerSprite.update(deltaSeconds, this.player.position.x, 0.12, this.player.position.y, this.player.isMoving() ? "walk" : "idle");
     this.updateHealthBar(this.playerHealthBar, this.player.position.x, COMBAT_VISUAL_HEIGHTS.playerHealthBar, this.player.position.y, this.playerHealth.hp, this.playerHealth.maxHp, true);
     this.updateCreatureAgents(deltaSeconds);
     this.updateTargetedAttack();
@@ -685,8 +683,8 @@ export class GameWorld {
     const interaction: LandmarkInteraction = { id: name, kind: "monster", label, x, z, radius: 1.4, monsterKey };
     body.metadata = { ...(body.metadata as Record<string, unknown> | undefined), valeInteraction: interaction };
     const kind: SpriteActorKind = monsterKey === "field-boar" ? "boar" : "goblin";
-    const sprite = new AnimatedSpriteActor(this.scene, kind, name, scale * 2.3);
-    sprite.update(0, x, scale * 0.66, z, "idle");
+    const sprite = new AnimatedSpriteActor(this.scene, kind, name, ZAO_SPRITE_SIZE[kind]);
+    sprite.update(0, x, 0.13, z, "idle");
     this.registerLandmark(sprite.mesh, interaction);
     const marker = MeshBuilder.CreateTorus(`${name}-target-marker`, { diameter: scale * 1.85, thickness: 0.045, tessellation: 20 }, this.scene);
     marker.position.set(x, 0.045, z);
@@ -785,7 +783,7 @@ export class GameWorld {
         creature.interaction.z = bounded.y;
       }
       const spriteAction: SpriteAction = creature.state === "attack" ? "attack" : creature.state === "chase" || creature.state === "return" ? "walk" : "idle";
-      creature.sprite.update(deltaSeconds, creature.body.position.x, 0.5, creature.body.position.z, spriteAction);
+      creature.sprite.update(deltaSeconds, creature.body.position.x, 0.13, creature.body.position.z, spriteAction);
       this.updateHealthBar(creature.healthBar, creature.body.position.x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, creature.body.position.z, creature.hp, creature.maxHp, true);
       const selected = creature.interaction.monsterKey === this.selectedAttackTarget;
       const markerMaterial = creature.marker.material as StandardMaterial;

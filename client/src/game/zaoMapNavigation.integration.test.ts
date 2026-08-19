@@ -35,4 +35,27 @@ describe("travessia navegável do mapa Zao", () => {
     expect(player.position.y).toBeGreaterThanOrEqual(8);
     expect(resolveZaoSubarea(player.position.x, player.position.y)).toBe("wind-road");
   });
+
+  it("bloqueia rios, mas mantém abertas as passagens das duas pontes", () => {
+    const scene = new Scene(new NullEngine());
+    disposables.push(scene);
+    const collision = new CollisionWorld({ minX: -20, maxX: 20, minZ: -16, maxZ: 20 });
+    createZaoInitialMaps(scene, collision);
+
+    const cityRiver = new Player(scene, new Vector2(-2.5, -6));
+    travel(cityRiver, collision, new Vector2(0, -6));
+    expect(cityRiver.position.x).toBeLessThan(-1.8);
+
+    const cityBridge = new Player(scene, new Vector2(-2.5, -3.88));
+    travel(cityBridge, collision, new Vector2(-0.8, -3.88));
+    expect(cityBridge.position.x).toBeGreaterThan(-1.1);
+
+    const windRiver = new Player(scene, new Vector2(5.25, 4.2));
+    travel(windRiver, collision, new Vector2(8.1, 4.2));
+    expect(windRiver.position.x).toBeLessThan(6.1);
+
+    const windBridge = new Player(scene, new Vector2(5.25, 5.5));
+    travel(windBridge, collision, new Vector2(8.1, 5.5));
+    expect(windBridge.position.x).toBeGreaterThan(7.7);
+  });
 });
