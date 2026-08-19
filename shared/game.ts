@@ -29,6 +29,20 @@ export const ELEMENT_COLOR: Record<DamageElement, string> = {
   death: "#9b59b6",
 };
 
+/** Posição inicial comum do avatar, usada pelo canvas, serviço e mundo visual. */
+export const ZAO_START_POSITION = {
+  x: -4.5,
+  z: -2.5,
+} as const;
+
+/** Limites explícitos do campo Zao para contratos compartilhados de mapa e spawn. */
+export const ZAO_WORLD_BOUNDS = {
+  minX: -27,
+  maxX: 27,
+  minZ: -27,
+  maxZ: 27,
+} as const;
+
 export const REGIONS = [
   { key: "wind-road", name: "Estrada dos Ventos", level: 1, theme: "Portal norte e trilhas de pedra" },
   { key: "bamboo-forest", name: "Cidade de Âmbar", level: 4, theme: "Praça, rio e muralhas" },
