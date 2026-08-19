@@ -1,4 +1,5 @@
 import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { Material } from "@babylonjs/core/Materials/material";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
@@ -8,6 +9,24 @@ import type { Scene } from "@babylonjs/core/scene";
 export type SpriteActorKind = "adventurer" | "goblin" | "boar";
 export type SpriteAction = "idle" | "walk" | "attack" | "hit" | "death";
 export const SPRITE_PLANE_ROTATION_X = Math.PI / 2;
+/** Pixels translúcidos abaixo deste limite são descartados; o personagem permanece sólido sobre o terreno. */
+export const SPRITE_ALPHA_CUTOFF = 0.08;
+/** Preset compartilhado que mantém as entidades legíveis, sólidas e acima da malha de tiles. */
+export const OPAQUE_SPRITE_RENDERING = {
+  alpha: 1,
+  alphaCutOff: SPRITE_ALPHA_CUTOFF,
+  transparencyMode: Material.MATERIAL_ALPHATEST,
+  forceDepthWrite: true,
+  useAlphaFromDiffuseTexture: true,
+  disableLighting: true,
+  renderingGroupId: 2,
+} as const;
+/** Cores plenas e sem atenuação de luz mantêm a leitura da sprite sobre gramado, água e pedra. */
+export const OPAQUE_SPRITE_CONTRAST = {
+  diffuseHex: "#FFFFFF",
+  emissiveHex: "#FFFFFF",
+  lighting: "unlit-full-color",
+} as const;
 type SpriteDirection = "south" | "east" | "north" | "west";
 
 type SpriteSheet = { url: string; columns: number; fps: number; loop: boolean };
@@ -76,14 +95,19 @@ export class AnimatedSpriteActor {
   constructor(private readonly scene: Scene, readonly kind: SpriteActorKind, name: string, size: number) {
     this.mesh = MeshBuilder.CreatePlane(`${name}-sprite`, { width: size, height: size }, scene);
     this.mesh.rotation.x = SPRITE_PLANE_ROTATION_X;
+    this.mesh.renderingGroupId = OPAQUE_SPRITE_RENDERING.renderingGroupId;
     this.mesh.isPickable = false;
     this.material = new StandardMaterial(`${name}-sprite-material`, scene);
-    this.material.diffuseColor = Color3.White();
-    this.material.emissiveColor = Color3.White();
+    this.material.diffuseColor = Color3.FromHexString(OPAQUE_SPRITE_CONTRAST.diffuseHex);
+    this.material.emissiveColor = Color3.FromHexString(OPAQUE_SPRITE_CONTRAST.emissiveHex);
     this.material.specularColor = Color3.Black();
-    this.material.useAlphaFromDiffuseTexture = true;
+    this.material.alpha = OPAQUE_SPRITE_RENDERING.alpha;
+    this.material.useAlphaFromDiffuseTexture = OPAQUE_SPRITE_RENDERING.useAlphaFromDiffuseTexture;
+    this.material.transparencyMode = OPAQUE_SPRITE_RENDERING.transparencyMode;
+    this.material.alphaCutOff = OPAQUE_SPRITE_RENDERING.alphaCutOff;
+    this.material.forceDepthWrite = OPAQUE_SPRITE_RENDERING.forceDepthWrite;
     this.material.backFaceCulling = false;
-    this.material.disableLighting = true;
+    this.material.disableLighting = OPAQUE_SPRITE_RENDERING.disableLighting;
     this.mesh.material = this.material;
     this.applySheet("idle");
   }

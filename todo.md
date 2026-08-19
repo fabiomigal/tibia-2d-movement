@@ -118,3 +118,8 @@
 - [x] Comprovar por contrato a escala recalibrada de aventureiro, goblin e javali em relação aos tiles do mundo.
 - [x] Testar a criação, abertura, remoção e limpeza do sprite de baú no fluxo real de drops em campo.
 - [x] Testar a sincronização pública de drops pelo evento do mundo até a criação, abertura e limpeza do sprite de baú.
+- [x] Corrigir a transparência aparente da sprite do jogador, reforçando opacidade e contraste sem alterar sua escala ou orientação.
+- [x] Cobrir e validar visualmente a apresentação opaca da sprite do jogador em desktop e mobile.
+- [x] Expor e testar o preset completo de material da sprite, incluindo opacidade, recorte alfa, profundidade e realce de contraste.
+- [x] Registrar um contrato verificável da apresentação sólida do jogador para complementar a validação visual responsiva.
+- [x] Declarar e testar explicitamente a política de contraste da sprite e o modo de transparência alfa-testado.

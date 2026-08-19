@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteRowUv } from "./spriteAnimation";
+import { OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteRowUv } from "./spriteAnimation";
+import { Material } from "@babylonjs/core/Materials/material";
 
 describe("seleção de frame dos sprites Zao", () => {
   it("repete apenas ações em loop e preserva o último frame das ações únicas", () => {
@@ -21,6 +22,28 @@ describe("seleção de frame dos sprites Zao", () => {
 
   it("mantém o plano horizontal virado para a câmera superior", () => {
     expect(SPRITE_PLANE_ROTATION_X).toBe(Math.PI / 2);
+  });
+
+  it("usa um corte alfa conservador para manter os pixels do personagem opacos", () => {
+    expect(SPRITE_ALPHA_CUTOFF).toBeGreaterThan(0);
+    expect(SPRITE_ALPHA_CUTOFF).toBeLessThanOrEqual(0.1);
+  });
+
+  it("declara material sólido, escrita de profundidade e prioridade visual sobre os tiles", () => {
+    expect(OPAQUE_SPRITE_RENDERING).toMatchObject({
+      alpha: 1,
+      alphaCutOff: SPRITE_ALPHA_CUTOFF,
+      transparencyMode: Material.MATERIAL_ALPHATEST,
+      forceDepthWrite: true,
+      useAlphaFromDiffuseTexture: true,
+      disableLighting: true,
+      renderingGroupId: 2,
+    });
+    expect(OPAQUE_SPRITE_CONTRAST).toEqual({
+      diffuseHex: "#FFFFFF",
+      emissiveHex: "#FFFFFF",
+      lighting: "unlit-full-color",
+    });
   });
 
   it("calibra aventureiro e criaturas para a escala do grid de tiles", () => {
