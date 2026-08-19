@@ -75,5 +75,5 @@
 - [x] Testar a integração do sinal `status.isResting` emitido pelo mundo até o disparo da sincronização do HUD e a atualização de recursos.
 - [x] Exercitar o componente real `GameOverlay` com evento `vale:status`, mutação de repouso, refetch e snapshot de recursos recuperados.
 - [x] Testar a ponte do `GameCanvas` que consome `vale:status` e atualiza a prop de status entregue ao HUD.
-- [ ] Integrar o projeto Vale de Âmbar a um repositório privado do GitHub do usuário.
-- [ ] Confirmar o envio do histórico local e informar o endereço do repositório remoto.
+- [x] Integrar o projeto Vale de Âmbar a um repositório privado do GitHub do usuário.
+- [x] Confirmar o envio do histórico local e informar o endereço do repositório remoto.
