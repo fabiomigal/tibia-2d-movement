@@ -1,6 +1,6 @@
 import { and, eq, lt } from "drizzle-orm";
 import { cities, gameCharacters, gameItems, gameNpcs, gameQuests, gameSkills, groundDrops, idleHunts, merchantItems, monsterEncounters } from "../drizzle/schema";
-import { ARCHETYPES, capacityForLevel, damageAfterResistance, inventoryWeight, levelFromXp, REGIONS, WORLD_MONSTER_SPAWNS, type ArchetypeKey, type DamageElement, type MonsterTemplate } from "@shared/game";
+import { ARCHETYPES, capacityForLevel, damageAfterResistance, inventoryWeight, levelFromXp, REGIONS, WORLD_MONSTER_SPAWNS, ZAO_START_POSITION, type ArchetypeKey, type DamageElement, type MonsterTemplate } from "@shared/game";
 import { MONSTERS, SKILLS } from "./gameCatalog";
 import { getDb } from "./db";
 import { resolveRestRegeneration } from "@shared/restRegeneration";
@@ -21,15 +21,15 @@ async function ensureWorldCatalog() {
   const db = await requireDb();
   const existing = await db.select().from(merchantItems).limit(1);
   if (existing.length) return;
-  await db.insert(cities).values({ cityKey: "campo-ambar", name: "Posto do Vale", region: "wind-road", description: "Uma parada para viajantes, mercadores e expedições." });
+  await db.insert(cities).values({ cityKey: "zao", name: "Zao", region: "wind-road", description: "Uma cidade de caminhos, rios e passagens entre as montanhas." });
   await db.insert(gameNpcs).values([
-    { npcKey: "selene-merchant", cityKey: "campo-ambar", name: "Selene", role: "Mercadora", dialogue: "Cuide da mochila. Cada passo vale mais quando o peso cabe na rota." },
-    { npcKey: "arden-scout", cityKey: "campo-ambar", name: "Arden", role: "Batedor", dialogue: "As pedras anciãs respondem a quem observa os sinais do mapa." },
+    { npcKey: "selene-merchant", cityKey: "zao", name: "Selene", role: "Mercadora", dialogue: "Cuide da mochila. Cada passo vale mais quando o peso cabe na rota." },
+    { npcKey: "arden-scout", cityKey: "zao", name: "Arden", role: "Batedor", dialogue: "As pedras anciãs respondem a quem observa os sinais do mapa." },
   ]);
   await db.insert(merchantItems).values([
-    { catalogKey: "merchant-minor-potion", cityKey: "campo-ambar", name: "Poção de Vida Menor", kind: "consumable", rarity: "common", weight: 1, slot: "consumable", price: 18, description: "Recupera 35 de vida ao ser usada ou pelo auto-pot." },
-    { catalogKey: "merchant-route-compass", cityKey: "campo-ambar", name: "Bússola de Rota", kind: "accessory", rarity: "uncommon", weight: 2, slot: "accessory", price: 68, description: "Instrumento de bronze para orientar expedições." },
-    { catalogKey: "merchant-amber-ward", cityKey: "campo-ambar", name: "Amuleto de Âmbar", kind: "accessory", rarity: "rare", weight: 2, slot: "accessory", price: 150, description: "Proteção rara para quem se aventura além do posto." },
+    { catalogKey: "merchant-minor-potion", cityKey: "zao", name: "Poção de Vida Menor", kind: "consumable", rarity: "common", weight: 1, slot: "consumable", price: 18, description: "Recupera 35 de vida ao ser usada ou pelo auto-pot." },
+    { catalogKey: "merchant-route-compass", cityKey: "zao", name: "Bússola de Rota", kind: "accessory", rarity: "uncommon", weight: 2, slot: "accessory", price: 68, description: "Instrumento de bronze para orientar expedições." },
+    { catalogKey: "merchant-amber-ward", cityKey: "zao", name: "Amuleto de Âmbar", kind: "accessory", rarity: "rare", weight: 2, slot: "accessory", price: 150, description: "Proteção rara para quem se aventura além do posto." },
   ]);
 }
 
@@ -42,7 +42,7 @@ async function ensureCharacter() {
     profileKey: PROFILE_KEY, name: "Aventureiro de Âmbar", archetype: "fighter", level: 1, xp: 0, gold: 120,
     hp: 110, maxHp: 110, mp: 60, maxMp: 60, energy: 80, maxEnergy: 80,
     strength: 12, dexterity: 9, vitality: 11, intelligence: 7, currentRegion: "wind-road", floor: 0,
-    positionX: -4, positionZ: -2, unlockedRegions: JSON.stringify(["wind-road"]), isDead: false, autoPotionEnabled: true,
+    positionX: ZAO_START_POSITION.x, positionZ: ZAO_START_POSITION.z, unlockedRegions: JSON.stringify(["wind-road"]), isDead: false, autoPotionEnabled: true,
   });
   const [created] = await db.select().from(gameCharacters).where(eq(gameCharacters.profileKey, PROFILE_KEY)).limit(1);
   if (!created) throw new Error("Não foi possível criar o personagem de desenvolvimento.");
@@ -204,7 +204,7 @@ export async function resolveCombat(monsterKey: string, skillKey?: string) {
 
 export async function reviveCharacter() {
   const db = await requireDb(); const character = await loadCharacter();
-  await db.update(gameCharacters).set({ hp: character.maxHp, mp: character.maxMp, energy: character.maxEnergy, gold: Math.floor(character.gold * 0.975), xp: Math.floor(character.xp * 0.97), isDead: false, currentRegion: "wind-road", floor: 0, positionX: -4, positionZ: -2, restStartedAt: null, lastResourceRegenAt: null, updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));
+  await db.update(gameCharacters).set({ hp: character.maxHp, mp: character.maxMp, energy: character.maxEnergy, gold: Math.floor(character.gold * 0.975), xp: Math.floor(character.xp * 0.97), isDead: false, currentRegion: "wind-road", floor: 0, positionX: ZAO_START_POSITION.x, positionZ: ZAO_START_POSITION.z, restStartedAt: null, lastResourceRegenAt: null, updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));
   return getGameSnapshot();
 }
 

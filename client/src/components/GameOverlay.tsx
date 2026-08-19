@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Backpack, BookOpen, ChevronRight, CircleDot, Coins, Crosshair, Heart, Map, MapPin, PackageOpen, Pause, Play, RotateCcw, ScrollText, Shield, ShoppingBag, Sparkles, Swords, Target, WandSparkles, X, Zap } from "lucide-react";
-import { ARCHETYPES, ELEMENT_COLOR, ELEMENT_LABEL, REGIONS, type DamageElement } from "@shared/game";
+import { ARCHETYPES, ELEMENT_COLOR, ELEMENT_LABEL, REGIONS, ZAO_WORLD_BOUNDS, type DamageElement } from "@shared/game";
 import { trpc } from "@/lib/trpc";
 import type { GameStatus } from "@/game/types";
 import { getMinimapMarkerTheme } from "../game/minimapTheme";
@@ -68,6 +68,9 @@ const DEMO_MONSTERS = [
   { key: "despair-titan", name: "Titã do Desespero", region: "valley-of-despair", level: 40, element: "physical" as DamageElement, tone: "#8b735a" },
   { key: "lava-golem", name: "Golem de Lava", region: "volcano", level: 48, element: "fire" as DamageElement, tone: "#d56a42" },
 ];
+
+const toMinimapLeft = (x: number) => `${Math.min(96, Math.max(4, ((x - ZAO_WORLD_BOUNDS.minX) / (ZAO_WORLD_BOUNDS.maxX - ZAO_WORLD_BOUNDS.minX)) * 100))}%`;
+const toMinimapTop = (z: number) => `${Math.min(96, Math.max(4, ((ZAO_WORLD_BOUNDS.maxZ - z) / (ZAO_WORLD_BOUNDS.maxZ - ZAO_WORLD_BOUNDS.minZ)) * 100))}%`;
 
 const RARITY_CLASS: Record<string, string> = {
   common: "rarity--common",
@@ -265,8 +268,8 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const activeSkill = data?.skills.find((skill) => skill.key === selectedSkill) ?? data?.skills.find((skill) => skill.equipped) ?? data?.skills[0];
   const lootChests = useMemo(() => groupLootChests(data?.drops ?? []), [data?.drops]);
   const selectedChest = lootChests.find((chest) => chest.chestKey === selectedChestKey) ?? null;
-  const minimapPlayerStyle = { left: `${Math.min(96, Math.max(4, ((status.position[0] + 23.4) / 46.8) * 100))}%`, top: `${Math.min(96, Math.max(4, ((16.4 - status.position[1]) / 32.8) * 100))}%` };
-  const minimapHotspotStyle = status.nearbyHotspot ? { left: `${Math.min(96, Math.max(4, ((status.nearbyHotspot.x + 23.4) / 46.8) * 100))}%`, top: `${Math.min(96, Math.max(4, ((16.4 - status.nearbyHotspot.z) / 32.8) * 100))}%` } : undefined;
+  const minimapPlayerStyle = { left: toMinimapLeft(status.position[0]), top: toMinimapTop(status.position[1]) };
+  const minimapHotspotStyle = status.nearbyHotspot ? { left: toMinimapLeft(status.nearbyHotspot.x), top: toMinimapTop(status.nearbyHotspot.z) } : undefined;
 
   if (bootstrap.isLoading || !data) {
     return <div className="rpg-loading"><div><Sparkles size={22} /><p>Preparando o códice de Âmbar...</p></div></div>;
@@ -292,7 +295,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
         <div className="rpg-minimap__heading"><Map size={14}/><span>MAPA LOCAL</span></div>
         <div className={`rpg-minimap__map rpg-minimap__map--${character.currentRegion}`}>
           <i className="minimap-water minimap-water--one"/><i className="minimap-water minimap-water--two"/><i className="minimap-path"/>
-          {status.monsters.map((monster) => { const tone = DEMO_MONSTERS.find((entry) => entry.key === monster.key)?.tone ?? "#d58d52"; return <b key={monster.key} className="minimap-monster" style={{ left: `${Math.min(96, Math.max(4, ((monster.x + 23.4) / 46.8) * 100))}%`, top: `${Math.min(96, Math.max(4, ((16.4 - monster.z) / 32.8) * 100))}%`, background: tone }} title={`${monster.name}: ${monster.hp}/${monster.maxHp} HP`}/>; })}
+          {status.monsters.map((monster) => { const tone = DEMO_MONSTERS.find((entry) => entry.key === monster.key)?.tone ?? "#d58d52"; return <b key={monster.key} className="minimap-monster" style={{ left: toMinimapLeft(monster.x), top: toMinimapTop(monster.z), background: tone }} title={`${monster.name}: ${monster.hp}/${monster.maxHp} HP`}/>; })}
           {status.nearbyHotspot && <b className={`minimap-hotspot minimap-hotspot--${minimapMarkerTheme}`} style={minimapHotspotStyle} title={status.nearbyHotspot.label}/>}<b className={`minimap-player minimap-player--${minimapMarkerTheme}`} style={minimapPlayerStyle} title="Você"/><span className="minimap-compass">N</span>
         </div>
         <button onClick={() => setPanel("map")}>Abrir mapa <ChevronRight size={13}/></button>

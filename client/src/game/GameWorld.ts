@@ -16,6 +16,7 @@ import { DemoPilot } from "./DemoPilot";
 import { MovementInput } from "./MovementInput";
 import { Player } from "./Player";
 import type { GameStatus, MovementSource, WorldBounds } from "./types";
+import { ZAO_START_POSITION, ZAO_WORLD_BOUNDS } from "@shared/game";
 import { dispatchHotspotFromActionKey, dispatchHotspotFromWorldPointer } from "./worldHotspotPipeline";
 import { resolveAttackApproach } from "./targeting";
 import { hasFiniteScreenCoordinates, toRenderableCombatFloatPosition, type CombatFloatEvent } from "./combatFloatEvents";
@@ -31,12 +32,7 @@ const assets = {
   water: "/manus-storage/vale-ambar-water_d5e9092a.png",
 } as const;
 
-const worldBounds: WorldBounds = {
-  minX: -23.4,
-  maxX: 23.4,
-  minZ: -16.4,
-  maxZ: 16.4,
-};
+const worldBounds: WorldBounds = ZAO_WORLD_BOUNDS;
 
 type LandmarkKind = "npc" | "portal" | "stairs" | "monster";
 type LandmarkInteraction = { id: string; kind: LandmarkKind; label: string; x: number; z: number; radius: number; monsterKey?: string };
@@ -161,10 +157,11 @@ export class GameWorld {
     this.createRouteStrokes();
     this.createObstacles();
     this.createFieldDetails();
+    this.createCityArchitecture();
     this.createWorldLandmarks();
     this.createForegroundFoliage();
 
-    this.player = new Player(scene, new Vector2(-4.5, -2.5));
+    this.player = new Player(scene, new Vector2(ZAO_START_POSITION.x, ZAO_START_POSITION.z));
     this.playerHealthBar = this.createHealthBar("player-health", "Aventureiro de Âmbar", "#4FDD69", 1.46);
     this.cameraController = new CameraController(scene, worldBounds);
     this.cameraController.update(1, this.player.position);
@@ -340,28 +337,29 @@ export class GameWorld {
   }
 
   private createWorldSurface() {
-    const base = MeshBuilder.CreateGround("grass-base", { width: 48, height: 34, subdivisions: 2 }, this.scene);
+    const base = MeshBuilder.CreateGround("grass-base", { width: 54, height: 54, subdivisions: 2 }, this.scene);
     base.material = this.colorMaterial("grass-base-material", "#657748", 0.2);
     base.isPickable = false;
 
-    const paintedField = MeshBuilder.CreateGround("painted-field", { width: 48, height: 34, subdivisions: 2 }, this.scene);
+    const paintedField = MeshBuilder.CreateGround("painted-field", { width: 54, height: 54, subdivisions: 2 }, this.scene);
     paintedField.position.y = 0.006;
     paintedField.material = this.texturedMaterial("painted-field-material", assets.fieldFallback, "#657748", 1, 1, 0.56);
     paintedField.isPickable = false;
 
-    const grass = MeshBuilder.CreateGround("walkable-grass", { width: 48, height: 34, subdivisions: 2 }, this.scene);
+    const grass = MeshBuilder.CreateGround("walkable-grass", { width: 54, height: 54, subdivisions: 2 }, this.scene);
     grass.position.y = 0.018;
-    grass.material = this.texturedMaterial("grass-material", assets.grass, "#718856", 16, 12, 0.66);
+    grass.material = this.texturedMaterial("grass-material", assets.grass, "#718856", 18, 18, 0.66);
     grass.isPickable = true;
   }
 
   private createWaterway() {
-    this.createWaterPatch("water-south", -18.25, -8.3, 4.1, 15.4);
-    this.createWaterPatch("water-bend", -14.7, -1, 4, 3);
-    this.createWaterPatch("water-east", -11.7, -0.25, 3.5, 2.2);
-    this.collision.addRectangle(-20.3, -16.2, -16, -0.6);
-    this.collision.addRectangle(-16.7, -12.7, -2.5, 0.5);
-    this.collision.addRectangle(-13.45, -9.95, -1.35, 0.85);
+    // Rio central: a ponte e a passagem sul ficam livres entre os dois trechos bloqueados.
+    this.createWaterPatch("zao-river-north", 1.25, -14.5, 3.6, 22);
+    this.createWaterPatch("zao-river-south", 1.25, 15.1, 3.6, 20);
+    this.createWaterPatch("zao-west-branch", -13.5, -7.4, 22, 2.6);
+    this.collision.addRectangle(-0.55, 3.05, -25.5, -3.65);
+    this.collision.addRectangle(-0.55, 3.05, 4.65, 25.5);
+    this.collision.addRectangle(-24.5, -2.5, -8.7, -6.1);
   }
 
   private createWaterPatch(name: string, x: number, z: number, width: number, height: number) {
@@ -398,16 +396,16 @@ export class GameWorld {
   private createRouteStrokes() {
     const material = this.colorMaterial("route-stroke-material", "#C0A657", 0.12, 0.42);
     const strokes = [
-      [-5, 5, 5, 0.18, 0.12],
-      [-1, 3.2, 3, 0.16, -0.38],
-      [3, 1.2, 4, 0.18, 0.28],
-      [9, 7.5, 3.6, 0.14, -0.2],
-      [14, -4, 2.8, 0.14, 0.1],
+      [-0.7, 0, 3.35, 50, 0],
+      [-1, 2.4, 48, 3.35, 0],
+      [-12.5, -8.5, 18, 2.8, -0.56],
+      [13.5, 9.5, 19, 2.8, 0.46],
+      [-16.5, 13, 11, 2.5, -0.18],
     ] as const;
 
     strokes.forEach(([x, z, width, height, rotation], index) => {
       const stroke = MeshBuilder.CreateGround(`route-stroke-${index}`, { width, height }, this.scene);
-      stroke.position.set(x, 0.015, z);
+      stroke.position.set(x, 0.04, z);
       stroke.rotation.y = rotation;
       stroke.material = material;
       stroke.isPickable = false;
@@ -433,13 +431,13 @@ export class GameWorld {
 
   private createPathPatches() {
     const pathNodes = [
-      [-4.7, -3.2, 4.8, 0.78, -0.18],
-      [-1.2, -1.45, 3.8, 0.72, 0.3],
-      [2, 0.7, 4.1, 0.7, 0.36],
-      [5.4, 2.7, 3.35, 0.68, 0.27],
-      [8.2, 4.8, 3.2, 0.62, 0.52],
-      [11.2, 6.3, 3.45, 0.6, 0.1],
-      [14.5, 5.7, 3.2, 0.58, -0.55],
+      [-22, 0, 8, 0.78, 0],
+      [-17, 5, 7, 0.72, 0.1],
+      [-14, -11, 7, 0.7, -0.42],
+      [15, -10, 8, 0.7, 0.44],
+      [18, 7, 7, 0.62, 0.34],
+      [0, 17, 8, 0.62, 0],
+      [-21, 17, 7, 0.58, -0.18],
     ] as const;
     pathNodes.forEach(([x, z, width, height, rotation], index) => {
       this.createPathStrip(`traveler-path-${index}`, x, z, width, height, rotation);
@@ -465,13 +463,15 @@ export class GameWorld {
   }
 
   private createObstacles() {
-    this.createBoulder(-3.5, 4.2, 1.0);
-    this.createBoulder(8.7, 5.4, 1.25);
-    this.createBoulder(13.6, -6.2, 0.95);
-    this.createRuin(5.8, -4.0, 1.65);
-    this.createTree(15.5, 9.6, 1.28);
-    this.createTree(-18.5, 9.2, 1.2);
-    this.createTree(18.2, -12.4, 1.12);
+    this.createBoulder(-21, -16, 1.2);
+    this.createBoulder(21, -15, 1.4);
+    this.createBoulder(-20, 15, 1.25);
+    this.createBoulder(21, 16, 1.1);
+    this.createRuin(-18, -5, 1.65);
+    this.createTree(-22, 10, 1.35);
+    this.createTree(22, 10, 1.3);
+    this.createTree(-22, -10, 1.2);
+    this.createTree(22, -6, 1.2);
   }
 
   private createBoulder(x: number, z: number, radius: number) {
@@ -578,13 +578,147 @@ export class GameWorld {
     });
   }
 
+  private createCityArchitecture() {
+    const wall = this.colorMaterial("zao-city-wall-material", "#7A746B", 0.08);
+    const timber = this.colorMaterial("zao-city-timber-material", "#6E4A32", 0.06);
+    const roof = this.colorMaterial("zao-city-roof-material", "#5D3E2D", 0.08);
+    const plaster = this.colorMaterial("zao-city-plaster-material", "#B99B68", 0.05);
+    const roadStone = this.colorMaterial("zao-city-road-material", "#A58A5D", 0.04);
+
+    const buildings = [
+      ["hall-northwest", -5.6, 5.2, 3.8, 2.9, plaster, roof],
+      ["hall-northeast", 5.5, 5.2, 3.6, 2.8, plaster, roof],
+      ["house-southwest", -5.4, -3.6, 3.2, 2.5, plaster, roof],
+      ["house-southeast", 5.4, -3.6, 3.4, 2.6, plaster, roof],
+      ["house-west", -9.4, 8.1, 2.8, 2.3, plaster, roof],
+      ["house-east", 9.3, -7.1, 2.9, 2.4, plaster, roof],
+      ["watch-house-north", -1.6, -20.6, 2.5, 2.2, timber, roof],
+      ["watch-house-south", 8.8, 18.4, 2.5, 2.2, timber, roof],
+    ] as const;
+    buildings.forEach(([key, x, z, width, depth, bodyMaterial, roofMaterial]) => this.createCityBuilding(key, x, z, width, depth, bodyMaterial, roofMaterial));
+
+    const walls = [
+      [-10.5, 7.2, 20.5, 0.42, 0],
+      [-10.5, -7.2, 20.5, 0.42, 0],
+      [-10.6, 0, 0.42, 11.2, 0],
+      [10.6, 0, 0.42, 11.2, 0],
+    ] as const;
+    walls.forEach(([x, z, width, depth, rotation], index) => {
+      const segment = MeshBuilder.CreateBox(`zao-wall-${index}`, { width, height: 0.62, depth }, this.scene);
+      segment.position.set(x, 0.31, z);
+      segment.rotation.y = rotation;
+      segment.material = wall;
+      segment.isPickable = false;
+      this.collision.addRectangle(x - width * 0.5, x + width * 0.5, z - depth * 0.5, z + depth * 0.5);
+    });
+
+    const plaza = MeshBuilder.CreateGround("zao-central-plaza", { width: 7.8, height: 6.2 }, this.scene);
+    plaza.position.set(-1.1, 0.052, 1.1);
+    plaza.material = roadStone;
+    plaza.isPickable = false;
+    this.createCityBridge("zao-central-bridge", 1.25, 0);
+    this.createCityFountain(-1.5, 1.2);
+    this.createCityGate(1.25, -23.2, "zao-north-gate");
+    this.createCityGate(1.25, 23.2, "zao-south-gate");
+
+    [-8.6, 8.6].forEach((x, index) => {
+      const lamp = MeshBuilder.CreateCylinder(`zao-lamp-${index}`, { height: 1.25, diameter: 0.12, tessellation: 8 }, this.scene);
+      lamp.position.set(x, 0.62, 1.8);
+      lamp.material = timber;
+      lamp.isPickable = false;
+      const flame = MeshBuilder.CreateSphere(`zao-lamp-flame-${index}`, { diameter: 0.26, segments: 8 }, this.scene);
+      flame.position.set(x, 1.3, 1.8);
+      flame.material = this.colorMaterial(`zao-lamp-flame-material-${index}`, "#F2B84B", 0.7);
+      flame.isPickable = false;
+    });
+  }
+
+  private createCityBuilding(key: string, x: number, z: number, width: number, depth: number, bodyMaterial: StandardMaterial, roofMaterial: StandardMaterial) {
+    const shadow = MeshBuilder.CreateGround(`${key}-shadow`, { width: width + 0.5, height: depth + 0.5 }, this.scene);
+    shadow.position.set(x + 0.22, 0.044, z + 0.22);
+    shadow.material = this.colorMaterial(`${key}-shadow-material`, "#2D3D30", 0.02, 0.24);
+    shadow.isPickable = false;
+
+    const body = MeshBuilder.CreateBox(`${key}-body`, { width, height: 1.2, depth }, this.scene);
+    body.position.set(x, 0.62, z);
+    body.material = bodyMaterial;
+    body.isPickable = false;
+
+    const roof = MeshBuilder.CreateBox(`${key}-roof`, { width: width + 0.34, height: 0.24, depth: depth + 0.34 }, this.scene);
+    roof.position.set(x, 1.32, z);
+    roof.rotation.y = 0.06;
+    roof.material = roofMaterial;
+    roof.isPickable = false;
+
+    const door = MeshBuilder.CreateBox(`${key}-door`, { width: 0.5, height: 0.72, depth: 0.08 }, this.scene);
+    door.position.set(x, 0.36, z - depth * 0.51);
+    door.material = this.colorMaterial(`${key}-door-material`, "#3B2A24", 0.02);
+    door.isPickable = false;
+
+    const window = MeshBuilder.CreateBox(`${key}-window`, { width: 0.48, height: 0.34, depth: 0.06 }, this.scene);
+    window.position.set(x + width * 0.28, 0.76, z - depth * 0.52);
+    window.material = this.colorMaterial(`${key}-window-material`, "#E0AC50", 0.38);
+    window.isPickable = false;
+
+    this.collision.addRectangle(x - width * 0.44, x + width * 0.44, z - depth * 0.42, z + depth * 0.42);
+  }
+
+  private createCityBridge(key: string, x: number, z: number) {
+    const bridge = MeshBuilder.CreateBox(`${key}-deck`, { width: 5.8, height: 0.16, depth: 4.8 }, this.scene);
+    bridge.position.set(x, 0.14, z);
+    bridge.material = this.colorMaterial(`${key}-deck-material`, "#92734B", 0.04);
+    bridge.isPickable = false;
+    for (let index = -2; index <= 2; index += 1) {
+      const plank = MeshBuilder.CreateBox(`${key}-plank-${index}`, { width: 0.08, height: 0.2, depth: 4.9 }, this.scene);
+      plank.position.set(x + index * 1.08, 0.25, z);
+      plank.material = this.colorMaterial(`${key}-plank-material-${index}`, "#C09A5A", 0.05);
+      plank.isPickable = false;
+    }
+  }
+
+  private createCityFountain(x: number, z: number) {
+    const basin = MeshBuilder.CreateCylinder("zao-fountain-basin", { height: 0.22, diameter: 2.1, tessellation: 16 }, this.scene);
+    basin.position.set(x, 0.16, z);
+    basin.material = this.colorMaterial("zao-fountain-stone", "#788187", 0.08);
+    basin.isPickable = false;
+    const water = MeshBuilder.CreateDisc("zao-fountain-water", { radius: 0.72, tessellation: 20 }, this.scene);
+    water.position.set(x, 0.29, z);
+    water.rotation.x = Math.PI / 2;
+    water.material = this.colorMaterial("zao-fountain-water-material", "#4D9DA1", 0.22);
+    water.isPickable = false;
+    const column = MeshBuilder.CreateCylinder("zao-fountain-column", { height: 0.82, diameter: 0.3, tessellation: 10 }, this.scene);
+    column.position.set(x, 0.64, z);
+    column.material = this.colorMaterial("zao-fountain-column-material", "#9BA4A1", 0.08);
+    column.isPickable = false;
+  }
+
+  private createCityGate(x: number, z: number, key: string) {
+    const left = MeshBuilder.CreateBox(`${key}-left`, { width: 0.95, height: 2.8, depth: 1.05 }, this.scene);
+    left.position.set(x - 2.1, 1.4, z);
+    left.material = this.colorMaterial(`${key}-left-material`, "#6B6A64", 0.1);
+    left.isPickable = false;
+    const right = left.clone(`${key}-right`);
+    if (right) right.position.x = x + 2.1;
+    const lintel = MeshBuilder.CreateBox(`${key}-lintel`, { width: 5.1, height: 0.55, depth: 1.18 }, this.scene);
+    lintel.position.set(x, 2.55, z);
+    lintel.material = this.colorMaterial(`${key}-lintel-material`, "#8B8170", 0.1);
+    lintel.isPickable = false;
+    const torchMaterial = this.colorMaterial(`${key}-torch-material`, "#F2B84B", 0.72);
+    [-2.1, 2.1].forEach((offset, index) => {
+      const torch = MeshBuilder.CreateSphere(`${key}-torch-${index}`, { diameter: 0.32, segments: 8 }, this.scene);
+      torch.position.set(x + offset, 2.1, z - 0.62);
+      torch.material = torchMaterial;
+      torch.isPickable = false;
+    });
+  }
+
   /** Marcos de conteúdo não selecionáveis: preservam o núcleo congelado de deslocamento. */
   private createWorldLandmarks() {
-    this.createMerchantCamp(-6.8, 5.8);
-    this.createPortal(16.2, 4.6, "portal-ruinas", "#769A94");
-    this.createStairway(11.8, -1.9);
-    this.createMonsterSighting(2.2, 5.6, "sighting-boar", "#B99064", 0.7, "field-boar", "Javali do Campo");
-    this.createMonsterSighting(7.5, -7.8, "sighting-goblin", "#82965C", 0.63, "wind-goblin", "Goblin da Estrada");
+    this.createMerchantCamp(-4.9, 2.8);
+    this.createPortal(19.2, -10.8, "portal-ruinas", "#769A94");
+    this.createStairway(-18.2, -4.2);
+    this.createMonsterSighting(-18, 8, "sighting-boar", "#B99064", 0.7, "field-boar", "Javali de Zao");
+    this.createMonsterSighting(17, -11, "sighting-goblin", "#82965C", 0.63, "wind-goblin", "Goblin da Estrada");
   }
 
   private createMerchantCamp(x: number, z: number) {
@@ -785,11 +919,11 @@ export class GameWorld {
     const foliageMaterial = this.colorMaterial("foreground-foliage-material", "#34563B", 0.08, 0.9);
     const amberGrassMaterial = this.colorMaterial("foreground-grass-material", "#A49350", 0.08, 0.9);
     const clusters = [
-      [-22.7, -14.8, 2.3, foliageMaterial],
-      [-20.8, -15.9, 1.7, amberGrassMaterial],
-      [21.8, -14.6, 2.5, foliageMaterial],
-      [22.5, 14.6, 1.9, amberGrassMaterial],
-      [-22.2, 14.5, 2, foliageMaterial],
+      [-26.2, -25.1, 2.3, foliageMaterial],
+      [-24.8, -26.1, 1.7, amberGrassMaterial],
+      [25.5, -24.8, 2.5, foliageMaterial],
+      [25.5, 25.2, 1.9, amberGrassMaterial],
+      [-25.7, 25.2, 2, foliageMaterial],
     ] as const;
 
     clusters.forEach(([x, z, radius, material], index) => {

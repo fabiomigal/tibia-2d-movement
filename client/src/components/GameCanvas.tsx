@@ -9,6 +9,7 @@ import { createGameScene, type GameHandle } from "@/game/scene";
 import { appendRenderableCombatFloat } from "@/game/combatFloatLayer";
 import type { ScreenCombatFloat } from "@/game/combatFloatEvents";
 import type { GameStatus } from "@/game/types";
+import { ZAO_START_POSITION } from "@shared/game";
 import GameOverlay from "./GameOverlay";
 
 const initialStatus: GameStatus = {
@@ -16,7 +17,7 @@ const initialStatus: GameStatus = {
   isResting: true,
   speed: 0,
   hint: "WASD, setas, clique ou toque no terreno",
-  position: [-4.5, -2.5],
+  position: [ZAO_START_POSITION.x, ZAO_START_POSITION.z],
   nearbyHotspot: null,
   monsters: [],
 };

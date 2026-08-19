@@ -29,8 +29,20 @@ export const ELEMENT_COLOR: Record<DamageElement, string> = {
   death: "#9b59b6",
 };
 
+export const ZAO_WORLD_BOUNDS = {
+  minX: -27,
+  maxX: 27,
+  minZ: -27,
+  maxZ: 27,
+} as const;
+
+export const ZAO_START_POSITION = {
+  x: -3,
+  z: 2,
+} as const;
+
 export const REGIONS = [
-  { key: "wind-road", name: "Estrada do Vento", level: 1, theme: "Campo inicial" },
+  { key: "wind-road", name: "Zao", level: 1, theme: "Cidade dos caminhos" },
   { key: "bamboo-forest", name: "Floresta de Bambu", level: 4, theme: "Bosque físico" },
   { key: "elders-ruins", name: "Ruínas Anciãs", level: 7, theme: "Pedra e aranhas" },
   { key: "cursed-graveyard", name: "Cemitério Amaldiçoado", level: 10, theme: "Mortos-vivos" },
@@ -62,8 +74,8 @@ export type MonsterTemplate = {
 
 /** Posições de referência do campo usadas pelo mundo visual e pelo baú de cada criatura derrotada. */
 export const WORLD_MONSTER_SPAWNS = [
-  { monsterKey: "field-boar", x: 2, z: 6 },
-  { monsterKey: "wind-goblin", x: 8, z: -8 },
+  { monsterKey: "field-boar", x: -18, z: 8 },
+  { monsterKey: "wind-goblin", x: 17, z: -11 },
 ] as const;
 
 export type GameSkill = {
