@@ -123,3 +123,9 @@
 - [x] Expor e testar o preset completo de material da sprite, incluindo opacidade, recorte alfa, profundidade e realce de contraste.
 - [x] Registrar um contrato verificável da apresentação sólida do jogador para complementar a validação visual responsiva.
 - [x] Declarar e testar explicitamente a política de contraste da sprite e o modo de transparência alfa-testado.
+- [x] Adicionar inventário simples à interface, exibindo itens coletados dos baús com quantidade e feedback de coleta.
+- [x] Conectar a abertura e a transferência de itens dos baús à atualização visível do inventário.
+- [x] Acrescentar partículas de poeira e transições visuais suaves ao deslocamento do personagem sem alterar a lógica congelada de movimento.
+- [x] Refazer a composição do mapa jogável em tiles com zonas mais legíveis, rotas, água, pontes, estruturas e obstáculos coerentes.
+- [x] Cobrir inventário, efeitos de movimento e novo mapa com testes e validações visuais em desktop e mobile.
+- [x] Testar em integração o fluxo de coleta do baú até a atualização renderizada da Mochila Rápida.

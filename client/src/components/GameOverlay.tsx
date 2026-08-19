@@ -12,6 +12,7 @@ import { createCombatFloatEvents } from "@/game/combatFloatEvents";
 import { REST_REGENERATION } from "@shared/restRegeneration";
 import { resolveRestSync } from "@/game/restSyncPipeline";
 import { getZaoMapFeatures, projectZaoMapPoint, resolveZaoSubarea } from "@/game/zaoMapLayout";
+import { createQuickInventory, getQuickInventoryTotal } from "@/game/quickInventory";
 
 type PanelKey = "character" | "inventory" | "equipment" | "skills" | "map" | "idle" | "merchant" | "quests" | "city" | "teleport" | "loot" | null;
 type FeedbackPanel = Exclude<PanelKey, null>;
@@ -109,6 +110,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const [reviveFeedback, setReviveFeedback] = useState<ActionFeedback | null>(null);
   const [lastCombat, setLastCombat] = useState<{ monster: string; monsterKey: string; damage: number; counterDamage: number; counterCritical: boolean; healing: number; element: DamageElement; critical: boolean; defeated: boolean; monsterHp: number; monsterMaxHp: number; xpGained: number; goldGained: number } | null>(null);
   const [selectedChestKey, setSelectedChestKey] = useState<string | null>(null);
+  const [lastCollectedItem, setLastCollectedItem] = useState<string | null>(null);
   const restingRef = useRef(false);
   const lastRestRefreshRef = useRef(0);
   const merchant = trpc.game.merchant.useQuery(undefined, { enabled: panel === "merchant", retry: 1 });
@@ -143,7 +145,16 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const idleResume = trpc.game.idleResume.useMutation({ onSuccess: async (result) => { setNotice(result.turns ? `Caça resolvida: ${result.turns} turnos, +${result.xp} XP e +${result.gold} ouro.` : "A sessão ainda não acumulou um turno completo."); await refresh(); }, onError: (error) => setNotice(error.message) });
   const revive = trpc.game.revive.useMutation({ onSuccess: async () => { const message = "Você retornou à Estrada do Vento, com uma pequena penalidade."; setNotice(message); setReviveFeedback({ panel: "character", tone: "success", message }); await refresh(); }, onError: (error) => { setNotice(error.message); setReviveFeedback({ panel: "character", tone: "error", message: error.message }); } });
   const restState = trpc.game.restState.useMutation({ onSuccess: refresh, onError: (error) => setNotice(error.message) });
-  const collectDrop = trpc.game.collectDrop.useMutation({ onSuccess: async () => { setNotice("Drop guardado na mochila."); await refresh(); }, onError: (error) => setNotice(error.message) });
+  const collectDrop = trpc.game.collectDrop.useMutation({
+    onMutate: ({ dropId }) => ({ itemName: data?.drops.find((drop) => drop.id === dropId)?.name ?? "Item" }),
+    onSuccess: async (_result, _input, context) => {
+      const itemName = context?.itemName ?? "Item";
+      setLastCollectedItem(itemName);
+      setNotice(`${itemName} guardado na mochila.`);
+      await refresh();
+    },
+    onError: (error) => setNotice(error.message),
+  });
   const autoPotion = trpc.game.autoPotion.useMutation({ onSuccess: refresh, onError: (error) => setNotice(error.message) });
   const merchantBuy = trpc.game.merchantBuy.useMutation({ onSuccess: async () => { setNotice("Compra concluída. O item foi guardado na mochila."); await refresh(); }, onError: (error) => setNotice(error.message) });
   const questAccept = trpc.game.questAccept.useMutation({ onSuccess: async () => { setNotice("Missão aceita. Os sinais da estrada agora contam para sua expedição."); await refresh(); }, onError: (error) => setNotice(error.message) });
@@ -267,6 +278,8 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const activeSkill = data?.skills.find((skill) => skill.key === selectedSkill) ?? data?.skills.find((skill) => skill.equipped) ?? data?.skills[0];
   const lootChests = useMemo(() => groupLootChests(data?.drops ?? []), [data?.drops]);
   const selectedChest = lootChests.find((chest) => chest.chestKey === selectedChestKey) ?? null;
+  const quickInventory = useMemo(() => createQuickInventory(data?.items ?? []), [data?.items]);
+  const quickInventoryTotal = getQuickInventoryTotal(data?.items ?? []);
   const zaoSubarea = resolveZaoSubarea(status.position[0], status.position[1]);
   const minimapFeatures = getZaoMapFeatures(zaoSubarea);
   const minimapPlayerPoint = projectZaoMapPoint(zaoSubarea, status.position[0], status.position[1]);
@@ -312,6 +325,12 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
           {status.nearbyHotspot && <b className={`minimap-hotspot minimap-hotspot--${minimapMarkerTheme}`} style={minimapHotspotStyle} title={status.nearbyHotspot.label}/>}<b className={`minimap-player minimap-player--${minimapMarkerTheme}`} style={minimapPlayerStyle} title="Você"/><span className="minimap-compass">N</span>
         </div>
         <button onClick={() => setPanel("map")}>Abrir mapa <ChevronRight size={13}/></button>
+      </section>
+
+      <section className="quick-inventory" aria-label="Itens coletados recentemente">
+        <header><Backpack size={15}/><span>MOCHILA RÁPIDA</span><b>{quickInventoryTotal}</b></header>
+        {quickInventory.length ? <div className="quick-inventory__items">{quickInventory.map((item) => <button key={`${item.name}-${item.rarity}`} className={RARITY_CLASS[item.rarity] ?? ""} onClick={() => setPanel("inventory")} title="Abrir mochila completa"><i>{item.rarity === "rare" || item.rarity === "epic" ? "✦" : "◆"}</i><span>{item.name}</span><b>×{item.quantity}</b></button>)}</div> : <p>Nenhum item coletado.</p>}
+        {lastCollectedItem && <footer aria-live="polite">+ {lastCollectedItem}</footer>}
       </section>
 
       <section className="rpg-actions" aria-label="Ações de jogo">

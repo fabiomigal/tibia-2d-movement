@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from "react";
-import { act, cleanup, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { REST_REGENERATION } from "@shared/restRegeneration";
 
@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   bootstrapRefetch: vi.fn(async () => undefined),
   bootstrapInvalidate: vi.fn(async () => undefined),
   snapshot: null as Record<string, unknown> | null,
+  collectDropMutate: vi.fn(),
+  collectDropOptions: null as any,
 }));
 
 const initialSnapshot = {
@@ -25,7 +27,9 @@ vi.mock("@/lib/trpc", () => {
         bootstrap: { useQuery: () => ({ data: mocks.snapshot, refetch: mocks.bootstrapRefetch }) },
         merchant: { useQuery: () => ({ data: [] }) },
         combat: passiveMutation, inventory: passiveMutation, travel: passiveMutation, idleStart: passiveMutation,
-        idleResume: passiveMutation, revive: passiveMutation, collectDrop: passiveMutation, autoPotion: passiveMutation,
+        idleResume: passiveMutation, revive: passiveMutation,
+        collectDrop: { useMutation: (options: unknown) => { mocks.collectDropOptions = options; return { mutate: mocks.collectDropMutate, isPending: false }; } },
+        autoPotion: passiveMutation,
         merchantBuy: passiveMutation, questAccept: passiveMutation, questClaim: passiveMutation, archetype: passiveMutation,
         restState: { useMutation: () => ({ mutate: mocks.restMutate }) },
       },
@@ -45,6 +49,8 @@ describe("GameOverlay — ciclo de repouso integrado", () => {
     mocks.restMutate.mockReset();
     mocks.bootstrapRefetch.mockReset();
     mocks.bootstrapInvalidate.mockReset();
+    mocks.collectDropMutate.mockReset();
+    mocks.collectDropOptions = null;
   });
 
   afterEach(() => {
@@ -73,5 +79,40 @@ describe("GameOverlay — ciclo de repouso integrado", () => {
     const refreshesBeforeWait = mocks.bootstrapRefetch.mock.calls.length;
     act(() => { vi.advanceTimersByTime(REST_REGENERATION.tickMs * 2); });
     expect(mocks.bootstrapRefetch).toHaveBeenCalledTimes(refreshesBeforeWait);
+  });
+
+  it("transfere o item de um baú aberto para a Mochila Rápida com quantidade e feedback visíveis", async () => {
+    const loot = { id: 71, chestKey: "chest-boar", name: "Essência de Javali", rarity: "uncommon", weight: 0.4, x: 2, z: 3 };
+    mocks.snapshot = { ...structuredClone(initialSnapshot), drops: [loot] };
+    mocks.collectDropMutate.mockImplementation(async ({ dropId }: { dropId: number }) => {
+      const options = mocks.collectDropOptions as {
+        onMutate?: (input: { dropId: number }) => { itemName: string };
+        onSuccess?: (result: unknown, input: { dropId: number }, context: { itemName: string }) => Promise<void>;
+      };
+      const context = options.onMutate?.({ dropId }) ?? { itemName: "Item" };
+      mocks.snapshot = {
+        ...structuredClone(initialSnapshot),
+        drops: [],
+        items: [{ id: 501, name: loot.name, kind: "material", rarity: loot.rarity, weight: loot.weight, quantity: 1, slot: "material", equipped: false, sellValue: 4 }],
+      };
+      await options.onSuccess?.({}, { dropId }, context);
+    });
+
+    const view = render(<GameOverlay status={movingStatus} />);
+    act(() => { window.dispatchEvent(new CustomEvent("vale:open-loot-chest", { detail: { chestKey: loot.chestKey } })); });
+    expect(document.body.textContent).toContain("Baú de expedição");
+    const collectButton = Array.from(document.querySelectorAll("button")).find((button) => button.textContent === "Guardar");
+    expect(collectButton).toBeTruthy();
+
+    await act(async () => { fireEvent.click(collectButton!); });
+    view.rerender(<GameOverlay status={movingStatus} />);
+
+    expect(mocks.collectDropMutate).toHaveBeenCalledWith({ dropId: loot.id });
+    expect(mocks.bootstrapInvalidate).toHaveBeenCalledTimes(1);
+    expect(document.body.textContent).toContain("MOCHILA RÁPIDA");
+    expect(document.body.textContent).toContain("Essência de Javali");
+    expect(document.body.textContent).toContain("×1");
+    expect(document.body.textContent).toContain("+ Essência de Javali");
+    expect(document.body.textContent).toContain("Essência de Javali guardado na mochila.");
   });
 });

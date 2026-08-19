@@ -1,5 +1,5 @@
 /** Horizonte em Miniatura: o mundo é uma maquete em camadas onde cada obstáculo preserva silhueta e rota. */
-import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
 import "@babylonjs/core/Culling/ray";
 import "@babylonjs/core/Shaders/default.vertex";
 import "@babylonjs/core/Shaders/default.fragment";
@@ -9,6 +9,7 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture";
+import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
 import type { Scene } from "@babylonjs/core/scene";
 import { CameraController } from "./CameraController";
 import { CollisionWorld } from "./CollisionWorld";
@@ -42,6 +43,13 @@ const worldBounds: WorldBounds = {
   maxZ: 16.4,
 };
 
+const MOVEMENT_DUST_EMIT_RATE = 16;
+
+/** Mantém o acionamento da poeira como uma decisão visual independente do controlador de movimento. */
+export function resolveMovementDustEmitRate(isMoving: boolean) {
+  return isMoving ? MOVEMENT_DUST_EMIT_RATE : 0;
+}
+
 type LandmarkKind = "npc" | "portal" | "stairs" | "monster";
 type LandmarkInteraction = { id: string; kind: LandmarkKind; label: string; x: number; z: number; radius: number; monsterKey?: string };
 type HealthBar = { rail: Mesh; fill: Mesh; label: Mesh; labelTexture: DynamicTexture; width: number; fillWidth: number; text: string };
@@ -68,6 +76,8 @@ export class GameWorld {
   private readonly lootChests = new Map<string, LootChest>();
   private readonly playerHealthBar: HealthBar;
   private readonly playerSprite: AnimatedSpriteActor;
+  private readonly movementDust: ParticleSystem;
+  private readonly movementDustTexture: DynamicTexture;
   private playerHealth = { hp: 1, maxHp: 1 };
   private activeAttackTarget: string | null = null;
   private selectedAttackTarget: string | null = null;
@@ -170,6 +180,9 @@ export class GameWorld {
 
     this.player = new Player(scene, new Vector2(-4.5, -2.5));
     this.playerSprite = new AnimatedSpriteActor(scene, "adventurer", "player-zao", ZAO_SPRITE_SIZE.adventurer);
+    const movementDust = this.createMovementDust();
+    this.movementDust = movementDust.system;
+    this.movementDustTexture = movementDust.texture;
     ["player-cloak", "player-mantle", "player-head", "player-facing", "player-shadow"].forEach((name) => {
       scene.getMeshByName(name)?.setEnabled(false);
     });
@@ -202,6 +215,7 @@ export class GameWorld {
 
     this.player.update(deltaSeconds, continuousVector, this.collision, source);
     this.playerSprite.update(deltaSeconds, this.player.position.x, 0.12, this.player.position.y, this.player.isMoving() ? "walk" : "idle");
+    this.updateMovementDust();
     this.updateHealthBar(this.playerHealthBar, this.player.position.x, COMBAT_VISUAL_HEIGHTS.playerHealthBar, this.player.position.y, this.playerHealth.hp, this.playerHealth.maxHp, true);
     this.updateCreatureAgents(deltaSeconds);
     this.updateTargetedAttack();
@@ -223,6 +237,8 @@ export class GameWorld {
     this.playerHealthBar.label.dispose();
     this.playerHealthBar.labelTexture.dispose();
     this.playerSprite.dispose();
+    this.movementDust.dispose();
+    this.movementDustTexture.dispose();
     this.creatureAgents.forEach((creature) => creature.sprite.dispose());
     this.lootChests.forEach((chest) => { chest.sprite.dispose(); chest.texture.dispose(); chest.material.dispose(); chest.glow.dispose(); });
     window.removeEventListener("resize", this.onResize);
@@ -238,6 +254,55 @@ export class GameWorld {
   }
 
   private readonly onResize = () => this.cameraController.resize();
+
+  private createMovementDust() {
+    const texture = new DynamicTexture("player-movement-dust-texture", { width: 64, height: 64 }, this.scene, true);
+    texture.hasAlpha = true;
+    const context = texture.getContext() as unknown as CanvasRenderingContext2D;
+    if (typeof context.fillRect === "function") {
+      context.clearRect?.(0, 0, 64, 64);
+      if (typeof context.createRadialGradient === "function") {
+        const gradient = context.createRadialGradient(32, 32, 3, 32, 32, 29);
+        gradient.addColorStop(0, "rgba(255, 231, 168, 0.78)");
+        gradient.addColorStop(0.54, "rgba(225, 176, 91, 0.46)");
+        gradient.addColorStop(1, "rgba(198, 135, 60, 0)");
+        context.fillStyle = gradient;
+      } else {
+        context.fillStyle = "rgba(225, 176, 91, 0.54)";
+      }
+      context.fillRect(0, 0, 64, 64);
+    }
+    texture.update();
+
+    const system = new ParticleSystem("player-movement-dust", 88, this.scene);
+    system.particleTexture = texture;
+    system.emitter = new Vector3(this.player.position.x, 0.055, this.player.position.y);
+    system.minEmitBox = new Vector3(-0.2, 0, -0.14);
+    system.maxEmitBox = new Vector3(0.2, 0.01, 0.14);
+    system.color1 = new Color4(1, 0.85, 0.55, 0.54);
+    system.color2 = new Color4(0.84, 0.58, 0.27, 0.34);
+    system.colorDead = new Color4(0.64, 0.4, 0.17, 0);
+    system.minSize = 0.075;
+    system.maxSize = 0.16;
+    system.minLifeTime = 0.2;
+    system.maxLifeTime = 0.42;
+    system.minEmitPower = 0.03;
+    system.maxEmitPower = 0.11;
+    system.updateSpeed = 0.018;
+    system.direction1 = new Vector3(-0.22, 0.018, -0.12);
+    system.direction2 = new Vector3(0.22, 0.035, 0.12);
+    system.gravity = Vector3.Zero();
+    system.emitRate = 0;
+    system.blendMode = ParticleSystem.BLENDMODE_STANDARD;
+    system.start();
+    return { system, texture };
+  }
+
+  private updateMovementDust() {
+    const emitter = this.movementDust.emitter as Vector3;
+    emitter.set(this.player.position.x, 0.055, this.player.position.y);
+    this.movementDust.emitRate = resolveMovementDustEmitRate(this.player.isMoving());
+  }
 
   private pickWorldPosition(canvas: HTMLCanvasElement, clientX: number, clientY: number) {
     const bounds = canvas.getBoundingClientRect();
