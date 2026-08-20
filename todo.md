@@ -167,4 +167,4 @@
 - [x] Publicar os spritesheets selecionados fora do projeto e registrar sua origem e autorização de uso no manifesto visual.
 - [x] Integrar os novos sprites de aventureiro, goblin e javali sem alterar movimentação, câmera, colisões ou regras de combate.
 - [x] Validar a troca visual em desktop e mobile e executar a verificação de tipos, 117 testes, build de produção e build do GitHub Pages.
-- [ ] Salvar o checkpoint dos sprites autorizados e sincronizá-lo com a ramificação principal do GitHub.
+- [x] Salvar o checkpoint dos sprites autorizados e sincronizá-lo com a ramificação principal do GitHub.
