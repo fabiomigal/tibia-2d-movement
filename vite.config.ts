@@ -151,8 +151,10 @@ function vitePluginManusDebugCollector(): Plugin {
 }
 
 const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const isGitHubPagesBuild = process.env.GITHUB_PAGES === "true";
 
 export default defineConfig({
+  base: isGitHubPagesBuild ? "/tibia-2d-movement/" : "/",
   plugins,
   resolve: {
     alias: {

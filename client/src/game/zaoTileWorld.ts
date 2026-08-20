@@ -9,6 +9,7 @@ import { getZaoMapFeatures, type ZaoMapFeature, type ZaoMapFeatureKind } from ".
 const WORLD_WIDTH = 48;
 const WORLD_HEIGHT = 34;
 const GROUND_LEVEL = 0.018;
+const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
 
 export type WorldTileAssetId = "grass" | "dirt" | "water" | "stone" | "wall";
 
@@ -86,11 +87,21 @@ function createTileMaterial(scene: Scene, assetId: string, name: string, materia
   if (cached) return cached;
   const asset = getTileAsset(assetId);
   if (!asset) throw new Error(`Tile do mundo não encontrado: ${assetId}`);
+  const material = new StandardMaterial(`${name}-${assetId}-material`, scene);
+  if (IS_STATIC_DEMO) {
+    const fallbackColor = Color3.FromHexString(asset.previewColor);
+    material.diffuseColor = fallbackColor;
+    material.emissiveColor = fallbackColor;
+    material.specularColor = Color3.Black();
+    material.backFaceCulling = false;
+    material.disableLighting = true;
+    materialCache.set(cacheKey, material);
+    return material;
+  }
   const texture = new Texture(asset.localFilename, scene, false, false, Texture.NEAREST_SAMPLINGMODE);
   texture.hasAlpha = true;
   texture.wrapU = Texture.WRAP_ADDRESSMODE;
   texture.wrapV = Texture.WRAP_ADDRESSMODE;
-  const material = new StandardMaterial(`${name}-${assetId}-material`, scene);
   const tint = Color3.FromHexString(tone);
   material.diffuseTexture = texture;
   material.emissiveTexture = texture;
@@ -138,9 +149,11 @@ function getFeatureTileLevel(kind: ZaoMapFeatureKind) {
 export function createZaoTileWorld(scene: Scene) {
   const materialCache = new Map<string, StandardMaterial>();
   const grassMaterial = createTileMaterial(scene, "grass", "world-ground", materialCache);
-  const grassTexture = grassMaterial.diffuseTexture as Texture;
-  grassTexture.uScale = WORLD_WIDTH;
-  grassTexture.vScale = WORLD_HEIGHT;
+  if (!IS_STATIC_DEMO) {
+    const grassTexture = grassMaterial.diffuseTexture as Texture;
+    grassTexture.uScale = WORLD_WIDTH;
+    grassTexture.vScale = WORLD_HEIGHT;
+  }
   const ground = MeshBuilder.CreateGround("walkable-grass", { width: WORLD_WIDTH, height: WORLD_HEIGHT, subdivisions: 2 }, scene);
   ground.position.y = GROUND_LEVEL;
   ground.material = grassMaterial;

@@ -6,6 +6,7 @@ import type { Scene } from "@babylonjs/core/scene";
 import { getTileAsset } from "../tilemap/catalog";
 import type { CollisionWorld } from "./CollisionWorld";
 
+const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
 type AssetId = "grass" | "dirt" | "stone" | "wall" | "tree" | "oak" | "bush";
 type MapDefinition = { id: string; label: string; x: number; z: number; width: number; height: number; floor: AssetId; tone: string };
 
@@ -20,14 +21,16 @@ function material(scene: Scene, id: AssetId, tone: string, cache: Map<string, St
   if (cached) return cached;
   const asset = getTileAsset(id);
   if (!asset) throw new Error(`Asset de exploração ausente: ${id}`);
-  const texture = new Texture(asset.localFilename, scene, false, false, Texture.NEAREST_SAMPLINGMODE);
-  texture.hasAlpha = true;
-  texture.wrapU = Texture.WRAP_ADDRESSMODE;
-  texture.wrapV = Texture.WRAP_ADDRESSMODE;
   const output = new StandardMaterial(`exploration-${key}`, scene);
   const tint = Color3.FromHexString(tone);
-  output.diffuseTexture = texture;
-  output.emissiveTexture = texture;
+  if (!IS_STATIC_DEMO) {
+    const texture = new Texture(asset.localFilename, scene, false, false, Texture.NEAREST_SAMPLINGMODE);
+    texture.hasAlpha = true;
+    texture.wrapU = Texture.WRAP_ADDRESSMODE;
+    texture.wrapV = Texture.WRAP_ADDRESSMODE;
+    output.diffuseTexture = texture;
+    output.emissiveTexture = texture;
+  }
   output.diffuseColor = tint;
   output.emissiveColor = tint;
   output.specularColor = Color3.Black();

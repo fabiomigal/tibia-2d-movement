@@ -33,6 +33,8 @@ import { resolveEnvironmentState, type EnvironmentState } from "./environment";
 import { createExplorationMaps } from "./explorationMaps";
 import { MONSTER_RESPAWN_DELAY_MS, WORLD_MONSTER_SPAWNS, WORLD_PORTALS } from "@shared/game";
 
+const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
+
 const assets = {
   fieldFallback: "/manus-storage/vale-ambar-field-fallback_07dc91d6.png",
   grass: "/manus-storage/vale-ambar-ground_0156fbee.png",
@@ -412,15 +414,21 @@ export class GameWorld {
       glow.material = this.colorMaterial(`loot-glow-material-${chest.chestKey}`, "#F2B84B", 0.55, 0.32); glow.isPickable = false;
       const asset = getTileAsset("loot_chest");
       if (!asset) continue;
-      const texture = new Texture(asset.localFilename, this.scene, false, false, Texture.NEAREST_SAMPLINGMODE);
-      texture.hasAlpha = true;
-      texture.wrapU = Texture.CLAMP_ADDRESSMODE;
-      texture.wrapV = Texture.CLAMP_ADDRESSMODE;
+      const texture = IS_STATIC_DEMO
+        ? new DynamicTexture(`loot-chest-fallback-${chest.chestKey}`, { width: 2, height: 2 }, this.scene)
+        : new Texture(asset.localFilename, this.scene, false, false, Texture.NEAREST_SAMPLINGMODE);
+      if (!IS_STATIC_DEMO) {
+        texture.hasAlpha = true;
+        texture.wrapU = Texture.CLAMP_ADDRESSMODE;
+        texture.wrapV = Texture.CLAMP_ADDRESSMODE;
+      }
       const material = new StandardMaterial(`loot-chest-material-${chest.chestKey}`, this.scene);
-      material.diffuseTexture = texture;
-      material.emissiveTexture = texture;
-      material.diffuseColor = Color3.White();
-      material.emissiveColor = Color3.White();
+      if (!IS_STATIC_DEMO) {
+        material.diffuseTexture = texture;
+        material.emissiveTexture = texture;
+      }
+      material.diffuseColor = IS_STATIC_DEMO ? Color3.FromHexString("#D9A441") : Color3.White();
+      material.emissiveColor = IS_STATIC_DEMO ? Color3.FromHexString("#D9A441") : Color3.White();
       material.specularColor = Color3.Black();
       material.useAlphaFromDiffuseTexture = true;
       material.backFaceCulling = false;
@@ -947,6 +955,7 @@ export class GameWorld {
   }
 
   private tryLoadGeneratedTextures() {
+    if (IS_STATIC_DEMO) return;
     this.pendingTextures.forEach((entry) => {
       if (entry.material.diffuseTexture) return;
       void fetch(entry.url, { method: "HEAD", cache: "no-store" })

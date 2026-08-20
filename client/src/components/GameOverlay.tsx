@@ -57,6 +57,17 @@ const FALLBACK_CHARACTER: Snapshot["character"] = {
   currentRegion: "wind-road", floor: 0, capacity: 75, currentWeight: 0, isDead: false, autoPotionEnabled: true,
 };
 
+const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
+const STATIC_DEMO_SNAPSHOT: Snapshot = {
+  character: { ...FALLBACK_CHARACTER, hp: 120, maxHp: 120, mp: 60, maxMp: 60, energy: 80, maxEnergy: 80, gold: 248 },
+  items: [{ id: -1, name: "Poção âmbar", kind: "consumable", rarity: "common", weight: 0.2, quantity: 2, slot: "bag", equipped: false, sellValue: 5 }],
+  skills: [{ id: -1, key: "static-strike", name: "Golpe de demonstração", element: "physical", damageBase: 12, manaCost: 0, energyCost: 0, description: "Ações persistidas estão disponíveis na versão completa.", hotkey: "F1", equipped: true }],
+  activeHunt: null,
+  quests: [],
+  drops: [],
+  encounters: [],
+};
+
 const DEMO_MONSTERS = [
   { key: "field-boar", name: "Javali do Campo", region: "wind-road", level: 1, element: "physical" as DamageElement, tone: "#b99064" },
   { key: "wind-goblin", name: "Goblin da Estrada", region: "wind-road", level: 3, element: "earth" as DamageElement, tone: "#82965c" },
@@ -101,8 +112,8 @@ function ActionFeedback({ feedback }: { feedback?: ActionFeedback }) {
 
 export default function GameOverlay({ status }: { status: GameStatus }) {
   const utils = trpc.useUtils();
-  const bootstrap = trpc.game.bootstrap.useQuery(undefined, { refetchOnWindowFocus: false, retry: 1 });
-  const data = bootstrap.data as Snapshot | undefined;
+  const bootstrap = trpc.game.bootstrap.useQuery(undefined, { enabled: !IS_STATIC_DEMO, refetchOnWindowFocus: false, retry: 1 });
+  const data = (bootstrap.data as Snapshot | undefined) ?? (IS_STATIC_DEMO ? STATIC_DEMO_SNAPSHOT : undefined);
   const [panel, setPanel] = useState<PanelKey>(null);
   const [notice, setNotice] = useState("Campo aberto. Escolha um rumo ou prepare-se para caçar.");
   const [selectedSkill, setSelectedSkill] = useState<string>();
@@ -114,9 +125,9 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const restingRef = useRef(false);
   const lastRestRefreshRef = useRef(0);
   const respawnRefreshTimersRef = useRef<number[]>([]);
-  const merchant = trpc.game.merchant.useQuery(undefined, { enabled: panel === "merchant", retry: 1 });
+  const merchant = trpc.game.merchant.useQuery(undefined, { enabled: !IS_STATIC_DEMO && panel === "merchant", retry: 1 });
 
-  const refresh = async () => { await utils.game.bootstrap.invalidate(); };
+  const refresh = async () => { if (!IS_STATIC_DEMO) await utils.game.bootstrap.invalidate(); };
   const combat = trpc.game.combat.useMutation({
     onSuccess: async (result) => {
       setLastCombat(result.result);
@@ -136,6 +147,10 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
     onError: (error) => setNotice(error.message),
   });
   const attemptCombat = useCallback((request: CombatRequest) => {
+    if (IS_STATIC_DEMO) {
+      setNotice("A demonstração estática preserva exploração e movimento; combate persistido está disponível na versão completa.");
+      return;
+    }
     attemptCombatWithResources({
       request,
       skills: (data?.skills ?? []).map((skill) => ({ key: skill.key, name: skill.name, manaCost: skill.manaCost, energyCost: skill.energyCost })),
@@ -171,6 +186,11 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const usePortal = (portalId: string) => {
     const portal = WORLD_PORTALS.find((entry) => entry.id === portalId);
     if (!portal) return;
+    if (IS_STATIC_DEMO) {
+      window.dispatchEvent(new CustomEvent("vale:portal-travel", { detail: portal.destination }));
+      setNotice(`${portal.label}: transição local concluída.`);
+      return;
+    }
     travel.mutate({ region: portal.to, portalId: portal.id }, { onSuccess: async () => { window.dispatchEvent(new CustomEvent("vale:portal-travel", { detail: portal.destination })); setNotice(`${portal.label}: transição concluída.`); await refresh(); }, onError: (error) => setNotice(error.message) });
   };
   const openCityService = (target: "merchant" | "quests", message: string) => {
@@ -210,7 +230,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   }, [data, selectedChestKey]);
 
   useEffect(() => {
-    if (!data) return;
+    if (IS_STATIC_DEMO || !data) return;
     const restSync = resolveRestSync({
       wasResting: restingRef.current,
       worldReportsRest: status.isResting,
@@ -223,6 +243,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   }, [data, restState, status.isResting]);
 
   useEffect(() => {
+    if (IS_STATIC_DEMO) return;
     const restSync = resolveRestSync({
       wasResting: restingRef.current,
       worldReportsRest: status.isResting,

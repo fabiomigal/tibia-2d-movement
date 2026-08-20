@@ -37,6 +37,12 @@ export const ZAO_SPRITE_SIZE: Record<SpriteActorKind, number> = {
   goblin: 2.18,
   boar: 2.36,
 };
+const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
+const STATIC_SPRITE_COLORS: Record<SpriteActorKind, string> = {
+  adventurer: "#f2b84b",
+  goblin: "#87a85a",
+  boar: "#b99064",
+};
 
 const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteSheet>>> = {
   adventurer: {
@@ -109,7 +115,14 @@ export class AnimatedSpriteActor {
     this.material.backFaceCulling = false;
     this.material.disableLighting = OPAQUE_SPRITE_RENDERING.disableLighting;
     this.mesh.material = this.material;
-    this.applySheet("idle");
+    if (IS_STATIC_DEMO) {
+      const color = Color3.FromHexString(STATIC_SPRITE_COLORS[this.kind]);
+      this.material.diffuseColor = color;
+      this.material.emissiveColor = color;
+      this.material.transparencyMode = Material.MATERIAL_OPAQUE;
+    } else {
+      this.applySheet("idle");
+    }
   }
 
   update(deltaSeconds: number, x: number, y: number, z: number, suggestedAction: SpriteAction) {
@@ -162,6 +175,7 @@ export class AnimatedSpriteActor {
   }
 
   private applySheet(action: SpriteAction) {
+    if (IS_STATIC_DEMO) return;
     const sheet = this.sheet(action);
     let texture = this.textures.get(action);
     if (!texture) {
