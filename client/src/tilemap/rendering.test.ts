@@ -26,9 +26,9 @@ describe("renderização do mapa em tiles", () => {
     const nodes = getVisibleTileRenderNodes(map, 0, { left: 0, top: 0, width: map.width, height: map.height });
     expect(nodes.filter((node) => node.kind === "object").length).toBeGreaterThan(0);
     expect(nodes.filter((node) => node.kind === "entity")).toEqual(expect.arrayContaining([
-      expect.objectContaining({ assetId: "explorer", label: "Ponto inicial" }),
-      expect.objectContaining({ assetId: "villager", label: "Lina, a cartógrafa" }),
-      expect.objectContaining({ assetId: "goblin", label: "Goblino da margem" }),
+      expect.objectContaining({ assetId: "aurora_adventurer", label: "Ponto inicial" }),
+      expect.objectContaining({ assetId: "aurora_adventurer", label: "Lina, a cartógrafa" }),
+      expect.objectContaining({ assetId: "aurora_goblin", label: "Guardião da margem" }),
     ]));
   });
 });

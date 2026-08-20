@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, USER_AUTHORIZED_ZAO_DIRECTION_ROWS, USER_AUTHORIZED_ZAO_SPRITE_URLS, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv } from "./spriteAnimation";
+import { AURORA_REFERENCE_DIRECTION_ROWS, AURORA_REFERENCE_SPRITE_URLS, OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv } from "./spriteAnimation";
 import { Material } from "@babylonjs/core/Materials/material";
 
 describe("seleção de frame dos sprites Zao", () => {
@@ -22,14 +22,14 @@ describe("seleção de frame dos sprites Zao", () => {
     expect(selectSpriteRowUv("north")).toEqual({ vOffset: 0.75, vScale: -0.25 });
   });
 
-  it("recorta os atlases autorizados de quatro direções e preserva a animação de cada ator", () => {
-    expect(USER_AUTHORIZED_ZAO_SPRITE_URLS.adventurer.attack).toBe("/manus-storage/adventurer_attack_493719ba.png");
-    expect(USER_AUTHORIZED_ZAO_SPRITE_URLS.goblin.death).toBe("/manus-storage/goblin_death_78823515.png");
-    expect(USER_AUTHORIZED_ZAO_SPRITE_URLS.boar.walk).toBe("/manus-storage/boar_walk_a46d9d51.png");
-    expect(selectSpriteRowUv("south", 4, USER_AUTHORIZED_ZAO_DIRECTION_ROWS)).toEqual({ vOffset: 0.25, vScale: -0.25 });
-    expect(selectSpriteRowUv("northeast", 4, USER_AUTHORIZED_ZAO_DIRECTION_ROWS)).toEqual({ vOffset: 0.5, vScale: -0.25 });
-    expect(selectSpriteFrameUv(0.45, 8, 6, true, 6)).toEqual({ uOffset: 0.5, uScale: 1 / 6 });
-    expect(selectSpriteFrameUv(0.7, 12, 6, false, 6)).toEqual({ uOffset: 5 / 6, uScale: 1 / 6 });
+  it("recorta os atlases Aurora de quatro direções e preserva a animação de cada ator", () => {
+    expect(AURORA_REFERENCE_SPRITE_URLS.adventurer).toBe("/manus-storage/aurora_adventurer_46c6b802.png");
+    expect(AURORA_REFERENCE_SPRITE_URLS.goblin).toBe("/manus-storage/aurora_goblin_44e23aa6.png");
+    expect(AURORA_REFERENCE_SPRITE_URLS.boar).toBe("/manus-storage/aurora_boar_e32a98d2.png");
+    expect(selectSpriteRowUv("south", 4, AURORA_REFERENCE_DIRECTION_ROWS)).toEqual({ vOffset: 0.25, vScale: -0.25 });
+    expect(selectSpriteRowUv("northeast", 4, AURORA_REFERENCE_DIRECTION_ROWS)).toEqual({ vOffset: 0.5, vScale: -0.25 });
+    expect(selectSpriteFrameUv(0.45, 8, 4, true, 4)).toEqual({ uOffset: 3 / 4, uScale: 1 / 4 });
+    expect(selectSpriteFrameUv(0.7, 12, 4, false, 4)).toEqual({ uOffset: 3 / 4, uScale: 1 / 4 });
   });
 
   it("mantém o plano horizontal virado para a câmera superior", () => {
@@ -59,7 +59,7 @@ describe("seleção de frame dos sprites Zao", () => {
   });
 
   it("calibra aventureiro e criaturas para a escala do grid de tiles", () => {
-    expect(ZAO_SPRITE_SIZE).toEqual({ adventurer: 1.12, goblin: 2.18, boar: 2.36 });
+    expect(ZAO_SPRITE_SIZE).toEqual({ adventurer: 1.08, goblin: 1.42, boar: 1.58 });
     expect(ZAO_SPRITE_SIZE.adventurer).toBeGreaterThan(1);
     expect(ZAO_SPRITE_SIZE.adventurer).toBeLessThan(ZAO_SPRITE_SIZE.goblin);
     expect(ZAO_SPRITE_SIZE.boar).toBeGreaterThan(ZAO_SPRITE_SIZE.goblin);

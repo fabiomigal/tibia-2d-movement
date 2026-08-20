@@ -34,9 +34,9 @@ type SpriteSheet = { url: string; columns: number; fps: number; loop: boolean; r
 
 /** Alturas em unidades de mundo: 1 tile = 1u; recalibradas para a leitura do novo cenário em grade. */
 export const ZAO_SPRITE_SIZE: Record<SpriteActorKind, number> = {
-  adventurer: 1.12,
-  goblin: 2.18,
-  boar: 2.36,
+  adventurer: 1.08,
+  goblin: 1.42,
+  boar: 1.58,
 };
 const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
 const STATIC_SPRITE_COLORS: Record<SpriteActorKind, string> = {
@@ -46,56 +46,39 @@ const STATIC_SPRITE_COLORS: Record<SpriteActorKind, string> = {
 };
 
 const CARDINAL_DIRECTION_ROWS: SpriteDirectionRows = { south: 0, east: 1, north: 2, west: 3 };
-/** Assets originais do autor do projeto; a permissão de uso público está registrada no manifesto. */
-export const USER_AUTHORIZED_ZAO_SPRITE_URLS = {
-  adventurer: {
-    idle: "/manus-storage/adventurer_idle_5c6c821a.png",
-    walk: "/manus-storage/adventurer_walk_99439df4.png",
-    attack: "/manus-storage/adventurer_attack_493719ba.png",
-    hit: "/manus-storage/adventurer_hit_e9a0af85.png",
-  },
-  goblin: {
-    idle: "/manus-storage/goblin_idle_c19e00f8.png",
-    walk: "/manus-storage/goblin_walk_8225eff3.png",
-    attack: "/manus-storage/goblin_attack_34582398.png",
-    hit: "/manus-storage/goblin_hit_09927f94.png",
-    death: "/manus-storage/goblin_death_78823515.png",
-  },
-  boar: {
-    idle: "/manus-storage/boar_idle_4df882b3.png",
-    walk: "/manus-storage/boar_walk_a46d9d51.png",
-    attack: "/manus-storage/boar_attack_c9d820f7.png",
-    hit: "/manus-storage/boar_hit_2caa49b1.png",
-    death: "/manus-storage/boar_death_448ff42f.png",
-  },
+/** Recortes da guia Aurora autorizada pelo autor; cada atlas é uma grade cardinal 4×4. */
+export const AURORA_REFERENCE_SPRITE_URLS = {
+  adventurer: "/manus-storage/aurora_adventurer_46c6b802.png",
+  goblin: "/manus-storage/aurora_goblin_44e23aa6.png",
+  boar: "/manus-storage/aurora_boar_e32a98d2.png",
 } as const;
 
-export const USER_AUTHORIZED_ZAO_DIRECTION_ROWS: SpriteDirectionRows = CARDINAL_DIRECTION_ROWS;
-const USER_AUTHORIZED_ZAO_BASE_SHEET = {
+export const AURORA_REFERENCE_DIRECTION_ROWS: SpriteDirectionRows = CARDINAL_DIRECTION_ROWS;
+const AURORA_REFERENCE_BASE_SHEET = {
   rows: 4,
-  directionRows: USER_AUTHORIZED_ZAO_DIRECTION_ROWS,
+  directionRows: AURORA_REFERENCE_DIRECTION_ROWS,
 } as const;
 
 const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteSheet>>> = {
   adventurer: {
-    idle: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.adventurer.idle, columns: 4, fps: 4, loop: true },
-    walk: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.adventurer.walk, columns: 6, fps: 8, loop: true },
-    attack: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.adventurer.attack, columns: 6, fps: 12, loop: false },
-    hit: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.adventurer.hit, columns: 4, fps: 10, loop: false },
+    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.adventurer, columns: 4, fps: 4, loop: true },
+    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.adventurer, columns: 4, fps: 8, loop: true },
+    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.adventurer, columns: 4, fps: 12, loop: false },
+    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.adventurer, columns: 4, fps: 10, loop: false },
   },
   goblin: {
-    idle: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.goblin.idle, columns: 4, fps: 4, loop: true },
-    walk: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.goblin.walk, columns: 6, fps: 8, loop: true },
-    attack: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.goblin.attack, columns: 6, fps: 12, loop: false },
-    hit: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.goblin.hit, columns: 4, fps: 10, loop: false },
-    death: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.goblin.death, columns: 6, fps: 8, loop: false },
+    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.goblin, columns: 4, fps: 4, loop: true },
+    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.goblin, columns: 4, fps: 8, loop: true },
+    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.goblin, columns: 4, fps: 12, loop: false },
+    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.goblin, columns: 4, fps: 10, loop: false },
+    death: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.goblin, columns: 4, fps: 8, loop: false },
   },
   boar: {
-    idle: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.boar.idle, columns: 4, fps: 4, loop: true },
-    walk: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.boar.walk, columns: 6, fps: 8, loop: true },
-    attack: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.boar.attack, columns: 6, fps: 12, loop: false },
-    hit: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.boar.hit, columns: 4, fps: 10, loop: false },
-    death: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.boar.death, columns: 6, fps: 8, loop: false },
+    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.boar, columns: 4, fps: 4, loop: true },
+    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.boar, columns: 4, fps: 8, loop: true },
+    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.boar, columns: 4, fps: 12, loop: false },
+    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.boar, columns: 4, fps: 10, loop: false },
+    death: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.boar, columns: 4, fps: 8, loop: false },
   },
 };
 

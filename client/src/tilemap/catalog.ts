@@ -1,105 +1,36 @@
 import type { TileAssetManifestEntry } from "./model";
 
-const KENNEY_RPG_SOURCE = "https://opengameart.org/content/rpg-pack-base-set";
-const KENNEY_TINY_DUNGEON_SOURCE = "https://kenney.nl/assets/tiny-dungeon";
-const CC0_LICENSE = "https://creativecommons.org/publicdomain/zero/1.0/";
-const OPEN_GAME_ART_CHEST_SOURCE = "https://opengameart.org/content/treasure-chests-32x32-and-16x16";
-const OGA_OVERWORLD_GRASS_SOURCE = "https://opengameart.org/content/overworld-grass-biome";
-const OGA_ADVENTURER_SOURCE = "https://opengameart.org/content/rpg-sprite-8-direction-human-male-16x16";
+const AURORA_PROJECT_SOURCE = "https://github.com/fabiomigal/tibia-2d-movement";
+const AURORA_AUTHORIZATION_RECORD = "https://github.com/fabiomigal/tibia-2d-movement/blob/main/docs/aurora-reference-extraction.md";
 
-function kenneyAsset(input: Omit<TileAssetManifestEntry, "sourceUrl" | "author" | "license" | "licenseUrl" | "attributionRequired" | "attributionText" | "tileWidth" | "tileHeight">): TileAssetManifestEntry {
+function auroraAsset(input: Omit<TileAssetManifestEntry, "sourceUrl" | "author" | "license" | "licenseUrl" | "attributionRequired" | "attributionText">): TileAssetManifestEntry {
   return {
     ...input,
-    sourceUrl: KENNEY_RPG_SOURCE,
-    author: "Kenney",
-    license: "CC0 1.0 Universal",
-    licenseUrl: CC0_LICENSE,
+    sourceUrl: AURORA_PROJECT_SOURCE,
+    author: "Autor do Vale de Âmbar",
+    license: "Uso autorizado pelo autor para este projeto",
+    licenseUrl: AURORA_AUTHORIZATION_RECORD,
     attributionRequired: false,
-    attributionText: "Kenney.nl (crédito opcional; registrado por transparência)",
-    tileWidth: 64,
-    tileHeight: 64,
+    attributionText: "Recorte derivado da guia Aurora autorizada pelo autor do Vale de Âmbar.",
   };
 }
 
-function kenneyTinyDungeonAsset(input: Omit<TileAssetManifestEntry, "sourceUrl" | "author" | "license" | "licenseUrl" | "attributionRequired" | "attributionText" | "tileWidth" | "tileHeight">): TileAssetManifestEntry {
-  return {
-    ...input,
-    sourceUrl: KENNEY_TINY_DUNGEON_SOURCE,
-    author: "Kenney",
-    license: "CC0 1.0 Universal",
-    licenseUrl: CC0_LICENSE,
-    attributionRequired: false,
-    attributionText: "Kenney.nl (crédito opcional; registrado por transparência)",
-    tileWidth: 16,
-    tileHeight: 16,
-  };
-}
-
-function ogaOverworldAsset(input: Omit<TileAssetManifestEntry, "sourceUrl" | "author" | "license" | "licenseUrl" | "attributionRequired" | "attributionText">): TileAssetManifestEntry {
-  return {
-    ...input,
-    sourceUrl: OGA_OVERWORLD_GRASS_SOURCE,
-    author: "OpenGameArt Community",
-    license: "CC0 1.0 Universal",
-    licenseUrl: CC0_LICENSE,
-    attributionRequired: false,
-    attributionText: "Overworld Grass Biome via OpenGameArt (crédito opcional; registrado por transparência)",
-  };
-}
-
-function ogaAdventurerAsset(input: Omit<TileAssetManifestEntry, "sourceUrl" | "author" | "license" | "licenseUrl" | "attributionRequired" | "attributionText">): TileAssetManifestEntry {
-  return {
-    ...input,
-    sourceUrl: OGA_ADVENTURER_SOURCE,
-    author: "TheNess",
-    license: "CC0 1.0 Universal",
-    licenseUrl: CC0_LICENSE,
-    attributionRequired: false,
-    attributionText: "TheNess via OpenGameArt (crédito apreciado, não obrigatório)",
-  };
-}
-
+/** Catálogo ativo: cada recurso é um recorte preparado da prancha Aurora autorizada pelo autor. */
 export const TILE_ASSET_MANIFEST: TileAssetManifestEntry[] = [
-  kenneyAsset({ assetId: "grass", name: "Gramado", category: "terrain", originalFilename: "rpgTile003.png", localFilename: "/manus-storage/rpgTile003_33e8aa73.png", previewColor: "#89bd3c" }),
-  kenneyAsset({ assetId: "dirt", name: "Estrada de terra", category: "road", originalFilename: "rpgTile009.png", localFilename: "/manus-storage/rpgTile009_79cd116b.png", previewColor: "#c4925f" }),
-  kenneyAsset({ assetId: "water", name: "Água", category: "terrain", originalFilename: "rpgTile013.png", localFilename: "/manus-storage/rpgTile013_d17365e9.png", previewColor: "#65c0d1" }),
-  kenneyAsset({ assetId: "stone", name: "Piso de pedra", category: "terrain", originalFilename: "rpgTile048.png", localFilename: "/manus-storage/rpgTile048_caeb7d23.png", previewColor: "#d9d0b3" }),
-  kenneyAsset({ assetId: "wall", name: "Muralha", category: "wall", originalFilename: "rpgTile072.png", localFilename: "/manus-storage/rpgTile072_72f04bff.png", previewColor: "#919aa0" }),
-  kenneyAsset({ assetId: "roof", name: "Telhado", category: "building", originalFilename: "rpgTile103.png", localFilename: "/manus-storage/rpgTile103_f3c84c44.png", previewColor: "#a46e45" }),
-  kenneyAsset({ assetId: "bush", name: "Arbusto", category: "flora", originalFilename: "rpgTile160.png", localFilename: "/manus-storage/rpgTile160_d1a6d3b1.png", previewColor: "#5e9d42" }),
-  kenneyAsset({ assetId: "tree", name: "Árvore de copa verde", category: "flora", originalFilename: "rpgTile176.png", localFilename: "/manus-storage/rpgTile176_76f6d1a9.png", previewColor: "#618b39" }),
-  kenneyAsset({ assetId: "fence", name: "Cerca", category: "decoration", originalFilename: "rpgTile181.png", localFilename: "/manus-storage/rpgTile181_097bb068.png", previewColor: "#967044" }),
-  kenneyAsset({ assetId: "barrel", name: "Barril", category: "decoration", originalFilename: "rpgTile183.png", localFilename: "/manus-storage/rpgTile183_157919f3.png", previewColor: "#9e7540" }),
-  kenneyAsset({ assetId: "oak", name: "Carvalho", category: "flora", originalFilename: "rpgTile195.png", localFilename: "/manus-storage/rpgTile195_7b2748d8.png", previewColor: "#67903d" }),
-  kenneyAsset({ assetId: "fence_long", name: "Cerca horizontal", category: "decoration", originalFilename: "rpgTile200.png", localFilename: "/manus-storage/rpgTile200_fe35cd13.png", previewColor: "#a77c4d" }),
-  kenneyTinyDungeonAsset({ assetId: "explorer", name: "Explorador", category: "character", originalFilename: "tile_0085.png", localFilename: "/manus-storage/tile_0085_d4fc6516.png", previewColor: "#c78e63" }),
-  kenneyTinyDungeonAsset({ assetId: "villager", name: "Habitante", category: "character", originalFilename: "tile_0084.png", localFilename: "/manus-storage/tile_0084_af7cbe21.png", previewColor: "#8d5b8f" }),
-  kenneyTinyDungeonAsset({ assetId: "goblin", name: "Goblino", category: "character", originalFilename: "tile_0110.png", localFilename: "/manus-storage/tile_0110_3dbf8ff3.png", previewColor: "#c24e46" }),
-  ogaOverworldAsset({ assetId: "oga_grass", name: "Gramado do Vale", category: "terrain", originalFilename: "overworld_tileset_grass.png (recorte de gramado)", localFilename: "/manus-storage/vale-ambar-grass_cd07443a.png", tileWidth: 16, tileHeight: 16, previewColor: "#7FA65A" }),
-  ogaOverworldAsset({ assetId: "oga_grass_flowers", name: "Gramado florido do Vale", category: "terrain", originalFilename: "overworld_tileset_grass.png (recorte de flores)", localFilename: "/manus-storage/vale-ambar-grass-flowers_b8d10c91.png", tileWidth: 16, tileHeight: 16, previewColor: "#95AD62" }),
-  ogaOverworldAsset({ assetId: "oga_path", name: "Trilha clara do Vale", category: "road", originalFilename: "overworld_tileset_grass.png (recorte de trilha)", localFilename: "/manus-storage/vale-ambar-path_b6e3b152.png", tileWidth: 16, tileHeight: 16, previewColor: "#D6B06D" }),
-  ogaOverworldAsset({ assetId: "oga_water", name: "Água do Vale", category: "terrain", originalFilename: "overworld_tileset_grass.png (recorte de água)", localFilename: "/manus-storage/vale-ambar-water_2d11e2c5.png", tileWidth: 16, tileHeight: 16, previewColor: "#5A9CAA" }),
-  ogaOverworldAsset({ assetId: "oga_stone", name: "Pedra do Vale", category: "rock", originalFilename: "overworld_tileset_grass.png (recorte de pedra)", localFilename: "/manus-storage/vale-ambar-stone_9095b7f2.png", tileWidth: 16, tileHeight: 16, previewColor: "#A89E8A" }),
-  ogaOverworldAsset({ assetId: "oga_wall", name: "Muro do Vale", category: "wall", originalFilename: "overworld_tileset_grass.png (recorte de muro)", localFilename: "/manus-storage/vale-ambar-wall_ba5e000b.png", tileWidth: 16, tileHeight: 16, previewColor: "#898275" }),
-  ogaOverworldAsset({ assetId: "oga_tree", name: "Árvore do Vale", category: "flora", originalFilename: "overworld_tileset_grass.png (recorte de árvore)", localFilename: "/manus-storage/vale-ambar-tree_b687db29.png", tileWidth: 48, tileHeight: 48, previewColor: "#587D4B" }),
-  ogaOverworldAsset({ assetId: "oga_flower_bed", name: "Canteiro do Vale", category: "flora", originalFilename: "overworld_tileset_grass.png (recorte de canteiro)", localFilename: "/manus-storage/vale-ambar-flower-bed_f48fafee.png", tileWidth: 16, tileHeight: 16, previewColor: "#AF8C70" }),
-  ogaAdventurerAsset({ assetId: "oga_adventurer", name: "Aventureiro do Vale", category: "character", originalFilename: "sprite_oga.png", localFilename: "/manus-storage/sprite_oga_f4502ba6.png", tileWidth: 16, tileHeight: 11, previewColor: "#D7B48A" }),
-  {
-    assetId: "loot_chest",
-    name: "Baú de saque fechado",
-    category: "decoration",
-    sourceUrl: OPEN_GAME_ART_CHEST_SOURCE,
-    author: "Blarumyrran",
-    license: "CC0 1.0 Universal",
-    licenseUrl: CC0_LICENSE,
-    attributionRequired: false,
-    attributionText: "Blarumyrran via OpenGameArt (crédito opcional; registrado por transparência)",
-    originalFilename: "chests_32x32.png (frame fechado)",
-    localFilename: "/manus-storage/loot-chest-closed_7788d04d.png",
-    tileWidth: 32,
-    tileHeight: 32,
-    previewColor: "#9d7148",
-  },
+  auroraAsset({ assetId: "aurora_grass", name: "Relva da Floresta do Orvalho", category: "terrain", originalFilename: "Lote B — gramado", localFilename: "/manus-storage/aurora_grass_c57dc482.png", tileWidth: 32, tileHeight: 32, previewColor: "#587241" }),
+  auroraAsset({ assetId: "aurora_path", name: "Trilha Âmbar", category: "road", originalFilename: "Lote B — trilha", localFilename: "/manus-storage/aurora_path_2a1cb6fb.png", tileWidth: 32, tileHeight: 32, previewColor: "#B78B4D" }),
+  auroraAsset({ assetId: "aurora_water", name: "Água do Orvalho", category: "terrain", originalFilename: "Lote B — água", localFilename: "/manus-storage/aurora_water_f80cfd58.png", tileWidth: 32, tileHeight: 32, previewColor: "#3A8391" }),
+  auroraAsset({ assetId: "aurora_mine_stone", name: "Pedra da Mina de Brasa Azul", category: "rock", originalFilename: "Lote C — pedra", localFilename: "/manus-storage/aurora_mine_stone_ff84402c.png", tileWidth: 32, tileHeight: 32, previewColor: "#354150" }),
+  auroraAsset({ assetId: "aurora_fortress_wall", name: "Muralha do Crepúsculo", category: "wall", originalFilename: "Lote D — muralha", localFilename: "/manus-storage/aurora_fortress_wall_9811b8f4.png", tileWidth: 32, tileHeight: 32, previewColor: "#4A4C60" }),
+  auroraAsset({ assetId: "aurora_catacomb_stone", name: "Pedra das Catacumbas Violetas", category: "terrain", originalFilename: "Lote E — pedra", localFilename: "/manus-storage/aurora_catacomb_stone_50cddad6.png", tileWidth: 32, tileHeight: 32, previewColor: "#56345F" }),
+  auroraAsset({ assetId: "aurora_tree", name: "Árvore do Orvalho", category: "flora", originalFilename: "Lote F — árvore", localFilename: "/manus-storage/aurora_tree_3c9a975d.png", tileWidth: 40, tileHeight: 48, previewColor: "#31563A" }),
+  auroraAsset({ assetId: "aurora_flower_bed", name: "Flores do Orvalho", category: "flora", originalFilename: "Lote F — flores", localFilename: "/manus-storage/aurora_flower_bed_2deeda6e.png", tileWidth: 40, tileHeight: 44, previewColor: "#779654" }),
+  auroraAsset({ assetId: "aurora_rock_cluster", name: "Conjunto de Rochas", category: "decoration", originalFilename: "Lote F — rochas", localFilename: "/manus-storage/aurora_rock_cluster_be5e100d.png", tileWidth: 40, tileHeight: 44, previewColor: "#52616B" }),
+  auroraAsset({ assetId: "aurora_loot_chest", name: "Baú de Saque Aurora", category: "decoration", originalFilename: "Lote F — baú", localFilename: "/manus-storage/aurora_loot_chest_cf0dad5a.png", tileWidth: 40, tileHeight: 40, previewColor: "#9B663B" }),
+  auroraAsset({ assetId: "aurora_adventurer", name: "Batedor de Ruínas", category: "character", originalFilename: "Lote G — personagens jogáveis", localFilename: "/manus-storage/aurora_adventurer_46c6b802.png", tileWidth: 32, tileHeight: 32, previewColor: "#D49048" }),
+  auroraAsset({ assetId: "aurora_goblin", name: "Guardião de Cristais", category: "character", originalFilename: "Lote G — personagens jogáveis", localFilename: "/manus-storage/aurora_goblin_44e23aa6.png", tileWidth: 32, tileHeight: 32, previewColor: "#73944F" }),
+  auroraAsset({ assetId: "aurora_boar", name: "Javali da Floresta", category: "character", originalFilename: "Lote I — criatura média", localFilename: "/manus-storage/aurora_boar_e32a98d2.png", tileWidth: 32, tileHeight: 32, previewColor: "#6E5240" }),
+  auroraAsset({ assetId: "aurora_dust", name: "Poeira de Movimento", category: "decoration", originalFilename: "Lote L — poeira", localFilename: "/manus-storage/aurora_dust_sheet_1a1d935b.png", tileWidth: 41, tileHeight: 42, previewColor: "#D5AD6B" }),
 ];
 
 export const TILE_ASSET_IDS = new Set(TILE_ASSET_MANIFEST.map((asset) => asset.assetId));

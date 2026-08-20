@@ -168,3 +168,10 @@
 - [x] Integrar os novos sprites de aventureiro, goblin e javali sem alterar movimentação, câmera, colisões ou regras de combate.
 - [x] Validar a troca visual em desktop e mobile e executar a verificação de tipos, 117 testes, build de produção e build do GitHub Pages.
 - [x] Salvar o checkpoint dos sprites autorizados e sincronizá-lo com a ramificação principal do GitHub.
+- [x] Documentar a guia de estilo fornecida e definir os contratos visuais dos biomas, personagens, monstros, props e efeitos.
+- [x] Mapear e recortar diretamente da imagem-guia autorizada os tiles, sprites, props e efeitos, removendo bordas, rótulos e molduras do catálogo.
+- [x] Criar e publicar novos tiles e props para floresta, mina, fortaleza e catacumbas, substituindo as imagens atualmente utilizadas.
+- [x] Criar e publicar novos atlases para aventureiro, goblin e javali/monstros, substituindo integralmente os sprites atuais.
+- [x] Integrar os novos recursos somente nos renderizadores e remover as referências visuais antigas, sem alterar mecânicas ou módulos congelados.
+- [x] Cobrir a nova direção de arte com testes e validar em desktop e mobile.
+- [ ] Salvar o checkpoint final da direção Aurora e sincronizá-lo com a ramificação principal do GitHub.

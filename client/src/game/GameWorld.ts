@@ -36,9 +36,8 @@ import { MONSTER_RESPAWN_DELAY_MS, WORLD_MONSTER_SPAWNS, WORLD_PORTALS } from "@
 const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
 
 const assets = {
-  fieldFallback: "/manus-storage/vale-ambar-field-fallback_07dc91d6.png",
-  grass: "/manus-storage/vale-ambar-ground_0156fbee.png",
-  water: "/manus-storage/vale-ambar-water_d5e9092a.png",
+  grass: "/manus-storage/aurora_grass_c57dc482.png",
+  water: "/manus-storage/aurora_water_f80cfd58.png",
 } as const;
 
 const worldBounds: WorldBounds = {
@@ -412,7 +411,7 @@ export class GameWorld {
       const glow = MeshBuilder.CreateDisc(`loot-glow-${chest.chestKey}`, { radius: 0.64, tessellation: 20 }, this.scene);
       glow.position.set(chest.x, 0.04, chest.z); glow.rotation.x = Math.PI / 2;
       glow.material = this.colorMaterial(`loot-glow-material-${chest.chestKey}`, "#F2B84B", 0.55, 0.32); glow.isPickable = false;
-      const asset = getTileAsset("loot_chest");
+      const asset = getTileAsset("aurora_loot_chest");
       if (!asset) continue;
       const texture = IS_STATIC_DEMO
         ? new DynamicTexture(`loot-chest-fallback-${chest.chestKey}`, { width: 2, height: 2 }, this.scene)
@@ -459,7 +458,7 @@ export class GameWorld {
 
     const paintedField = MeshBuilder.CreateGround("painted-field", { width: 48, height: 34, subdivisions: 2 }, this.scene);
     paintedField.position.y = 0.006;
-    paintedField.material = this.texturedMaterial("painted-field-material", assets.fieldFallback, "#657748", 1, 1, 0.56);
+    paintedField.material = this.texturedMaterial("painted-field-material", assets.grass, "#536E42", 1, 1, 0.56);
     paintedField.isPickable = false;
 
     const grass = MeshBuilder.CreateGround("walkable-grass", { width: 48, height: 34, subdivisions: 2 }, this.scene);
@@ -967,7 +966,7 @@ export class GameWorld {
           texture.wrapV = Texture.WRAP_ADDRESSMODE;
           texture.uScale = entry.uScale;
           texture.vScale = entry.vScale;
-          texture.level = entry.url.includes("field-fallback") ? 1 : entry.url.includes("ground") ? 0.42 : 0.68;
+          texture.level = entry.url.includes("aurora_grass") ? 0.56 : 0.68;
           texture.anisotropicFilteringLevel = 4;
           entry.material.diffuseTexture = texture;
           entry.material.alpha = entry.alpha;

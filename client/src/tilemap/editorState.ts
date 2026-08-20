@@ -69,18 +69,18 @@ export function updateObjectProperties(map: TileMapDocument, input: { objectId: 
 
 export function createDemoTileMap(): TileMapDocument {
   let map = createEmptyTileMap({ mapId: "clareira-das-sete-pontes", name: "Clareira das Sete Pontes", width: 28, height: 18, tileSize: 40 });
-  for (let y = 0; y < map.height; y += 1) for (let x = 0; x < map.width; x += 1) map = paintTile(map, { layer: "ground", assetId: "grass", x, y });
-  for (let x = 0; x < map.width; x += 1) map = paintTile(map, { layer: "terrain_border", assetId: "water", x, y: 9, collision: "water" });
-  for (const x of [12, 13, 14, 15]) map = paintTile(map, { layer: "low_objects", assetId: "fence_long", x, y: 9, collision: "walkable" });
-  for (let x = 2; x < 26; x += 1) map = paintTile(map, { layer: "ground", assetId: "dirt", x, y: 4 });
-  for (let y = 1; y < 9; y += 1) map = paintTile(map, { layer: "ground", assetId: "dirt", x: 13, y });
-  for (const [x, y] of [[2, 2], [5, 2], [23, 2], [25, 4], [3, 13], [7, 15], [21, 13], [25, 15]] as const) map = putObject(map, { assetId: "tree", x, y, width: 1, height: 1, collision: "blocked", layer: "objects" });
-  for (const [x, y] of [[7, 6], [8, 6], [7, 7], [8, 7]] as const) map = putObject(map, { assetId: "roof", x, y, width: 1, height: 1, collision: "blocked", layer: "high_objects" });
-  map = putObject(map, { assetId: "barrel", x: 10, y: 6, width: 1, height: 1, collision: "interaction", interaction: "inspect", layer: "objects" });
+  for (let y = 0; y < map.height; y += 1) for (let x = 0; x < map.width; x += 1) map = paintTile(map, { layer: "ground", assetId: "aurora_grass", x, y });
+  for (let x = 0; x < map.width; x += 1) map = paintTile(map, { layer: "terrain_border", assetId: "aurora_water", x, y: 9, collision: "water" });
+  for (const x of [12, 13, 14, 15]) map = paintTile(map, { layer: "low_objects", assetId: "aurora_mine_stone", x, y: 9, collision: "walkable" });
+  for (let x = 2; x < 26; x += 1) map = paintTile(map, { layer: "ground", assetId: "aurora_path", x, y: 4 });
+  for (let y = 1; y < 9; y += 1) map = paintTile(map, { layer: "ground", assetId: "aurora_path", x: 13, y });
+  for (const [x, y] of [[2, 2], [5, 2], [23, 2], [25, 4], [3, 13], [7, 15], [21, 13], [25, 15]] as const) map = putObject(map, { assetId: "aurora_tree", x, y, width: 1, height: 1, collision: "blocked", layer: "objects" });
+  for (const [x, y] of [[7, 6], [8, 6], [7, 7], [8, 7]] as const) map = putObject(map, { assetId: "aurora_fortress_wall", x, y, width: 1, height: 1, collision: "blocked", layer: "high_objects" });
+  map = putObject(map, { assetId: "aurora_loot_chest", x: 10, y: 6, width: 1, height: 1, collision: "interaction", interaction: "inspect", layer: "objects" });
   map.levels[0].entities.push(
-    { entityId: "spawn-explorador", assetId: "explorer", kind: "player_spawn", label: "Ponto inicial", x: 4, y: 6, z: 0, direction: "south" },
-    { entityId: "npc-lina", assetId: "villager", kind: "npc", label: "Lina, a cartógrafa", x: 10, y: 4, z: 0, direction: "east", properties: { interaction: "dialogue" } },
-    { entityId: "creature-goblin", assetId: "goblin", kind: "creature", label: "Goblino da margem", x: 21, y: 13, z: 0, direction: "west", properties: { spawnRadius: 2 } },
+    { entityId: "spawn-explorador", assetId: "aurora_adventurer", kind: "player_spawn", label: "Ponto inicial", x: 4, y: 6, z: 0, direction: "south" },
+    { entityId: "npc-lina", assetId: "aurora_adventurer", kind: "npc", label: "Lina, a cartógrafa", x: 10, y: 4, z: 0, direction: "east", properties: { interaction: "dialogue" } },
+    { entityId: "creature-goblin", assetId: "aurora_goblin", kind: "creature", label: "Guardião da margem", x: 21, y: 13, z: 0, direction: "west", properties: { spawnRadius: 2 } },
   );
   return map;
 }

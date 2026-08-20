@@ -11,7 +11,7 @@ const WORLD_HEIGHT = 34;
 const GROUND_LEVEL = 0.018;
 const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
 
-export type WorldTileAssetId = "oga_grass" | "oga_path" | "oga_water" | "oga_stone" | "oga_wall";
+export type WorldTileAssetId = "aurora_grass" | "aurora_path" | "aurora_water" | "aurora_mine_stone" | "aurora_fortress_wall";
 
 type TilePatch = {
   id: string;
@@ -27,47 +27,47 @@ type TilePatch = {
 
 /** Zonas somente visuais. A geometria física continua inteiramente em zaoMapLayout.ts. */
 const VISUAL_ZONES: readonly TilePatch[] = [
-  { id: "amber-city-plaza", assetId: "oga_stone", x: -5.35, z: -3.42, width: 5.35, height: 4.6, tone: "#E7C783", level: 0.022 },
-  { id: "amber-city-west-court", assetId: "oga_stone", x: -8.9, z: -3.38, width: 2.55, height: 8.75, tone: "#CDBA8E", level: 0.021 },
-  { id: "amber-city-riverside-lawn", assetId: "oga_grass", x: -0.08, z: -3.48, width: 2.25, height: 10.5, tone: "#95A966", level: 0.019 },
-  { id: "amber-city-south-garden", assetId: "oga_grass", x: -7.7, z: -7.45, width: 11.1, height: 2.25, tone: "#879D59", level: 0.019 },
-  { id: "wind-road-forest-floor", assetId: "oga_grass", x: 4.95, z: 9.3, width: 16.8, height: 11.9, tone: "#738C50", level: 0.019 },
-  { id: "wind-road-west-grove", assetId: "oga_grass", x: -2.25, z: 9.85, width: 6.2, height: 7.5, tone: "#638049", level: 0.02 },
-  { id: "wind-road-east-grove", assetId: "oga_grass", x: 12.6, z: 9.6, width: 5.6, height: 8.1, tone: "#668147", level: 0.02 },
-  { id: "wind-road-south-clearing", assetId: "oga_path", x: 5.1, z: 3.68, width: 14.75, height: 2.05, tone: "#C49C5C", level: 0.024 },
+  { id: "amber-city-plaza", assetId: "aurora_mine_stone", x: -5.35, z: -3.42, width: 5.35, height: 4.6, tone: "#B8C1D2", level: 0.022 },
+  { id: "amber-city-west-court", assetId: "aurora_mine_stone", x: -8.9, z: -3.38, width: 2.55, height: 8.75, tone: "#8393AE", level: 0.021 },
+  { id: "amber-city-riverside-lawn", assetId: "aurora_grass", x: -0.08, z: -3.48, width: 2.25, height: 10.5, tone: "#78945B", level: 0.019 },
+  { id: "amber-city-south-garden", assetId: "aurora_grass", x: -7.7, z: -7.45, width: 11.1, height: 2.25, tone: "#5E7D4A", level: 0.019 },
+  { id: "wind-road-forest-floor", assetId: "aurora_grass", x: 4.95, z: 9.3, width: 16.8, height: 11.9, tone: "#5A7948", level: 0.019 },
+  { id: "wind-road-west-grove", assetId: "aurora_grass", x: -2.25, z: 9.85, width: 6.2, height: 7.5, tone: "#4D6B42", level: 0.02 },
+  { id: "wind-road-east-grove", assetId: "aurora_grass", x: 12.6, z: 9.6, width: 5.6, height: 8.1, tone: "#527342", level: 0.02 },
+  { id: "wind-road-south-clearing", assetId: "aurora_path", x: 5.1, z: 3.68, width: 14.75, height: 2.05, tone: "#B97840", level: 0.024 },
 ];
 
 const DECORATIONS = [
-  { assetId: "oga_tree", x: -14.95, z: -7.45, scale: 2.35 },
-  { assetId: "oga_tree", x: -13.75, z: -7.15, scale: 2.08 },
-  { assetId: "oga_flower_bed", x: -12.4, z: 0.22, scale: 0.72 },
-  { assetId: "oga_tree", x: -11.85, z: 0.3, scale: 2.16 },
-  { assetId: "oga_tree", x: -8.55, z: -1.85, scale: 2.07 },
-  { assetId: "oga_flower_bed", x: -8.68, z: -5.55, scale: 0.72 },
-  { assetId: "oga_tree", x: -2.05, z: -5.55, scale: 1.98 },
-  { assetId: "oga_flower_bed", x: -1.18, z: -1.18, scale: 0.66 },
-  { assetId: "oga_tree", x: 0.62, z: -3.28, scale: 1.67 },
-  { assetId: "oga_tree", x: -1.38, z: 10.85, scale: 2.35 },
-  { assetId: "oga_tree", x: -0.78, z: 11.35, scale: 1.98 },
-  { assetId: "oga_flower_bed", x: -1.72, z: 9.95, scale: 0.7 },
-  { assetId: "oga_tree", x: 11.1, z: 10.62, scale: 2.44 },
-  { assetId: "oga_tree", x: 12.75, z: 13.22, scale: 2.22 },
-  { assetId: "oga_tree", x: 13.05, z: 10.82, scale: 1.91 },
-  { assetId: "oga_flower_bed", x: 12.15, z: 9.78, scale: 0.68 },
-  { assetId: "oga_flower_bed", x: 0.48, z: 6.1, scale: 0.61 },
-  { assetId: "oga_flower_bed", x: 13.08, z: 5.72, scale: 0.61 },
+  { assetId: "aurora_tree", x: -14.95, z: -7.45, scale: 2.35 },
+  { assetId: "aurora_tree", x: -13.75, z: -7.15, scale: 2.08 },
+  { assetId: "aurora_flower_bed", x: -12.4, z: 0.22, scale: 0.72 },
+  { assetId: "aurora_tree", x: -11.85, z: 0.3, scale: 2.16 },
+  { assetId: "aurora_tree", x: -8.55, z: -1.85, scale: 2.07 },
+  { assetId: "aurora_flower_bed", x: -8.68, z: -5.55, scale: 0.72 },
+  { assetId: "aurora_tree", x: -2.05, z: -5.55, scale: 1.98 },
+  { assetId: "aurora_flower_bed", x: -1.18, z: -1.18, scale: 0.66 },
+  { assetId: "aurora_tree", x: 0.62, z: -3.28, scale: 1.67 },
+  { assetId: "aurora_tree", x: -1.38, z: 10.85, scale: 2.35 },
+  { assetId: "aurora_tree", x: -0.78, z: 11.35, scale: 1.98 },
+  { assetId: "aurora_flower_bed", x: -1.72, z: 9.95, scale: 0.7 },
+  { assetId: "aurora_tree", x: 11.1, z: 10.62, scale: 2.44 },
+  { assetId: "aurora_tree", x: 12.75, z: 13.22, scale: 2.22 },
+  { assetId: "aurora_tree", x: 13.05, z: 10.82, scale: 1.91 },
+  { assetId: "aurora_flower_bed", x: 12.15, z: 9.78, scale: 0.68 },
+  { assetId: "aurora_flower_bed", x: 0.48, z: 6.1, scale: 0.61 },
+  { assetId: "aurora_flower_bed", x: 13.08, z: 5.72, scale: 0.61 },
 ] as const;
 
 export function resolveWorldTileAsset(kind: ZaoMapFeatureKind): WorldTileAssetId {
   switch (kind) {
-    case "water": return "oga_water";
-    case "road": return "oga_path";
-    case "bridge": return "oga_stone";
-    case "wall": return "oga_wall";
+    case "water": return "aurora_water";
+    case "road": return "aurora_path";
+    case "bridge": return "aurora_mine_stone";
+    case "wall": return "aurora_fortress_wall";
     case "structure":
     case "tower":
-    case "gate": return "oga_wall";
-    case "cliff": return "oga_stone";
+    case "gate": return "aurora_fortress_wall";
+    case "cliff": return "aurora_mine_stone";
   }
 }
 
@@ -148,7 +148,7 @@ function getFeatureTileLevel(kind: ZaoMapFeatureKind) {
 /** Renderização jogável em tiles: camadas distinguem cidade, rio, estrada e floresta sem backdrop. */
 export function createZaoTileWorld(scene: Scene) {
   const materialCache = new Map<string, StandardMaterial>();
-  const grassMaterial = createTileMaterial(scene, "oga_grass", "world-ground", materialCache);
+  const grassMaterial = createTileMaterial(scene, "aurora_grass", "world-ground", materialCache);
   if (!IS_STATIC_DEMO) {
     const grassTexture = grassMaterial.diffuseTexture as Texture;
     grassTexture.uScale = WORLD_WIDTH;

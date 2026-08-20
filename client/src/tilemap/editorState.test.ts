@@ -30,9 +30,9 @@ describe("estado do editor de mapas", () => {
   it("inclui personagem, NPC e criatura no mapa demonstrativo", () => {
     const entities = createDemoTileMap().levels[0].entities;
     expect(entities).toEqual(expect.arrayContaining([
-      expect.objectContaining({ kind: "player_spawn", assetId: "explorer" }),
-      expect.objectContaining({ kind: "npc", assetId: "villager" }),
-      expect.objectContaining({ kind: "creature", assetId: "goblin" }),
+      expect.objectContaining({ kind: "player_spawn", assetId: "aurora_adventurer" }),
+      expect.objectContaining({ kind: "npc", assetId: "aurora_adventurer" }),
+      expect.objectContaining({ kind: "creature", assetId: "aurora_goblin" }),
     ]));
   });
 });
