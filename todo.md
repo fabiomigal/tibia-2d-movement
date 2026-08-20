@@ -174,4 +174,4 @@
 - [x] Criar e publicar novos atlases para aventureiro, goblin e javali/monstros, substituindo integralmente os sprites atuais.
 - [x] Integrar os novos recursos somente nos renderizadores e remover as referências visuais antigas, sem alterar mecânicas ou módulos congelados.
 - [x] Cobrir a nova direção de arte com testes e validar em desktop e mobile.
-- [ ] Salvar o checkpoint final da direção Aurora e sincronizá-lo com a ramificação principal do GitHub.
+- [x] Salvar o checkpoint final da direção Aurora e sincronizá-lo com a ramificação principal do GitHub.
