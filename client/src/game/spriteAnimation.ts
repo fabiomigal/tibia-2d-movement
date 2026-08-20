@@ -27,13 +27,14 @@ export const OPAQUE_SPRITE_CONTRAST = {
   emissiveHex: "#FFFFFF",
   lighting: "unlit-full-color",
 } as const;
-type SpriteDirection = "south" | "east" | "north" | "west";
 
-type SpriteSheet = { url: string; columns: number; fps: number; loop: boolean };
+type SpriteDirection = "south" | "southwest" | "west" | "northwest" | "north" | "northeast" | "east" | "southeast";
+type SpriteDirectionRows = Readonly<Partial<Record<SpriteDirection, number>>>;
+type SpriteSheet = { url: string; columns: number; fps: number; loop: boolean; rows?: number; directionRows?: SpriteDirectionRows; columnStart?: number; frameColumns?: number };
 
 /** Alturas em unidades de mundo: 1 tile = 1u; recalibradas para a leitura do novo cenário em grade. */
 export const ZAO_SPRITE_SIZE: Record<SpriteActorKind, number> = {
-  adventurer: 2.55,
+  adventurer: 1.12,
   goblin: 2.18,
   boar: 2.36,
 };
@@ -44,12 +45,33 @@ const STATIC_SPRITE_COLORS: Record<SpriteActorKind, string> = {
   boar: "#b99064",
 };
 
+const CARDINAL_DIRECTION_ROWS: SpriteDirectionRows = { south: 0, east: 1, north: 2, west: 3 };
+/** O atlas CC0 de TheNess usa 6 colunas e 8 linhas, com diagonais após as direções cardinais. */
+export const ADVENTURER_OGA_SPRITE_URL = "/manus-storage/sprite_oga_f4502ba6.png";
+export const ADVENTURER_OGA_DIRECTION_ROWS: SpriteDirectionRows = {
+  south: 0,
+  west: 1,
+  north: 2,
+  east: 3,
+  southwest: 4,
+  northwest: 5,
+  northeast: 6,
+  southeast: 7,
+};
+const OGA_ADVENTURER_BASE_SHEET = {
+  url: ADVENTURER_OGA_SPRITE_URL,
+  columns: 6,
+  rows: 8,
+  directionRows: ADVENTURER_OGA_DIRECTION_ROWS,
+} as const;
+
 const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteSheet>>> = {
   adventurer: {
-    idle: { url: "/manus-storage/adventurer_idle_f791f566.png", columns: 4, fps: 4, loop: true },
-    walk: { url: "/manus-storage/adventurer_walk_c19bb4bc.png", columns: 6, fps: 8, loop: true },
-    attack: { url: "/manus-storage/adventurer_attack_3f75fd84.png", columns: 6, fps: 12, loop: false },
-    hit: { url: "/manus-storage/adventurer_hit_5e3c5bec.png", columns: 4, fps: 10, loop: false },
+    idle: { ...OGA_ADVENTURER_BASE_SHEET, fps: 4, loop: true, frameColumns: 4 },
+    walk: { ...OGA_ADVENTURER_BASE_SHEET, fps: 8, loop: true, frameColumns: 4 },
+    attack: { ...OGA_ADVENTURER_BASE_SHEET, fps: 10, loop: false, frameColumns: 4 },
+    hit: { ...OGA_ADVENTURER_BASE_SHEET, fps: 9, loop: false, columnStart: 1, frameColumns: 1 },
+    death: { ...OGA_ADVENTURER_BASE_SHEET, fps: 1, loop: false, columnStart: 2, frameColumns: 1 },
   },
   goblin: {
     idle: { url: "/manus-storage/goblin_idle_f8be0563.png", columns: 4, fps: 4, loop: true },
@@ -67,11 +89,13 @@ const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteS
   },
 };
 
-const directionRows: Record<SpriteDirection, number> = { south: 0, east: 1, north: 2, west: 3 };
-
 /** Recorte UV com eixo V invertido para manter o topo do PNG como topo visual no terreno. */
-export function selectSpriteRowUv(direction: SpriteDirection) {
-  return { vOffset: (directionRows[direction] + 1) / 4, vScale: -1 / 4 };
+export function selectSpriteRowUv(direction: SpriteDirection, rows = 4, directionRows: SpriteDirectionRows = CARDINAL_DIRECTION_ROWS) {
+  const cardinalFallback: Record<SpriteDirection, "south" | "east" | "north" | "west"> = {
+    south: "south", southwest: "west", west: "west", northwest: "west", north: "north", northeast: "east", east: "east", southeast: "east",
+  };
+  const row = directionRows[direction] ?? directionRows[cardinalFallback[direction]] ?? 0;
+  return { vOffset: (row + 1) / rows, vScale: -1 / rows };
 }
 
 export function selectSpriteFrame(elapsedSeconds: number, fps: number, columns: number, loop: boolean) {
@@ -79,13 +103,22 @@ export function selectSpriteFrame(elapsedSeconds: number, fps: number, columns: 
   return loop ? rawFrame % columns : Math.min(columns - 1, rawFrame);
 }
 
-export function selectSpriteDirection(deltaX: number, deltaZ: number, fallback: SpriteDirection = "south"): SpriteDirection {
-  if (Math.abs(deltaX) < 0.0001 && Math.abs(deltaZ) < 0.0001) return fallback;
-  if (Math.abs(deltaX) > Math.abs(deltaZ)) return deltaX > 0 ? "east" : "west";
-  return deltaZ > 0 ? "south" : "north";
+/** Retorna o recorte horizontal de um estado em atlas que pode reservar colunas exclusivas para ataque. */
+export function selectSpriteFrameUv(elapsedSeconds: number, fps: number, frameColumns: number, loop: boolean, atlasColumns: number, columnStart = 0) {
+  return { uOffset: (columnStart + selectSpriteFrame(elapsedSeconds, fps, frameColumns, loop)) / atlasColumns, uScale: 1 / atlasColumns };
 }
 
-/** Camada visual independente da lógica de movimento: recorta atlas 4×N em um plano horizontal do mundo. */
+export function selectSpriteDirection(deltaX: number, deltaZ: number, fallback: SpriteDirection = "south"): SpriteDirection {
+  if (Math.abs(deltaX) < 0.0001 && Math.abs(deltaZ) < 0.0001) return fallback;
+  const horizontal = Math.abs(deltaX);
+  const vertical = Math.abs(deltaZ);
+  if (horizontal > vertical * 2) return deltaX > 0 ? "east" : "west";
+  if (vertical > horizontal * 2) return deltaZ > 0 ? "south" : "north";
+  if (deltaX > 0) return deltaZ > 0 ? "southeast" : "northeast";
+  return deltaZ > 0 ? "southwest" : "northwest";
+}
+
+/** Camada visual independente da lógica de movimento: recorta atlas 4×N ou 8×N em um plano horizontal do mundo. */
 export class AnimatedSpriteActor {
   readonly mesh: Mesh;
   private readonly material: StandardMaterial;
@@ -144,8 +177,9 @@ export class AnimatedSpriteActor {
     const sheet = this.sheet(this.action);
     const texture = this.textures.get(this.action);
     if (texture) {
-      texture.uOffset = selectSpriteFrame(this.elapsed, sheet.fps, sheet.columns, sheet.loop) / sheet.columns;
-      const rowUv = selectSpriteRowUv(this.direction);
+      const frameUv = selectSpriteFrameUv(this.elapsed, sheet.fps, sheet.frameColumns ?? sheet.columns, sheet.loop, sheet.columns, sheet.columnStart);
+      texture.uOffset = frameUv.uOffset;
+      const rowUv = selectSpriteRowUv(this.direction, sheet.rows ?? 4, sheet.directionRows);
       texture.vOffset = rowUv.vOffset;
     }
     this.mesh.position.set(x, y, z);
@@ -154,7 +188,7 @@ export class AnimatedSpriteActor {
   play(action: SpriteAction) {
     const sheet = this.sheet(action);
     this.forcedAction = action;
-    this.forcedUntil = performance.now() + (sheet.columns / sheet.fps) * 1000;
+    this.forcedUntil = performance.now() + ((sheet.frameColumns ?? sheet.columns) / sheet.fps) * 1000;
     this.action = action;
     this.elapsed = 0;
     this.applySheet(action);
@@ -184,7 +218,7 @@ export class AnimatedSpriteActor {
       texture.wrapU = Texture.CLAMP_ADDRESSMODE;
       texture.wrapV = Texture.CLAMP_ADDRESSMODE;
       texture.uScale = 1 / sheet.columns;
-      texture.vScale = selectSpriteRowUv("south").vScale;
+      texture.vScale = selectSpriteRowUv("south", sheet.rows ?? 4, sheet.directionRows).vScale;
       this.textures.set(action, texture);
     }
     this.material.diffuseTexture = texture;

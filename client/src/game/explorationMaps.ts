@@ -7,12 +7,12 @@ import { getTileAsset } from "../tilemap/catalog";
 import type { CollisionWorld } from "./CollisionWorld";
 
 const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
-type AssetId = "grass" | "dirt" | "stone" | "wall" | "tree" | "oak" | "bush";
+type AssetId = "oga_grass" | "oga_path" | "oga_stone" | "oga_wall" | "oga_tree" | "oga_flower_bed";
 type MapDefinition = { id: string; label: string; x: number; z: number; width: number; height: number; floor: AssetId; tone: string };
 
 export const EXPLORATION_MAPS: readonly MapDefinition[] = [
-  { id: "amber-inn", label: "Estalagem do Âmbar", x: -18.2, z: 12.6, width: 7.2, height: 6.1, floor: "stone", tone: "#D7BD8B" },
-  { id: "moon-sanctuary", label: "Santuário da Lua", x: 18.2, z: -11.8, width: 8.6, height: 7.1, floor: "dirt", tone: "#97A784" },
+  { id: "amber-inn", label: "Estalagem do Âmbar", x: -18.2, z: 12.6, width: 7.2, height: 6.1, floor: "oga_stone", tone: "#D7BD8B" },
+  { id: "moon-sanctuary", label: "Santuário da Lua", x: 18.2, z: -11.8, width: 8.6, height: 7.1, floor: "oga_path", tone: "#97A784" },
 ];
 
 function material(scene: Scene, id: AssetId, tone: string, cache: Map<string, StandardMaterial>) {
@@ -51,11 +51,11 @@ function ground(scene: Scene, definition: MapDefinition, cache: Map<string, Stan
 function wall(scene: Scene, x: number, z: number, width: number, depth: number, name: string, cache: Map<string, StandardMaterial>) {
   const mesh = MeshBuilder.CreateBox(name, { width, height: 0.42, depth }, scene);
   mesh.position.set(x, 0.24, z);
-  mesh.material = material(scene, "wall", "#B8B0A0", cache);
+  mesh.material = material(scene, "oga_wall", "#B8B0A0", cache);
   mesh.isPickable = false;
 }
 
-function decoration(scene: Scene, id: "tree" | "oak" | "bush", x: number, z: number, scale: number, cache: Map<string, StandardMaterial>) {
+function decoration(scene: Scene, id: "oga_tree" | "oga_flower_bed", x: number, z: number, scale: number, cache: Map<string, StandardMaterial>) {
   const mesh = MeshBuilder.CreatePlane(`exploration-${id}-${x}-${z}`, { width: scale, height: scale }, scene);
   mesh.position.set(x, 0.095, z);
   mesh.rotation.x = Math.PI / 2;
@@ -94,10 +94,10 @@ export function createExplorationMaps(scene: Scene, collision: CollisionWorld) {
   wall(scene, sanctuary.x, sanctuaryBottom, sanctuary.width, 0.3, "sanctuary-cliff-south", cache);
   wall(scene, sanctuaryLeft, sanctuary.z, 0.3, sanctuary.height, "sanctuary-cliff-west", cache);
   wall(scene, sanctuaryRight, sanctuary.z, 0.3, sanctuary.height, "sanctuary-cliff-east", cache);
-  decoration(scene, "tree", sanctuaryLeft + 1, sanctuaryTop + 1.1, 1.15, cache);
-  decoration(scene, "oak", sanctuaryRight - 1.2, sanctuaryTop + 1.15, 1.05, cache);
-  decoration(scene, "bush", sanctuaryLeft + 1.15, sanctuaryBottom - 1.1, 0.85, cache);
-  decoration(scene, "bush", sanctuaryRight - 1.05, sanctuaryBottom - 1, 0.78, cache);
+  decoration(scene, "oga_tree", sanctuaryLeft + 1, sanctuaryTop + 1.1, 2.3, cache);
+  decoration(scene, "oga_tree", sanctuaryRight - 1.2, sanctuaryTop + 1.15, 2.1, cache);
+  decoration(scene, "oga_flower_bed", sanctuaryLeft + 1.15, sanctuaryBottom - 1.1, 0.85, cache);
+  decoration(scene, "oga_flower_bed", sanctuaryRight - 1.05, sanctuaryBottom - 1, 0.78, cache);
   collision.addRectangle(sanctuaryLeft - 0.15, sanctuaryRight + 0.15, sanctuaryTop - 0.15, sanctuaryTop + 0.15);
   collision.addRectangle(sanctuaryLeft - 0.15, sanctuaryRight + 0.15, sanctuaryBottom - 0.15, sanctuaryBottom + 0.15);
   collision.addRectangle(sanctuaryLeft - 0.15, sanctuaryLeft + 0.15, sanctuaryTop - 0.15, sanctuaryBottom + 0.15);

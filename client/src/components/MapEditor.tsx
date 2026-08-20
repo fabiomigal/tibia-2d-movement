@@ -92,11 +92,11 @@ export default function MapEditor() {
       <section className="map-editor-layout">
         <aside className="map-editor-panel map-editor-palette" aria-label="Paleta de assets">
           <div className="editor-panel-heading"><div><p>Biblioteca</p><h2>Assets licenciados</h2></div><FileUp size={17} /></div>
-          <p className="editor-panel-copy">CC0 · Kenney. Clique para escolher um asset antes de editar.</p>
+          <p className="editor-panel-copy">CC0 · Kenney e OpenGameArt. Clique para escolher um asset antes de editar.</p>
           <div className="asset-grid">
             {TILE_ASSET_MANIFEST.map((asset) => <button key={asset.assetId} type="button" className={`asset-chip ${activeAssetId === asset.assetId ? "is-active" : ""}`} onClick={() => setActiveAssetId(asset.assetId)}><span style={{ backgroundImage: `url(${asset.localFilename})` }} /><b>{asset.name}</b><small>{asset.category}</small></button>)}
           </div>
-          <a className="editor-manifest-link" href="https://opengameart.org/content/rpg-pack-base-set" target="_blank" rel="noreferrer">Ver fonte e licença</a>
+          <a className="editor-manifest-link" href="https://opengameart.org/content/overworld-grass-biome" target="_blank" rel="noreferrer">Ver fontes e licenças</a>
         </aside>
 
         <section className="map-editor-workspace">

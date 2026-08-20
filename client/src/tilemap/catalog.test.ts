@@ -21,4 +21,12 @@ describe("catálogo de assets licenciados", () => {
     });
     expect(getTileAsset("inexistente")).toBeUndefined();
   });
+
+  it("registra o conjunto OGA separado dos assets Kenney preexistentes", () => {
+    const ogaAssetIds = ["oga_grass", "oga_grass_flowers", "oga_path", "oga_water", "oga_stone", "oga_wall", "oga_tree", "oga_flower_bed", "oga_adventurer"];
+    expect(ogaAssetIds.map(getTileAsset)).toHaveLength(9);
+    expect(getTileAsset("oga_grass")?.sourceUrl).toBe("https://opengameart.org/content/overworld-grass-biome");
+    expect(getTileAsset("oga_tree")).toMatchObject({ tileWidth: 48, tileHeight: 48, localFilename: "/manus-storage/vale-ambar-tree_b687db29.png" });
+    expect(getTileAsset("oga_adventurer")).toMatchObject({ author: "TheNess", tileWidth: 16, tileHeight: 11, localFilename: "/manus-storage/sprite_oga_f4502ba6.png" });
+  });
 });

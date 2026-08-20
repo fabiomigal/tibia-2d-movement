@@ -1,6 +1,33 @@
 # Assets — Vale de Âmbar
 
-**Art direction:** Mundo de fantasia em vista superior como uma maquete pintada à mão. Relva em oliva, musgo e sálvia; pedra cinza-azulada; água verde-azulada; luz de fim de tarde; silhuetas limpas e sombras curtas. O jogador e o destino usam o Âmbar de Rota como contraste funcional. O ciclo ambiental modula a mesma base para amanhecer âmbar, dia claro, crepúsculo dourado e noite azul-profunda, com chuva fina e névoa baixa criadas proceduralmente em camadas sem novos assets externos.
+**Art direction:** Fantasia em pixel art vista de cima, inspirada apenas pela legibilidade de trilhas claras, vegetação densa e pequenos props naturais da referência fornecida pelo usuário. A paleta usa gramado oliva e musgo, areia creme, pedra cinza-azulada, água verde-musgo e luz âmbar. Silhuetas têm contorno escuro limpo, sombras curtas e leitura imediata sobre o terreno. O ciclo ambiental preserva a base e modula a mesma arte para amanhecer, dia, crepúsculo, noite, chuva e névoa.
+
+## Assets originais — atualização visual de 20 de agosto de 2026
+
+| Nome | Papel | URL publicada |
+|---|---|---|
+| Alvo visual pixel art | Referência de composição e qualidade | `/manus-storage/vale-ambar-pixel-art-target_76f810e2.png` |
+| Aventureiro 4×4 | Avatar jogável, quatro direções e quatro fases | `/manus-storage/vale-ambar-adventurer-sheet_acbe013b.png` |
+| Relva de musgo | Tile de terreno | `/manus-storage/vale-ambar-grass-tile_1f74ec93.png` |
+| Trilha arenosa | Tile de estrada | `/manus-storage/vale-ambar-path-tile_6443de3d.png` |
+| Água rasa | Tile de água | `/manus-storage/vale-ambar-water-tile_778ed4bb.png` |
+| Pedra pavimentada | Tile de praça e ponte | `/manus-storage/vale-ambar-stone-tile_8096ab3a.png` |
+| Muralha de pedra | Tile de estrutura | `/manus-storage/vale-ambar-wall-tile_366b2485.png` |
+| Árvore densa | Prop com transparência | `/manus-storage/vale-ambar-tree_04c39aa6.png` |
+| Arbusto florido | Prop com transparência | `/manus-storage/vale-ambar-bush-flowers_cb892225.png` |
+| Conjunto de rochas | Prop com transparência | `/manus-storage/vale-ambar-rock-cluster_5644a5e9.png` |
+| Baú de saque | Prop com transparência | `/manus-storage/vale-ambar-loot-chest_921277b1.png` |
+
+Os assets desta tabela são originais, gerados para o Vale de Âmbar. Eles não reproduzem personagens, UI, textos ou arquivos da referência fornecida; a referência foi usada apenas para direcionar perspectiva, densidade e paleta.
+
+## Assets externos CC0 — integração de 20 de agosto de 2026
+
+| Nome | Papel | Origem e licença | URL publicada |
+|---|---|---|---|
+| Overworld Grass Biome | Gramado, flores, trilha, água, pedra, muro, árvore e canteiro | [OpenGameArt](https://opengameart.org/content/overworld-grass-biome) · CC0 1.0 | `/manus-storage/vale-ambar-grass_cd07443a.png`, `/manus-storage/vale-ambar-grass-flowers_b8d10c91.png`, `/manus-storage/vale-ambar-path_b6e3b152.png`, `/manus-storage/vale-ambar-water_2d11e2c5.png`, `/manus-storage/vale-ambar-stone_9095b7f2.png`, `/manus-storage/vale-ambar-wall_ba5e000b.png`, `/manus-storage/vale-ambar-tree_b687db29.png` e `/manus-storage/vale-ambar-flower-bed_f48fafee.png` |
+| RPG Sprite — Human Male 16×16 | Aventureiro com oito direções, caminhada e gesto de ataque | [TheNess via OpenGameArt](https://opengameart.org/content/rpg-sprite-8-direction-human-male-16x16) · CC0 1.0 | `/manus-storage/sprite_oga_f4502ba6.png` |
+
+Os arquivos externos acima substituem somente a aparência do terreno, decoração e personagem principal. **Movimentação, câmera, portais, colisões, combate e inventário permanecem inalterados.**
 
 ## Referência visual
 
