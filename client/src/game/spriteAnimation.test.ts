@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ADVENTURER_OGA_DIRECTION_ROWS, ADVENTURER_OGA_SPRITE_URL, OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv } from "./spriteAnimation";
+import { OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, USER_AUTHORIZED_ZAO_DIRECTION_ROWS, USER_AUTHORIZED_ZAO_SPRITE_URLS, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv } from "./spriteAnimation";
 import { Material } from "@babylonjs/core/Materials/material";
 
 describe("seleção de frame dos sprites Zao", () => {
@@ -22,12 +22,14 @@ describe("seleção de frame dos sprites Zao", () => {
     expect(selectSpriteRowUv("north")).toEqual({ vOffset: 0.75, vScale: -0.25 });
   });
 
-  it("recorta o atlas OGA de seis por oito preservando as diagonais e frames transitórios legíveis", () => {
-    expect(ADVENTURER_OGA_SPRITE_URL).toBe("/manus-storage/sprite_oga_f4502ba6.png");
-    expect(selectSpriteRowUv("southwest", 8, ADVENTURER_OGA_DIRECTION_ROWS)).toEqual({ vOffset: 0.625, vScale: -0.125 });
-    expect(selectSpriteRowUv("southeast", 8, ADVENTURER_OGA_DIRECTION_ROWS)).toEqual({ vOffset: 1, vScale: -0.125 });
-    expect(selectSpriteFrameUv(0.45, 8, 4, true, 6)).toEqual({ uOffset: 0.5, uScale: 1 / 6 });
-    expect(selectSpriteFrameUv(0.12, 10, 4, false, 6)).toEqual({ uOffset: 1 / 6, uScale: 1 / 6 });
+  it("recorta os atlases autorizados de quatro direções e preserva a animação de cada ator", () => {
+    expect(USER_AUTHORIZED_ZAO_SPRITE_URLS.adventurer.attack).toBe("/manus-storage/adventurer_attack_493719ba.png");
+    expect(USER_AUTHORIZED_ZAO_SPRITE_URLS.goblin.death).toBe("/manus-storage/goblin_death_78823515.png");
+    expect(USER_AUTHORIZED_ZAO_SPRITE_URLS.boar.walk).toBe("/manus-storage/boar_walk_a46d9d51.png");
+    expect(selectSpriteRowUv("south", 4, USER_AUTHORIZED_ZAO_DIRECTION_ROWS)).toEqual({ vOffset: 0.25, vScale: -0.25 });
+    expect(selectSpriteRowUv("northeast", 4, USER_AUTHORIZED_ZAO_DIRECTION_ROWS)).toEqual({ vOffset: 0.5, vScale: -0.25 });
+    expect(selectSpriteFrameUv(0.45, 8, 6, true, 6)).toEqual({ uOffset: 0.5, uScale: 1 / 6 });
+    expect(selectSpriteFrameUv(0.7, 12, 6, false, 6)).toEqual({ uOffset: 5 / 6, uScale: 1 / 6 });
   });
 
   it("mantém o plano horizontal virado para a câmera superior", () => {

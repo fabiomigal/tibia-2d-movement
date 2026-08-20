@@ -162,3 +162,9 @@
 - [x] Cobrir os novos contratos de catálogo e atlas, validar em desktop e mobile e sincronizar a atualização visual com o GitHub.
 - [x] Recalibrar a escala visual do atlas OGA do aventureiro para a grade do mapa, sem alterar posição, colisão ou movimentação.
 - [x] Registrar a substituição das tarefas de geração original pela diretriz aprovada de usar exclusivamente os assets externos CC0 documentados.
+- [x] Inspecionar os spritesheets fornecidos, validar sua proveniência declarada e mapear seus metadados de animação.
+- [x] Registrar no manifesto a autorização explícita do autor para uso do pacote no projeto público.
+- [x] Publicar os spritesheets selecionados fora do projeto e registrar sua origem e autorização de uso no manifesto visual.
+- [x] Integrar os novos sprites de aventureiro, goblin e javali sem alterar movimentação, câmera, colisões ou regras de combate.
+- [x] Validar a troca visual em desktop e mobile e executar a verificação de tipos, 117 testes, build de produção e build do GitHub Pages.
+- [ ] Salvar o checkpoint dos sprites autorizados e sincronizá-lo com a ramificação principal do GitHub.

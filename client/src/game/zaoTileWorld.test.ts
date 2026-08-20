@@ -21,6 +21,8 @@ describe("mundo Zao construído em tiles", () => {
     expect(zones.find((zone) => zone.id === "amber-city-plaza")?.assetId).toBe("oga_stone");
     expect(zones.find((zone) => zone.id === "wind-road-forest-floor")?.assetId).toBe("oga_grass");
     expect(zones.find((zone) => zone.id === "wind-road-south-clearing")?.assetId).toBe("oga_path");
+    expect(zones.find((zone) => zone.id === "wind-road-forest-floor")?.tone).toBe("#738C50");
+    expect(zones.find((zone) => zone.id === "wind-road-south-clearing")?.tone).toBe("#C49C5C");
     expect(zones.every((zone) => zone.level > 0)).toBe(true);
   });
 });

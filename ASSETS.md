@@ -29,6 +29,18 @@ Os assets desta tabela são originais, gerados para o Vale de Âmbar. Eles não 
 
 Os arquivos externos acima substituem somente a aparência do terreno, decoração e personagem principal. **Movimentação, câmera, portais, colisões, combate e inventário permanecem inalterados.**
 
+## Animações autorizadas pelo autor do projeto — 20 de agosto de 2026
+
+O autor do Vale de Âmbar forneceu o pacote `zao_animations_essential.zip`, declarou que o criou com auxílio desta conversa e autorizou explicitamente seu uso no projeto público. A autorização é destinada a este projeto e não equivale a uma relicença CC0 ou a uma permissão de redistribuição irrestrita.
+
+| Ator | Estados integrados | Grade e direção | URLs publicadas |
+|---|---|---|---|
+| Aventureiro | repouso, caminhada, ataque e dano | 128 × 128 px; 4 linhas: sul, leste, norte e oeste | `/manus-storage/adventurer_idle_5c6c821a.png`, `/manus-storage/adventurer_walk_99439df4.png`, `/manus-storage/adventurer_attack_493719ba.png`, `/manus-storage/adventurer_hit_e9a0af85.png` |
+| Goblin | repouso, caminhada, ataque, dano e morte | 128 × 128 px; 4 linhas: sul, leste, norte e oeste | `/manus-storage/goblin_idle_c19e00f8.png`, `/manus-storage/goblin_walk_8225eff3.png`, `/manus-storage/goblin_attack_34582398.png`, `/manus-storage/goblin_hit_09927f94.png`, `/manus-storage/goblin_death_78823515.png` |
+| Javali | repouso, caminhada, ataque, dano e morte | 128 × 128 px; 4 linhas: sul, leste, norte e oeste | `/manus-storage/boar_idle_4df882b3.png`, `/manus-storage/boar_walk_a46d9d51.png`, `/manus-storage/boar_attack_c9d820f7.png`, `/manus-storage/boar_hit_2caa49b1.png`, `/manus-storage/boar_death_448ff42f.png` |
+
+O ambiente mantém os tiles externos CC0 já registrados, agora com tons oliva e âmbar mais contidos para preservar contraste com as novas animações detalhadas. **Movimentação, câmera, portais, colisões, combate e inventário permanecem inalterados.**
+
 ## Referência visual
 
 | Nome | Papel | Tamanho de exibição | Imagem |

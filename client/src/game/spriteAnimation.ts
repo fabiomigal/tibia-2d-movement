@@ -46,46 +46,56 @@ const STATIC_SPRITE_COLORS: Record<SpriteActorKind, string> = {
 };
 
 const CARDINAL_DIRECTION_ROWS: SpriteDirectionRows = { south: 0, east: 1, north: 2, west: 3 };
-/** O atlas CC0 de TheNess usa 6 colunas e 8 linhas, com diagonais após as direções cardinais. */
-export const ADVENTURER_OGA_SPRITE_URL = "/manus-storage/sprite_oga_f4502ba6.png";
-export const ADVENTURER_OGA_DIRECTION_ROWS: SpriteDirectionRows = {
-  south: 0,
-  west: 1,
-  north: 2,
-  east: 3,
-  southwest: 4,
-  northwest: 5,
-  northeast: 6,
-  southeast: 7,
-};
-const OGA_ADVENTURER_BASE_SHEET = {
-  url: ADVENTURER_OGA_SPRITE_URL,
-  columns: 6,
-  rows: 8,
-  directionRows: ADVENTURER_OGA_DIRECTION_ROWS,
+/** Assets originais do autor do projeto; a permissão de uso público está registrada no manifesto. */
+export const USER_AUTHORIZED_ZAO_SPRITE_URLS = {
+  adventurer: {
+    idle: "/manus-storage/adventurer_idle_5c6c821a.png",
+    walk: "/manus-storage/adventurer_walk_99439df4.png",
+    attack: "/manus-storage/adventurer_attack_493719ba.png",
+    hit: "/manus-storage/adventurer_hit_e9a0af85.png",
+  },
+  goblin: {
+    idle: "/manus-storage/goblin_idle_c19e00f8.png",
+    walk: "/manus-storage/goblin_walk_8225eff3.png",
+    attack: "/manus-storage/goblin_attack_34582398.png",
+    hit: "/manus-storage/goblin_hit_09927f94.png",
+    death: "/manus-storage/goblin_death_78823515.png",
+  },
+  boar: {
+    idle: "/manus-storage/boar_idle_4df882b3.png",
+    walk: "/manus-storage/boar_walk_a46d9d51.png",
+    attack: "/manus-storage/boar_attack_c9d820f7.png",
+    hit: "/manus-storage/boar_hit_2caa49b1.png",
+    death: "/manus-storage/boar_death_448ff42f.png",
+  },
+} as const;
+
+export const USER_AUTHORIZED_ZAO_DIRECTION_ROWS: SpriteDirectionRows = CARDINAL_DIRECTION_ROWS;
+const USER_AUTHORIZED_ZAO_BASE_SHEET = {
+  rows: 4,
+  directionRows: USER_AUTHORIZED_ZAO_DIRECTION_ROWS,
 } as const;
 
 const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteSheet>>> = {
   adventurer: {
-    idle: { ...OGA_ADVENTURER_BASE_SHEET, fps: 4, loop: true, frameColumns: 4 },
-    walk: { ...OGA_ADVENTURER_BASE_SHEET, fps: 8, loop: true, frameColumns: 4 },
-    attack: { ...OGA_ADVENTURER_BASE_SHEET, fps: 10, loop: false, frameColumns: 4 },
-    hit: { ...OGA_ADVENTURER_BASE_SHEET, fps: 9, loop: false, columnStart: 1, frameColumns: 1 },
-    death: { ...OGA_ADVENTURER_BASE_SHEET, fps: 1, loop: false, columnStart: 2, frameColumns: 1 },
+    idle: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.adventurer.idle, columns: 4, fps: 4, loop: true },
+    walk: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.adventurer.walk, columns: 6, fps: 8, loop: true },
+    attack: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.adventurer.attack, columns: 6, fps: 12, loop: false },
+    hit: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.adventurer.hit, columns: 4, fps: 10, loop: false },
   },
   goblin: {
-    idle: { url: "/manus-storage/goblin_idle_f8be0563.png", columns: 4, fps: 4, loop: true },
-    walk: { url: "/manus-storage/goblin_walk_229e3a0a.png", columns: 6, fps: 8, loop: true },
-    attack: { url: "/manus-storage/goblin_attack_05f6581b.png", columns: 6, fps: 12, loop: false },
-    hit: { url: "/manus-storage/goblin_hit_c3863c07.png", columns: 4, fps: 10, loop: false },
-    death: { url: "/manus-storage/goblin_death_fe048a24.png", columns: 6, fps: 8, loop: false },
+    idle: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.goblin.idle, columns: 4, fps: 4, loop: true },
+    walk: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.goblin.walk, columns: 6, fps: 8, loop: true },
+    attack: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.goblin.attack, columns: 6, fps: 12, loop: false },
+    hit: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.goblin.hit, columns: 4, fps: 10, loop: false },
+    death: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.goblin.death, columns: 6, fps: 8, loop: false },
   },
   boar: {
-    idle: { url: "/manus-storage/boar_idle_fee5ef14.png", columns: 4, fps: 4, loop: true },
-    walk: { url: "/manus-storage/boar_walk_d2e462b2.png", columns: 6, fps: 8, loop: true },
-    attack: { url: "/manus-storage/boar_attack_e5c330cc.png", columns: 6, fps: 12, loop: false },
-    hit: { url: "/manus-storage/boar_hit_28aa6f30.png", columns: 4, fps: 10, loop: false },
-    death: { url: "/manus-storage/boar_death_e30e85a5.png", columns: 6, fps: 8, loop: false },
+    idle: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.boar.idle, columns: 4, fps: 4, loop: true },
+    walk: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.boar.walk, columns: 6, fps: 8, loop: true },
+    attack: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.boar.attack, columns: 6, fps: 12, loop: false },
+    hit: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.boar.hit, columns: 4, fps: 10, loop: false },
+    death: { ...USER_AUTHORIZED_ZAO_BASE_SHEET, url: USER_AUTHORIZED_ZAO_SPRITE_URLS.boar.death, columns: 6, fps: 8, loop: false },
   },
 };
 

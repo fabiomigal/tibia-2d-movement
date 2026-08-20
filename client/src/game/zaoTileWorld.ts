@@ -27,14 +27,14 @@ type TilePatch = {
 
 /** Zonas somente visuais. A geometria física continua inteiramente em zaoMapLayout.ts. */
 const VISUAL_ZONES: readonly TilePatch[] = [
-  { id: "amber-city-plaza", assetId: "oga_stone", x: -5.35, z: -3.42, width: 5.35, height: 4.6, tone: "#F2D39A", level: 0.022 },
-  { id: "amber-city-west-court", assetId: "oga_stone", x: -8.9, z: -3.38, width: 2.55, height: 8.75, tone: "#D9C49A", level: 0.021 },
-  { id: "amber-city-riverside-lawn", assetId: "oga_grass", x: -0.08, z: -3.48, width: 2.25, height: 10.5, tone: "#A9B970", level: 0.019 },
-  { id: "amber-city-south-garden", assetId: "oga_grass", x: -7.7, z: -7.45, width: 11.1, height: 2.25, tone: "#93A860", level: 0.019 },
-  { id: "wind-road-forest-floor", assetId: "oga_grass", x: 4.95, z: 9.3, width: 16.8, height: 11.9, tone: "#819A58", level: 0.019 },
-  { id: "wind-road-west-grove", assetId: "oga_grass", x: -2.25, z: 9.85, width: 6.2, height: 7.5, tone: "#6D8750", level: 0.02 },
-  { id: "wind-road-east-grove", assetId: "oga_grass", x: 12.6, z: 9.6, width: 5.6, height: 8.1, tone: "#708B4D", level: 0.02 },
-  { id: "wind-road-south-clearing", assetId: "oga_path", x: 5.1, z: 3.68, width: 14.75, height: 2.05, tone: "#D3AB69", level: 0.024 },
+  { id: "amber-city-plaza", assetId: "oga_stone", x: -5.35, z: -3.42, width: 5.35, height: 4.6, tone: "#E7C783", level: 0.022 },
+  { id: "amber-city-west-court", assetId: "oga_stone", x: -8.9, z: -3.38, width: 2.55, height: 8.75, tone: "#CDBA8E", level: 0.021 },
+  { id: "amber-city-riverside-lawn", assetId: "oga_grass", x: -0.08, z: -3.48, width: 2.25, height: 10.5, tone: "#95A966", level: 0.019 },
+  { id: "amber-city-south-garden", assetId: "oga_grass", x: -7.7, z: -7.45, width: 11.1, height: 2.25, tone: "#879D59", level: 0.019 },
+  { id: "wind-road-forest-floor", assetId: "oga_grass", x: 4.95, z: 9.3, width: 16.8, height: 11.9, tone: "#738C50", level: 0.019 },
+  { id: "wind-road-west-grove", assetId: "oga_grass", x: -2.25, z: 9.85, width: 6.2, height: 7.5, tone: "#638049", level: 0.02 },
+  { id: "wind-road-east-grove", assetId: "oga_grass", x: 12.6, z: 9.6, width: 5.6, height: 8.1, tone: "#668147", level: 0.02 },
+  { id: "wind-road-south-clearing", assetId: "oga_path", x: 5.1, z: 3.68, width: 14.75, height: 2.05, tone: "#C49C5C", level: 0.024 },
 ];
 
 const DECORATIONS = [
