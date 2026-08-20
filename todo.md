@@ -178,3 +178,9 @@
 - [x] Diagnosticar e corrigir a inversão vertical dos tiles, props e atlas Aurora sem modificar módulos de mecânica congelados.
 - [x] Cobrir a orientação corrigida com 117 testes, validação de tipos, builds de produção/GitHub Pages e prévias desktop/mobile.
 - [x] Salvar o checkpoint da correção de orientação Aurora e sincronizá-lo com o GitHub.
+- [x] Mapear a grade e as camadas atuais do primeiro mapa para uma visualização fiel.
+- [x] Gerar e entregar uma prancha gráfica legendada da organização da grade do primeiro mapa.
+- [x] Preparar e registrar as duas tiles de campo fornecidas pelo usuário, removendo apenas suas bordas externas para uso repetido.
+- [x] Publicar as duas variações e aplicá-las exclusivamente às células transitáveis de campo, preservando a orientação superior.
+- [x] Validar a continuidade visual em desktop e mobile e executar a checagem de tipos, 118 testes e builds de produção/GitHub Pages.
+- [ ] Salvar o checkpoint das tiles de campo e sincronizá-lo com o GitHub.

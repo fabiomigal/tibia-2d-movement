@@ -25,4 +25,11 @@ describe("mundo Zao construído em tiles", () => {
     expect(zones.find((zone) => zone.id === "wind-road-south-clearing")?.tone).toBe("#B97840");
     expect(zones.every((zone) => zone.level > 0)).toBe(true);
   });
+
+  it("alterna as duas tiles fornecidas entre o campo-base e as zonas de relva", () => {
+    const zones = getZaoWorldVisualZones();
+    expect(zones.find((zone) => zone.id === "wind-road-forest-floor")?.assetId).toBe("aurora_grass");
+    expect(zones.find((zone) => zone.id === "wind-road-west-grove")?.assetId).toBe("aurora_grass_variant");
+    expect(zones.find((zone) => zone.id === "amber-city-south-garden")?.tone).toBe("#FFFFFF");
+  });
 });

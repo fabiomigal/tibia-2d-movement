@@ -17,7 +17,8 @@ function auroraAsset(input: Omit<TileAssetManifestEntry, "sourceUrl" | "author" 
 
 /** Catálogo ativo: cada recurso é um recorte preparado da prancha Aurora autorizada pelo autor. */
 export const TILE_ASSET_MANIFEST: TileAssetManifestEntry[] = [
-  auroraAsset({ assetId: "aurora_grass", name: "Relva da Floresta do Orvalho", category: "terrain", originalFilename: "Lote B — gramado", localFilename: "/manus-storage/aurora_grass_c57dc482.png", tileWidth: 32, tileHeight: 32, previewColor: "#587241" }),
+  auroraAsset({ assetId: "aurora_grass", name: "Campo Florido — Variação A", category: "terrain", originalFilename: "Tile de campo fornecida pelo autor — variação A", localFilename: "/manus-storage/field-meadow-a_38596e09.png", tileWidth: 32, tileHeight: 32, previewColor: "#4C821D" }),
+  auroraAsset({ assetId: "aurora_grass_variant", name: "Campo Florido — Variação B", category: "terrain", originalFilename: "Tile de campo fornecida pelo autor — variação B", localFilename: "/manus-storage/field-meadow-b_1e3bf0f5.png", tileWidth: 32, tileHeight: 32, previewColor: "#3D761C" }),
   auroraAsset({ assetId: "aurora_path", name: "Trilha Âmbar", category: "road", originalFilename: "Lote B — trilha", localFilename: "/manus-storage/aurora_path_2a1cb6fb.png", tileWidth: 32, tileHeight: 32, previewColor: "#B78B4D" }),
   auroraAsset({ assetId: "aurora_water", name: "Água do Orvalho", category: "terrain", originalFilename: "Lote B — água", localFilename: "/manus-storage/aurora_water_f80cfd58.png", tileWidth: 32, tileHeight: 32, previewColor: "#3A8391" }),
   auroraAsset({ assetId: "aurora_mine_stone", name: "Pedra da Mina de Brasa Azul", category: "rock", originalFilename: "Lote C — pedra", localFilename: "/manus-storage/aurora_mine_stone_ff84402c.png", tileWidth: 32, tileHeight: 32, previewColor: "#354150" }),

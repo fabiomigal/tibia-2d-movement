@@ -11,7 +11,7 @@ const WORLD_HEIGHT = 34;
 const GROUND_LEVEL = 0.018;
 const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
 
-export type WorldTileAssetId = "aurora_grass" | "aurora_path" | "aurora_water" | "aurora_mine_stone" | "aurora_fortress_wall";
+export type WorldTileAssetId = "aurora_grass" | "aurora_grass_variant" | "aurora_path" | "aurora_water" | "aurora_mine_stone" | "aurora_fortress_wall";
 
 type TilePatch = {
   id: string;
@@ -30,10 +30,10 @@ const VISUAL_ZONES: readonly TilePatch[] = [
   { id: "amber-city-plaza", assetId: "aurora_mine_stone", x: -5.35, z: -3.42, width: 5.35, height: 4.6, tone: "#B8C1D2", level: 0.022 },
   { id: "amber-city-west-court", assetId: "aurora_mine_stone", x: -8.9, z: -3.38, width: 2.55, height: 8.75, tone: "#8393AE", level: 0.021 },
   { id: "amber-city-riverside-lawn", assetId: "aurora_grass", x: -0.08, z: -3.48, width: 2.25, height: 10.5, tone: "#78945B", level: 0.019 },
-  { id: "amber-city-south-garden", assetId: "aurora_grass", x: -7.7, z: -7.45, width: 11.1, height: 2.25, tone: "#5E7D4A", level: 0.019 },
+  { id: "amber-city-south-garden", assetId: "aurora_grass_variant", x: -7.7, z: -7.45, width: 11.1, height: 2.25, tone: "#FFFFFF", level: 0.019 },
   { id: "wind-road-forest-floor", assetId: "aurora_grass", x: 4.95, z: 9.3, width: 16.8, height: 11.9, tone: "#5A7948", level: 0.019 },
-  { id: "wind-road-west-grove", assetId: "aurora_grass", x: -2.25, z: 9.85, width: 6.2, height: 7.5, tone: "#4D6B42", level: 0.02 },
-  { id: "wind-road-east-grove", assetId: "aurora_grass", x: 12.6, z: 9.6, width: 5.6, height: 8.1, tone: "#527342", level: 0.02 },
+  { id: "wind-road-west-grove", assetId: "aurora_grass_variant", x: -2.25, z: 9.85, width: 6.2, height: 7.5, tone: "#FFFFFF", level: 0.02 },
+  { id: "wind-road-east-grove", assetId: "aurora_grass_variant", x: 12.6, z: 9.6, width: 5.6, height: 8.1, tone: "#FFFFFF", level: 0.02 },
   { id: "wind-road-south-clearing", assetId: "aurora_path", x: 5.1, z: 3.68, width: 14.75, height: 2.05, tone: "#B97840", level: 0.024 },
 ];
 
@@ -150,7 +150,7 @@ function getFeatureTileLevel(kind: ZaoMapFeatureKind) {
 /** Renderização jogável em tiles: camadas distinguem cidade, rio, estrada e floresta sem backdrop. */
 export function createZaoTileWorld(scene: Scene) {
   const materialCache = new Map<string, StandardMaterial>();
-  const grassMaterial = createTileMaterial(scene, "aurora_grass", "world-ground", materialCache);
+  const grassMaterial = createTileMaterial(scene, "aurora_grass", "world-ground", materialCache, "#FFFFFF");
   if (!IS_STATIC_DEMO) {
     const grassTexture = grassMaterial.diffuseTexture as Texture;
     grassTexture.uScale = WORLD_WIDTH;

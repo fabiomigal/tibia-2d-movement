@@ -23,9 +23,11 @@ describe("catálogo de assets Aurora autorizados", () => {
   });
 
   it("registra o conjunto Aurora como catálogo ativo único", () => {
-    const auroraAssetIds = ["aurora_grass", "aurora_path", "aurora_water", "aurora_mine_stone", "aurora_fortress_wall", "aurora_catacomb_stone", "aurora_tree", "aurora_flower_bed", "aurora_rock_cluster", "aurora_loot_chest", "aurora_adventurer", "aurora_goblin", "aurora_boar", "aurora_dust"];
-    expect(auroraAssetIds.map(getTileAsset)).toHaveLength(14);
+    const auroraAssetIds = ["aurora_grass", "aurora_grass_variant", "aurora_path", "aurora_water", "aurora_mine_stone", "aurora_fortress_wall", "aurora_catacomb_stone", "aurora_tree", "aurora_flower_bed", "aurora_rock_cluster", "aurora_loot_chest", "aurora_adventurer", "aurora_goblin", "aurora_boar", "aurora_dust"];
+    expect(auroraAssetIds.map(getTileAsset)).toHaveLength(15);
     expect(getTileAsset("aurora_grass")?.sourceUrl).toBe("https://github.com/fabiomigal/tibia-2d-movement");
+    expect(getTileAsset("aurora_grass")).toMatchObject({ localFilename: "/manus-storage/field-meadow-a_38596e09.png", tileWidth: 32, tileHeight: 32 });
+    expect(getTileAsset("aurora_grass_variant")).toMatchObject({ localFilename: "/manus-storage/field-meadow-b_1e3bf0f5.png", tileWidth: 32, tileHeight: 32 });
     expect(getTileAsset("aurora_tree")).toMatchObject({ tileWidth: 40, tileHeight: 48, localFilename: "/manus-storage/aurora_tree_3c9a975d.png" });
     expect(getTileAsset("aurora_adventurer")).toMatchObject({ author: "Autor do Vale de Âmbar", tileWidth: 32, tileHeight: 32, localFilename: "/manus-storage/aurora_adventurer_46c6b802.png" });
   });

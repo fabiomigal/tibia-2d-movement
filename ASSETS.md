@@ -8,7 +8,8 @@
 
 | Conjunto | Uso ativo | Arquivos publicados |
 |---|---|---|
-| Floresta do Orvalho | Gramado, trilha, água, árvore e flores do exterior | `aurora_grass_c2027220.png`, `aurora_path_33133ffa.png`, `aurora_water_bfd50fd5.png`, `aurora_tree_d42827c3.png`, `aurora_flower_bed_9d7b95d7.png` |
+| Campo transitável | Duas variações de relva repetida, fornecidas e autorizadas pelo autor, sem moldura externa | `field-meadow-a_38596e09.png`, `field-meadow-b_1e3bf0f5.png` |
+| Floresta do Orvalho | Trilha, água, árvore e flores do exterior; usa as variações de Campo transitável como relva | `aurora_path_33133ffa.png`, `aurora_water_bfd50fd5.png`, `aurora_tree_d42827c3.png`, `aurora_flower_bed_9d7b95d7.png` |
 | Mina / Fortaleza / Catacumbas | Pedra, muralhas e interiores | `aurora_mine_stone_6e3b1013.png`, `aurora_fortress_wall_e826603d.png`, `aurora_catacomb_stone_f82954c0.png` |
 | Personagens e criaturas | Aventureiro, goblin e javali em atlas cardinal 4×4 | `aurora_adventurer_2aa70015.png`, `aurora_goblin_a3a2f159.png`, `aurora_boar_deeedfd0.png` |
 | Props e efeitos | Baú, rochas e poeira de movimento | `aurora_loot_chest_23688efc.png`, `aurora_rock_cluster_584ad55e.png`, `aurora_dust_sheet_2c6cb634.png` |

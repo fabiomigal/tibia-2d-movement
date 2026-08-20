@@ -36,7 +36,7 @@ import { MONSTER_RESPAWN_DELAY_MS, WORLD_MONSTER_SPAWNS, WORLD_PORTALS } from "@
 const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
 
 const assets = {
-  grass: "/manus-storage/aurora_grass_c57dc482.png",
+  grass: "/manus-storage/field-meadow-a_38596e09.png",
   water: "/manus-storage/aurora_water_f80cfd58.png",
 } as const;
 
@@ -969,7 +969,7 @@ export class GameWorld {
           texture.uScale = entry.uScale;
           texture.vOffset = entry.vScale;
           texture.vScale = -entry.vScale;
-          texture.level = entry.url.includes("aurora_grass") ? 0.56 : 0.68;
+          texture.level = entry.url.includes("field-meadow") ? 0.72 : 0.68;
           texture.anisotropicFilteringLevel = 4;
           entry.material.diffuseTexture = texture;
           entry.material.alpha = entry.alpha;
