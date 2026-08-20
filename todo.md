@@ -183,4 +183,4 @@
 - [x] Preparar e registrar as duas tiles de campo fornecidas pelo usuário, removendo apenas suas bordas externas para uso repetido.
 - [x] Publicar as duas variações e aplicá-las exclusivamente às células transitáveis de campo, preservando a orientação superior.
 - [x] Validar a continuidade visual em desktop e mobile e executar a checagem de tipos, 118 testes e builds de produção/GitHub Pages.
-- [ ] Salvar o checkpoint das tiles de campo e sincronizá-lo com o GitHub.
+- [x] Salvar o checkpoint das tiles de campo e sincronizá-lo com o GitHub.
