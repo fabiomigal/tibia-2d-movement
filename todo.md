@@ -137,10 +137,11 @@
 - [x] Ajustar o respawn de criaturas para dois segundos após a derrota, no cliente e no estado persistido.
 - [x] Cobrir os novos sistemas ambientais, transições e respawns em testes e validações desktop/mobile.
 - [ ] Sincronizar o checkpoint validado do Vale de Âmbar com a ramificação principal do GitHub.
-- [x] Configurar o build estático e o workflow de GitHub Pages para visualização do jogo no repositório.
+- [ ] Configurar o build estático e o workflow de GitHub Pages para visualização do jogo no repositório.
 - [ ] Habilitar o GitHub Pages, confirmar a URL pública e validar o carregamento do jogo publicado.
 - [x] Implementar um modo estático explícito para GitHub Pages, preservando canvas e HUD sem chamadas tRPC indisponíveis.
 - [x] Adaptar os assets ao GitHub Pages com fallbacks locais no modo estático e validar que o build não solicita recursos privados.
 - [x] Servir e validar localmente o diretório final do Pages, incluindo ausência de erros de API e de recursos ausentes.
 - [x] Substituir referências remanescentes a `/manus-storage/` por recursos locais ou equivalentes acessíveis no GitHub Pages.
 - [x] Inspecionar as requisições do runtime estático e comprovar que não há dependências de `/api/*`, `/manus-storage/*` ou caminhos não servidos pelo Pages.
+- [ ] Corrigir o conflito entre a versão de pnpm do workflow e a versão declarada no `package.json`, e repetir a publicação remota.
