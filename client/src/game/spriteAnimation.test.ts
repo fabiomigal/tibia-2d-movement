@@ -17,17 +17,17 @@ describe("seleção de frame dos sprites Zao", () => {
     expect(selectSpriteDirection(-1, -1)).toBe("northwest");
   });
 
-  it("inverte o eixo V sem trocar a ordem declarada das direções no atlas", () => {
-    expect(selectSpriteRowUv("south")).toEqual({ vOffset: 0.25, vScale: -0.25 });
-    expect(selectSpriteRowUv("north")).toEqual({ vOffset: 0.75, vScale: -0.25 });
+  it("preserva o eixo V nativo sem trocar a ordem declarada das direções no atlas", () => {
+    expect(selectSpriteRowUv("south")).toEqual({ vOffset: 0, vScale: 0.25 });
+    expect(selectSpriteRowUv("north")).toEqual({ vOffset: 0.5, vScale: 0.25 });
   });
 
   it("recorta os atlases Aurora de quatro direções e preserva a animação de cada ator", () => {
     expect(AURORA_REFERENCE_SPRITE_URLS.adventurer).toBe("/manus-storage/aurora_adventurer_46c6b802.png");
     expect(AURORA_REFERENCE_SPRITE_URLS.goblin).toBe("/manus-storage/aurora_goblin_44e23aa6.png");
     expect(AURORA_REFERENCE_SPRITE_URLS.boar).toBe("/manus-storage/aurora_boar_e32a98d2.png");
-    expect(selectSpriteRowUv("south", 4, AURORA_REFERENCE_DIRECTION_ROWS)).toEqual({ vOffset: 0.25, vScale: -0.25 });
-    expect(selectSpriteRowUv("northeast", 4, AURORA_REFERENCE_DIRECTION_ROWS)).toEqual({ vOffset: 0.5, vScale: -0.25 });
+    expect(selectSpriteRowUv("south", 4, AURORA_REFERENCE_DIRECTION_ROWS)).toEqual({ vOffset: 0, vScale: 0.25 });
+    expect(selectSpriteRowUv("northeast", 4, AURORA_REFERENCE_DIRECTION_ROWS)).toEqual({ vOffset: 0.25, vScale: 0.25 });
     expect(selectSpriteFrameUv(0.45, 8, 4, true, 4)).toEqual({ uOffset: 3 / 4, uScale: 1 / 4 });
     expect(selectSpriteFrameUv(0.7, 12, 4, false, 4)).toEqual({ uOffset: 3 / 4, uScale: 1 / 4 });
   });

@@ -175,3 +175,6 @@
 - [x] Integrar os novos recursos somente nos renderizadores e remover as referências visuais antigas, sem alterar mecânicas ou módulos congelados.
 - [x] Cobrir a nova direção de arte com testes e validar em desktop e mobile.
 - [x] Salvar o checkpoint final da direção Aurora e sincronizá-lo com a ramificação principal do GitHub.
+- [x] Diagnosticar e corrigir a inversão vertical dos tiles, props e atlas Aurora sem modificar módulos de mecânica congelados.
+- [x] Cobrir a orientação corrigida com 117 testes, validação de tipos, builds de produção/GitHub Pages e prévias desktop/mobile.
+- [ ] Salvar o checkpoint da correção de orientação Aurora e sincronizá-lo com o GitHub.

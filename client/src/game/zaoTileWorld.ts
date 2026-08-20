@@ -102,6 +102,8 @@ function createTileMaterial(scene: Scene, assetId: string, name: string, materia
   texture.hasAlpha = true;
   texture.wrapU = Texture.WRAP_ADDRESSMODE;
   texture.wrapV = Texture.WRAP_ADDRESSMODE;
+  texture.vOffset = 1;
+  texture.vScale = -1;
   const tint = Color3.FromHexString(tone);
   material.diffuseTexture = texture;
   material.emissiveTexture = texture;
@@ -152,7 +154,8 @@ export function createZaoTileWorld(scene: Scene) {
   if (!IS_STATIC_DEMO) {
     const grassTexture = grassMaterial.diffuseTexture as Texture;
     grassTexture.uScale = WORLD_WIDTH;
-    grassTexture.vScale = WORLD_HEIGHT;
+    grassTexture.vOffset = WORLD_HEIGHT;
+    grassTexture.vScale = -WORLD_HEIGHT;
   }
   const ground = MeshBuilder.CreateGround("walkable-grass", { width: WORLD_WIDTH, height: WORLD_HEIGHT, subdivisions: 2 }, scene);
   ground.position.y = GROUND_LEVEL;

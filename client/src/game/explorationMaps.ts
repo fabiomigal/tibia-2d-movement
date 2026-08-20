@@ -28,6 +28,8 @@ function material(scene: Scene, id: AssetId, tone: string, cache: Map<string, St
     texture.hasAlpha = true;
     texture.wrapU = Texture.WRAP_ADDRESSMODE;
     texture.wrapV = Texture.WRAP_ADDRESSMODE;
+    texture.vOffset = 1;
+    texture.vScale = -1;
     output.diffuseTexture = texture;
     output.emissiveTexture = texture;
   }

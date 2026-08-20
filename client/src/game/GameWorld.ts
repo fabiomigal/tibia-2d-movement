@@ -420,6 +420,8 @@ export class GameWorld {
         texture.hasAlpha = true;
         texture.wrapU = Texture.CLAMP_ADDRESSMODE;
         texture.wrapV = Texture.CLAMP_ADDRESSMODE;
+        texture.vOffset = 1;
+        texture.vScale = -1;
       }
       const material = new StandardMaterial(`loot-chest-material-${chest.chestKey}`, this.scene);
       if (!IS_STATIC_DEMO) {
@@ -965,7 +967,8 @@ export class GameWorld {
           texture.wrapU = Texture.WRAP_ADDRESSMODE;
           texture.wrapV = Texture.WRAP_ADDRESSMODE;
           texture.uScale = entry.uScale;
-          texture.vScale = entry.vScale;
+          texture.vOffset = entry.vScale;
+          texture.vScale = -entry.vScale;
           texture.level = entry.url.includes("aurora_grass") ? 0.56 : 0.68;
           texture.anisotropicFilteringLevel = 4;
           entry.material.diffuseTexture = texture;

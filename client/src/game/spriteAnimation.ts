@@ -82,13 +82,13 @@ const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteS
   },
 };
 
-/** Recorte UV com eixo V invertido para manter o topo do PNG como topo visual no terreno. */
+/** Recorte UV no sentido nativo do atlas Aurora: o topo do PNG permanece no topo visual do plano. */
 export function selectSpriteRowUv(direction: SpriteDirection, rows = 4, directionRows: SpriteDirectionRows = CARDINAL_DIRECTION_ROWS) {
   const cardinalFallback: Record<SpriteDirection, "south" | "east" | "north" | "west"> = {
     south: "south", southwest: "west", west: "west", northwest: "west", north: "north", northeast: "east", east: "east", southeast: "east",
   };
   const row = directionRows[direction] ?? directionRows[cardinalFallback[direction]] ?? 0;
-  return { vOffset: (row + 1) / rows, vScale: -1 / rows };
+  return { vOffset: row / rows, vScale: 1 / rows };
 }
 
 export function selectSpriteFrame(elapsedSeconds: number, fps: number, columns: number, loop: boolean) {
@@ -211,7 +211,9 @@ export class AnimatedSpriteActor {
       texture.wrapU = Texture.CLAMP_ADDRESSMODE;
       texture.wrapV = Texture.CLAMP_ADDRESSMODE;
       texture.uScale = 1 / sheet.columns;
-      texture.vScale = selectSpriteRowUv("south", sheet.rows ?? 4, sheet.directionRows).vScale;
+      const initialRowUv = selectSpriteRowUv("south", sheet.rows ?? 4, sheet.directionRows);
+      texture.vOffset = initialRowUv.vOffset;
+      texture.vScale = initialRowUv.vScale;
       this.textures.set(action, texture);
     }
     this.material.diffuseTexture = texture;
