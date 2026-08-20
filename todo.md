@@ -149,8 +149,8 @@
 - [x] Alterar a visibilidade do repositório para pública conforme autorização explícita do usuário e confirmar a exposição do código-fonte.
 - [x] Reexecutar o workflow de GitHub Pages após a alteração de visibilidade e validar a URL pública do jogo.
 - [x] Mapear os materiais, sprites e elementos de cenário substituíveis sem alterar módulos de funcionalidade, movimento ou câmera.
-- [ ] Gerar uma referência visual original em pixel art com trilhas claras, vegetação densa e ambientação de fantasia vista de cima.
-- [ ] Gerar e publicar sprites originais para o aventureiro e um conjunto modular de cenário fiel à composição da referência.
+- [x] Gerar uma referência visual original em pixel art com trilhas claras, vegetação densa e ambientação de fantasia vista de cima. **Substituída pela diretriz aprovada de usar exclusivamente assets externos CC0 documentados.**
+- [x] Gerar e publicar sprites originais para o aventureiro e um conjunto modular de cenário fiel à composição da referência. **Substituída pela diretriz aprovada de usar exclusivamente assets externos CC0 documentados.**
 - [x] Integrar os novos assets apenas nos renderizadores e materiais visuais do jogo, preservando todos os contratos de gameplay.
 - [x] Cobrir os novos contratos visuais e validar a aparência em desktop e mobile.
 - [x] Pesquisar e selecionar tiles e sprites externos de pixel art com licença explícita, compatíveis com a referência.
@@ -159,5 +159,6 @@
 - [x] Priorizar conjuntos CC0 ou CC-BY de RPG top-down com trilhas claras, vegetação e personagem em pixel art.
 - [x] Integrar os tiles CC0 Overworld Grass Biome ao mundo externo e aos interiores, preservando a geometria de colisão existente.
 - [x] Adaptar o atlas CC0 do aventureiro de oito direções aos estados visuais do jogador sem modificar a movimentação.
-- [ ] Cobrir os novos contratos de catálogo e atlas, validar em desktop e mobile e sincronizar a atualização visual com o GitHub.
+- [x] Cobrir os novos contratos de catálogo e atlas, validar em desktop e mobile e sincronizar a atualização visual com o GitHub.
 - [x] Recalibrar a escala visual do atlas OGA do aventureiro para a grade do mapa, sem alterar posição, colisão ou movimentação.
+- [x] Registrar a substituição das tarefas de geração original pela diretriz aprovada de usar exclusivamente os assets externos CC0 documentados.
