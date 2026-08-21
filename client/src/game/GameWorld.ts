@@ -956,7 +956,7 @@ export class GameWorld {
       position: [this.player.position.x, this.player.position.y],
       nearbyHotspot: this.landmarkInteractions.find((entry) => entry.id === this.nearbyLandmarkId) ?? null,
       monsters: this.creatureAgents.filter((entry) => entry.state !== "dead").map((entry) => ({ 
-        id: entry.interaction.monsterEncounterId ?? -1, 
+        id: entry.interaction.monsterEncounterId !== undefined ? entry.interaction.monsterEncounterId : -1, 
         key: entry.interaction.monsterKey ?? entry.interaction.id, 
         name: entry.interaction.label, 
         x: entry.interaction.x, 

@@ -231,3 +231,5 @@
 - [x] Ajustar todas as referências no código (gameCatalog.ts, gameService.ts, GameWorld.ts, etc.) para refletir a remoção dos mapas.
 - [x] Identificar e corrigir quaisquer erros remanescentes no projeto, incluindo falhas de tipo e duplicidade de chaves.
 - [x] Atualizar o repositório no GitHub e o GitHub Pages com o estado final limpo e funcional.
+
+- [ ] Refatorar a geração de chaves em `GameOverlay.tsx` para garantir unicidade absoluta (usar `monsterEncounterId` ou UUID como fallback).

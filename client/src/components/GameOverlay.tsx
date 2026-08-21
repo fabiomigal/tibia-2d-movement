@@ -369,11 +369,12 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       <section className="rpg-minimap" aria-label="Minimapa de região">
         <div className="rpg-minimap__heading"><Map size={14}/><span>MAPA LOCAL</span></div>
         <div className={`rpg-minimap__map rpg-minimap__map--zao rpg-minimap__map--${zaoSubarea}`}>
-          {status.monsters.map((monster) => {
-            const encounter = data.encounters.find((e) => e.monsterKey === monster.key && Math.abs(e.x - monster.x) < 1 && Math.abs(e.z - monster.z) < 1);
+          {status.monsters.map((monster, index) => {
             const tone = DEMO_MONSTERS.find((entry) => entry.key === monster.key)?.tone ?? "#d58d52";
             const point = projectZaoMapPoint(zaoSubarea, monster.x, monster.z);
-            return <b key={encounter?.id ?? `${monster.key}-${monster.x}-${monster.z}`} className="minimap-monster" style={{ left: `${point.left}%`, top: `${point.top}%`, background: tone }} title={`${monster.name}: ${monster.hp}/${monster.maxHp} HP`}/>;
+            // Prioriza o ID real, caso contrário usa uma chave composta única que inclui o índice
+            const monsterKey = monster.id > 0 ? `minimap-m-${monster.id}` : `minimap-idx-${index}-${monster.key}-${monster.x}-${monster.z}`;
+            return <b key={monsterKey} className="minimap-monster" style={{ left: `${point.left}%`, top: `${point.top}%`, background: tone }} title={`${monster.name}: ${monster.hp}/${monster.maxHp} HP`}/>;
           })}
           {status.nearbyHotspot && <b className={`minimap-hotspot minimap-hotspot--${minimapMarkerTheme}`} style={minimapHotspotStyle} title={status.nearbyHotspot.label}/>}<b className={`minimap-player minimap-player--${minimapMarkerTheme}`} style={minimapPlayerStyle} title="Você"/><span className="minimap-compass">N</span>
         </div>
@@ -382,7 +383,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
 
       <section className="quick-inventory" aria-label="Itens coletados recentemente">
         <header><Backpack size={15}/><span>MOCHILA RÁPIDA</span><b>{quickInventoryTotal}</b></header>
-        {quickInventory.length ? <div className="quick-inventory__items">{quickInventory.map((item) => <button key={`${item.name}-${item.rarity}`} className={RARITY_CLASS[item.rarity] ?? ""} onClick={() => setPanel("inventory")} title="Abrir mochila completa"><i>{item.rarity === "rare" || item.rarity === "epic" ? "✦" : "◆"}</i><span>{item.name}</span><b>×{item.quantity}</b></button>)}</div> : <p>Nenhum item coletado.</p>}
+        {quickInventory.length ? <div className="quick-inventory__items">{quickInventory.map((item, index) => <button key={`quick-inv-${item.name}-${item.rarity}-${index}`} className={RARITY_CLASS[item.rarity] ?? ""} onClick={() => setPanel("inventory")} title="Abrir mochila completa"><i>{item.rarity === "rare" || item.rarity === "epic" ? "✦" : "◆"}</i><span>{item.name}</span><b>×{item.quantity}</b></button>)}</div> : <p>Nenhum item coletado.</p>}
         {lastCollectedItem && <footer aria-live="polite">+ {lastCollectedItem}</footer>}
       </section>
 
