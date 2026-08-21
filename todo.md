@@ -188,4 +188,4 @@
 - [x] Entregar o arquivo gráfico da grade ao usuário.
 - [x] Mapear os frames de repouso, caminhada, ataque, dano e derrota da spritesheet Batedor de Ruínas fornecida.
 - [x] Preparar e publicar um atlas limpo do Batedor de Ruínas e aplicá-lo somente ao personagem principal.
-- [ ] Validar as animações em desktop e mobile, executar testes e sincronizar o checkpoint com o GitHub.
+- [x] Validar as animações em desktop e mobile, executar testes e sincronizar o checkpoint com o GitHub.
