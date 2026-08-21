@@ -58,9 +58,11 @@ describe("GameWorld — ataque básico por duplo clique", () => {
     const world = new GameWorld(scene, canvas, false);
     const boar = scene.getMeshByName("sighting-boar-body");
     const playerSprite = scene.getMeshByName("player-zao-sprite");
+    const boarSprite = scene.getMeshByName("sighting-boar-sprite");
     const legacyPlayer = scene.getMeshByName("player-cloak");
     expect(boar).toBeTruthy();
     expect(boar?.isVisible).toBe(false);
+    expect(boarSprite?.isVisible).toBe(true);
     expect(playerSprite?.isVisible).toBe(true);
     expect(legacyPlayer?.isEnabled()).toBe(false);
     vi.spyOn(scene, "pick").mockReturnValue({ pickedMesh: boar } as never);
@@ -87,7 +89,7 @@ describe("GameWorld — ataque básico por duplo clique", () => {
     respawningBoar.respawnAt = 0;
     world.update(0);
     expect(respawningBoar.body.isVisible).toBe(false);
-    expect(respawningBoar.sprite.mesh.isVisible).toBe(false);
+    expect(respawningBoar.sprite.mesh.isVisible).toBe(true);
 
     world.dispose();
     scene.dispose();

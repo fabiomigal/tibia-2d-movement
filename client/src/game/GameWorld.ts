@@ -764,7 +764,7 @@ export class GameWorld {
     const kind: SpriteActorKind = monsterKey === "field-boar" ? "boar" : "goblin";
     const sprite = new AnimatedSpriteActor(this.scene, kind, name, ZAO_SPRITE_SIZE[kind]);
     sprite.update(0, x, 0.13, z, "idle");
-    sprite.setVisible(false);
+    sprite.setVisible(true);
     this.registerLandmark(sprite.mesh, interaction);
     const marker = MeshBuilder.CreateTorus(`${name}-target-marker`, { diameter: scale * 1.85, thickness: 0.045, tessellation: 20 }, this.scene);
     marker.position.set(x, 0.045, z);
@@ -809,7 +809,7 @@ export class GameWorld {
         creature.state = "return";
         creature.body.isVisible = false;
         creature.body.isPickable = true;
-        creature.sprite.setVisible(false);
+        creature.sprite.setVisible(true);
         creature.sprite.mesh.isPickable = true;
         creature.marker.isVisible = false;
         creature.hp = creature.maxHp;
@@ -866,7 +866,7 @@ export class GameWorld {
       }
       const spriteAction: SpriteAction = creature.state === "attack" ? "attack" : creature.state === "chase" || creature.state === "return" ? "walk" : "idle";
       creature.sprite.update(deltaSeconds, creature.body.position.x, 0.13, creature.body.position.z, spriteAction);
-      creature.sprite.setVisible(false);
+      creature.sprite.setVisible(true);
       this.updateHealthBar(creature.healthBar, creature.body.position.x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, creature.body.position.z, creature.hp, creature.maxHp, false);
       const selected = creature.interaction.monsterKey === this.selectedAttackTarget;
       const markerMaterial = creature.marker.material as StandardMaterial;

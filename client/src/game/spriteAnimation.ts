@@ -73,6 +73,12 @@ export const AURORA_REFERENCE_SPRITE_URLS = {
   boar: "/manus-storage/aurora_boar_e32a98d2.png",
 } as const;
 
+/** Cópias dos atlas Aurora incluídas no artefato do GitHub Pages. */
+export const AURORA_REFERENCE_STATIC_SPRITE_URLS = {
+  goblin: `${import.meta.env.BASE_URL}sprites/aurora-monsters/aurora_goblin.png`,
+  boar: `${import.meta.env.BASE_URL}sprites/aurora-monsters/aurora_boar.png`,
+} as const;
+
 export const AURORA_REFERENCE_DIRECTION_ROWS: SpriteDirectionRows = CARDINAL_DIRECTION_ROWS;
 const AURORA_REFERENCE_BASE_SHEET = {
   rows: 4,
@@ -151,9 +157,9 @@ export function selectCardinalSpriteDirection(deltaX: number, deltaZ: number, fa
   return deltaZ > 0 ? "south" : "north";
 }
 
-/** Durante a limpeza visual, somente o personagem principal conserva um atlas de imagem. */
+/** O protagonista e as criaturas usam seus respectivos atlas de imagem. */
 export function usesSpriteTexture(kind: SpriteActorKind) {
-  return kind === "adventurer";
+  return kind === "adventurer" || kind === "goblin" || kind === "boar";
 }
 
 /** Camada visual independente da lógica de movimento: recorta atlas 4×N ou 8×N em um plano horizontal do mundo. */
@@ -246,8 +252,13 @@ export class AnimatedSpriteActor {
 
   private sheet(action: SpriteAction) {
     const sheet = spriteSheets[this.kind][action] ?? spriteSheets[this.kind].idle!;
-    if (IS_STATIC_DEMO && this.kind === "adventurer") {
-      return { ...sheet, url: BATEDOR_RUINAS_STATIC_SPRITE_URLS[action] ?? BATEDOR_RUINAS_STATIC_SPRITE_URLS.idle };
+    if (IS_STATIC_DEMO) {
+      if (this.kind === "adventurer") {
+        return { ...sheet, url: BATEDOR_RUINAS_STATIC_SPRITE_URLS[action] ?? BATEDOR_RUINAS_STATIC_SPRITE_URLS.idle };
+      }
+      if (this.kind === "goblin" || this.kind === "boar") {
+        return { ...sheet, url: AURORA_REFERENCE_STATIC_SPRITE_URLS[this.kind] };
+      }
     }
     return sheet;
   }

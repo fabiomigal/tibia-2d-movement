@@ -49,6 +49,19 @@ jobs:
           mkdir -p dist/public/field-assets
           cp /tmp/amber-field-uniform.png dist/public/field-assets/amber-field-uniform.png
           test -s dist/public/field-assets/amber-field-uniform.png
+      - name: Incluir sprites Aurora de criaturas
+        run: |
+          curl --fail --location --silent --show-error \
+            https://github.com/fabiomigal/tibia-2d-movement/releases/download/aurora-monster-sprites-v1/aurora_goblin.png \
+            --output /tmp/aurora_goblin.png
+          curl --fail --location --silent --show-error \
+            https://github.com/fabiomigal/tibia-2d-movement/releases/download/aurora-monster-sprites-v1/aurora_boar.png \
+            --output /tmp/aurora_boar.png
+          mkdir -p dist/public/sprites/aurora-monsters
+          cp /tmp/aurora_goblin.png dist/public/sprites/aurora-monsters/aurora_goblin.png
+          cp /tmp/aurora_boar.png dist/public/sprites/aurora-monsters/aurora_boar.png
+          test -s dist/public/sprites/aurora-monsters/aurora_goblin.png
+          test -s dist/public/sprites/aurora-monsters/aurora_boar.png
       - name: Configurar Pages
         uses: actions/configure-pages@v5
         with:
