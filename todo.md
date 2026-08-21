@@ -209,4 +209,4 @@
 - [x] Corrigir o Batedor de Ruínas para exibir somente a direção cardinal correspondente ao último sentido de deslocamento ou repouso.
 - [x] Cobrir a retenção de direção por testes, validar em desktop/mobile e sincronizar o ajuste com GitHub e GitHub Pages.
 - [x] Restaurar e orientar corretamente os sprites de goblin e javali no mapa, preservando suas interações de combate.
-- [ ] Cobrir os sprites de monstros com testes, validar em desktop/mobile e sincronizar a atualização com GitHub e GitHub Pages.
+- [x] Cobrir os sprites de monstros com testes, validar em desktop/mobile e sincronizar a atualização com GitHub e GitHub Pages.
