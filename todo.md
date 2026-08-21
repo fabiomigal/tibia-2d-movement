@@ -197,4 +197,4 @@
 - [x] Registrar o conteúdo e a proveniência do pacote de sprites e confirmar seu acesso público no repositório.
 - [x] Disponibilizar os cinco atlas do Batedor de Ruínas por URLs públicas compatíveis com o GitHub Pages.
 - [x] Aplicar os atlas públicos somente ao modo estático, preservando os sprites e os módulos de jogo existentes.
-- [ ] Validar o build GitHub Pages, a página publicada e sincronizar o checkpoint da atualização.
+- [x] Validar o build GitHub Pages, a página publicada e sincronizar o checkpoint da atualização.

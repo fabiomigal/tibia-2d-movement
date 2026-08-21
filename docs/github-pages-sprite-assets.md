@@ -7,3 +7,7 @@ O workflow `deploy-pages.yml` baixa o pacote versionado `vale-ambar-batedor-ruin
 ## Validação local
 
 Em 21 de agosto de 2026, a extração local do pacote foi reproduzida com sucesso e confirmou os cinco arquivos esperados: `idle`, `walk`, `attack`, `hit` e `death`. A prévia inicial do artefato estático ainda exibiu uma tela em branco na janela automatizada, embora o bundle principal e o atlas `idle` tenham respondido com HTTP 200 no subdiretório `/tibia-2d-movement/`. A inspeção do documento mostrou que o script e a folha de estilos foram baixados, mas o contêiner React não montou um canvas nessa prévia temporária. Como esse servidor não reproduz integralmente o ambiente GitHub Pages, a confirmação definitiva será feita no domínio publicado após o workflow.
+
+## Confirmação publicada
+
+O workflow `32438026677` foi concluído com sucesso no GitHub Actions. A página pública respondeu com o canvas e o HUD no endereço do GitHub Pages, e o navegador registrou a solicitação do atlas `idle` em `https://fabiomigal.github.io/tibia-2d-movement/sprites/batedor-ruinas/batedor-ruinas-idle-4x4.png`. Isso confirma que o modo estático do personagem principal usa a cópia publicada no artefato, e não o caminho privado de armazenamento.
