@@ -1,124 +1,105 @@
-import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import type { Scene } from "@babylonjs/core/scene";
-import { getZaoMapFeatures, type ZaoMapFeature, type ZaoMapFeatureKind } from "./zaoMapLayout";
 
 const WORLD_WIDTH = 48;
 const WORLD_HEIGHT = 34;
-const GROUND_LEVEL = 0.018;
-export type WorldSolidSurfaceId = "solid-grass" | "solid-grove" | "solid-road" | "solid-water" | "solid-stone" | "solid-wall";
+/** Acima de qualquer plano legado: a grade é a única superfície visual do mapa. */
+const GROUND_LEVEL = 0.075;
+const ATLAS_COLUMNS = 5;
+const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
 
-/** Paleta temporária sem texturas: separa regiões e preserva a leitura do mapa após a limpeza dos tiles. */
-export const WORLD_SOLID_SURFACE_COLORS: Readonly<Record<WorldSolidSurfaceId, string>> = {
-  "solid-grass": "#4F7A43",
-  "solid-grove": "#35613D",
-  "solid-road": "#B9874C",
-  "solid-water": "#3B8798",
-  "solid-stone": "#667083",
-  "solid-wall": "#3E4859",
+export type CleanFieldFamily = "amber-meadow" | "wind-trail" | "inn-garden" | "moon-clearing";
+
+/** Atlases horizontais de cinco tiles de chão, sem objetos, paredes, água profunda ou estruturas. */
+export const CLEAN_FIELD_ATLAS_URLS: Readonly<Record<CleanFieldFamily, string>> = {
+  "amber-meadow": "/manus-storage/amber-meadow-atlas_9c669b22.png",
+  "wind-trail": "/manus-storage/wind-trail-atlas_2727f147.png",
+  "inn-garden": "/manus-storage/inn-garden-atlas_4d8b2099.png",
+  "moon-clearing": "/manus-storage/moon-clearing-atlas_b5f9ac1e.png",
 };
 
-type TilePatch = {
+/** Cópias da release incluídas no artefato estático, respeitando o subdiretório do GitHub Pages. */
+export const CLEAN_FIELD_STATIC_ATLAS_URLS: Readonly<Record<CleanFieldFamily, string>> = {
+  "amber-meadow": `${import.meta.env.BASE_URL}tiles/clean-field/amber-meadow-atlas.png`,
+  "wind-trail": `${import.meta.env.BASE_URL}tiles/clean-field/wind-trail-atlas.png`,
+  "inn-garden": `${import.meta.env.BASE_URL}tiles/clean-field/inn-garden-atlas.png`,
+  "moon-clearing": `${import.meta.env.BASE_URL}tiles/clean-field/moon-clearing-atlas.png`,
+};
+
+function atlasUrl(family: CleanFieldFamily) {
+  return IS_STATIC_DEMO ? CLEAN_FIELD_STATIC_ATLAS_URLS[family] : CLEAN_FIELD_ATLAS_URLS[family];
+}
+
+export type CleanFieldGridProfile = {
   id: string;
-  surfaceId: WorldSolidSurfaceId;
+  family: CleanFieldFamily;
   x: number;
   z: number;
   width: number;
   height: number;
-  rotation?: number;
-  level: number;
+  level?: number;
 };
 
-/** Zonas somente visuais. A geometria física continua inteiramente em zaoMapLayout.ts. */
-const VISUAL_ZONES: readonly TilePatch[] = [
-  { id: "amber-city-plaza", surfaceId: "solid-stone", x: -5.35, z: -3.42, width: 5.35, height: 4.6, level: 0.022 },
-  { id: "amber-city-west-court", surfaceId: "solid-stone", x: -8.9, z: -3.38, width: 2.55, height: 8.75, level: 0.021 },
-  { id: "amber-city-riverside-lawn", surfaceId: "solid-grass", x: -0.08, z: -3.48, width: 2.25, height: 10.5, level: 0.019 },
-  { id: "amber-city-south-garden", surfaceId: "solid-grove", x: -7.7, z: -7.45, width: 11.1, height: 2.25, level: 0.019 },
-  { id: "wind-road-forest-floor", surfaceId: "solid-grass", x: 4.95, z: 9.3, width: 16.8, height: 11.9, level: 0.019 },
-  { id: "wind-road-west-grove", surfaceId: "solid-grove", x: -2.25, z: 9.85, width: 6.2, height: 7.5, level: 0.02 },
-  { id: "wind-road-east-grove", surfaceId: "solid-grove", x: 12.6, z: 9.6, width: 5.6, height: 8.1, level: 0.02 },
-  { id: "wind-road-south-clearing", surfaceId: "solid-road", x: 5.1, z: 3.68, width: 14.75, height: 2.05, level: 0.024 },
+/** Cada perfil mantém a identidade de área por meio do chão, e não por construções ou objetos. */
+export const CLEAN_FIELD_GRID_PROFILES: readonly CleanFieldGridProfile[] = [
+  { id: "amber-city-clean-field", family: "amber-meadow", x: -12, z: 0, width: 24, height: WORLD_HEIGHT },
+  { id: "wind-road-clean-field", family: "wind-trail", x: 12, z: 0, width: 24, height: WORLD_HEIGHT },
+  { id: "amber-inn-clean-field", family: "inn-garden", x: -18.2, z: 12.6, width: 7.2, height: 6.1, level: 0.041 },
+  { id: "moon-sanctuary-clean-field", family: "moon-clearing", x: 18.2, z: -11.8, width: 8.6, height: 7.1, level: 0.041 },
 ];
 
-export function resolveWorldSolidSurface(kind: ZaoMapFeatureKind): WorldSolidSurfaceId {
-  switch (kind) {
-    case "water": return "solid-water";
-    case "road": return "solid-road";
-    case "bridge": return "solid-stone";
-    case "wall": return "solid-wall";
-    case "structure":
-    case "tower":
-    case "gate": return "solid-wall";
-    case "cliff": return "solid-stone";
-  }
+export function getCleanFieldGridProfiles() {
+  return [...CLEAN_FIELD_GRID_PROFILES];
 }
 
-export function getZaoWorldSolidFeatures(): Array<ZaoMapFeature & { surfaceId: WorldSolidSurfaceId }> {
-  return (["bamboo-forest", "wind-road"] as const)
-    .flatMap((subarea) => getZaoMapFeatures(subarea))
-    .map((feature) => ({ ...feature, surfaceId: resolveWorldSolidSurface(feature.kind) }));
-}
-
-export function getZaoWorldVisualZones() {
-  return [...VISUAL_ZONES];
-}
-
-function createSolidMaterial(scene: Scene, surfaceId: WorldSolidSurfaceId, name: string, materialCache: Map<string, StandardMaterial>) {
-  const cacheKey = surfaceId;
-  const cached = materialCache.get(cacheKey);
+function materialForTile(scene: Scene, family: CleanFieldFamily, tileIndex: number, cache: Map<string, StandardMaterial>) {
+  const key = `${family}:${tileIndex}`;
+  const cached = cache.get(key);
   if (cached) return cached;
-  const material = new StandardMaterial(`${name}-${surfaceId}-material`, scene);
-  const color = Color3.FromHexString(WORLD_SOLID_SURFACE_COLORS[surfaceId]);
-  material.diffuseColor = color;
-  material.emissiveColor = color;
-  material.specularColor = Color3.Black();
-  material.backFaceCulling = false;
+
+  const material = new StandardMaterial(`clean-field-${key}`, scene);
+  const texture = new Texture(atlasUrl(family), scene, false, false, Texture.NEAREST_SAMPLINGMODE);
+  texture.uScale = 1 / ATLAS_COLUMNS;
+  texture.uOffset = tileIndex / ATLAS_COLUMNS;
+  texture.vScale = -1;
+  texture.vOffset = 1;
+  texture.wrapU = Texture.CLAMP_ADDRESSMODE;
+  texture.wrapV = Texture.CLAMP_ADDRESSMODE;
+  texture.hasAlpha = false;
+  material.diffuseTexture = texture;
+  material.emissiveTexture = texture;
+  material.specularColor.set(0, 0, 0);
   material.disableLighting = true;
-  materialCache.set(cacheKey, material);
+  material.backFaceCulling = false;
+  cache.set(key, material);
   return material;
 }
 
-function createTilePatch(scene: Scene, feature: TilePatch, materialCache: Map<string, StandardMaterial>) {
-  const columns = Math.max(1, Math.round(feature.width));
-  const rows = Math.max(1, Math.round(feature.height));
-  const tileWidth = feature.width / columns;
-  const tileHeight = feature.height / rows;
-  const material = createSolidMaterial(scene, feature.surfaceId, `world-surface-${feature.id}`, materialCache);
+/** Cria uma grade visual de chão. Nenhum objeto de mapa, parede, ponte, muro ou casa é produzido. */
+export function createCleanFieldGrid(scene: Scene, profile: CleanFieldGridProfile, materialCache = new Map<string, StandardMaterial>()) {
+  const columns = Math.max(1, Math.round(profile.width));
+  const rows = Math.max(1, Math.round(profile.height));
+  const tileWidth = profile.width / columns;
+  const tileHeight = profile.height / rows;
+  const level = profile.level ?? GROUND_LEVEL;
+
   for (let row = 0; row < rows; row += 1) {
     for (let column = 0; column < columns; column += 1) {
-      const tile = MeshBuilder.CreateGround(`world-tile-${feature.id}-${column}-${row}`, { width: tileWidth + 0.012, height: tileHeight + 0.012 }, scene);
-      tile.position.set(feature.x + (column + 0.5 - columns / 2) * tileWidth, GROUND_LEVEL + feature.level, feature.z + (row + 0.5 - rows / 2) * tileHeight);
-      tile.rotation.y = feature.rotation ?? 0;
-      tile.material = material;
-      tile.isPickable = false;
+      const tileIndex = (column * 3 + row * 2 + (profile.id.length % ATLAS_COLUMNS)) % ATLAS_COLUMNS;
+      const tile = MeshBuilder.CreateGround(`clean-field-${profile.id}-${column}-${row}`, { width: tileWidth + 0.008, height: tileHeight + 0.008 }, scene);
+      tile.position.set(profile.x + (column + 0.5 - columns / 2) * tileWidth, level, profile.z + (row + 0.5 - rows / 2) * tileHeight);
+      tile.material = materialForTile(scene, profile.family, tileIndex, materialCache);
+      tile.isPickable = true;
     }
   }
 }
 
-function getFeatureTileLevel(kind: ZaoMapFeatureKind) {
-  switch (kind) {
-    case "water": return 0.024;
-    case "road": return 0.033;
-    case "bridge": return 0.045;
-    case "wall":
-    case "structure":
-    case "tower":
-    case "gate":
-    case "cliff": return 0.052;
-  }
-}
-
-/** Superfícies sólidas temporárias: mantêm a leitura espacial enquanto as tiles e props são removidas do runtime. */
+/** Reconstrói o exterior como duas grades limpas: Campo de Âmbar e Estrada dos Ventos. */
 export function createZaoTileWorld(scene: Scene) {
-  const materialCache = new Map<string, StandardMaterial>();
-  const grassMaterial = createSolidMaterial(scene, "solid-grass", "world-ground", materialCache);
-  const ground = MeshBuilder.CreateGround("walkable-grass", { width: WORLD_WIDTH, height: WORLD_HEIGHT, subdivisions: 2 }, scene);
-  ground.position.y = GROUND_LEVEL;
-  ground.material = grassMaterial;
-  ground.isPickable = true;
-
-  getZaoWorldVisualZones().forEach((zone) => createTilePatch(scene, zone, materialCache));
-  getZaoWorldSolidFeatures().forEach((feature) => createTilePatch(scene, { ...feature, level: getFeatureTileLevel(feature.kind) }, materialCache));
+  const cache = new Map<string, StandardMaterial>();
+  CLEAN_FIELD_GRID_PROFILES
+    .filter((profile) => profile.id === "amber-city-clean-field" || profile.id === "wind-road-clean-field")
+    .forEach((profile) => createCleanFieldGrid(scene, profile, cache));
 }
