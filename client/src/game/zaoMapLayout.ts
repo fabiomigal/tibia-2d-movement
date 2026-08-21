@@ -104,21 +104,11 @@ export function projectZaoMapPoint(subarea: ZaoSubarea, x: number, z: number) {
   };
 }
 
-function addMapCollision(collision: CollisionWorld) {
-  [CITY_FEATURES, WIND_ROAD_FEATURES]
-    .flat()
-    .filter((feature) => feature.blocksMovement)
-    .forEach((feature) => {
-      collision.addRectangle(
-        feature.x - feature.width / 2,
-        feature.x + feature.width / 2,
-        feature.z - feature.height / 2,
-        feature.z + feature.height / 2,
-      );
-    });
-}
-
-/** Os colisores permanecem derivados da geometria declarativa; a renderização é feita em `zaoTileWorld`. */
-export function createZaoInitialMaps(_scene: Scene, collision: CollisionWorld) {
-  addMapCollision(collision);
+/**
+ * Mantém a assinatura usada pelo orquestrador do mundo, sem instalar obstáculos.
+ * Os metadados acima continuam disponíveis para regiões e portais, mas o campo
+ * uniforme é totalmente transitável conforme a solicitação atual.
+ */
+export function createZaoInitialMaps(_scene: Scene, _collision: CollisionWorld) {
+  // O mapa de campo uniforme não possui objetos, rios ou estruturas bloqueantes.
 }

@@ -202,3 +202,7 @@
 - [x] Remover do runtime todas as tiles e props visuais atuais, preservando apenas o atlas do personagem principal e as regras de colisão existentes.
 - [x] Aplicar um cenário temporário composto apenas por cores sólidas às regiões, caminhos, água, construções e obstáculos do mapa.
 - [x] Atualizar contratos e documentação, validar desktop/mobile, salvar checkpoint e sincronizar a limpeza visual com GitHub e GitHub Pages.
+- [x] Publicar a sprite de campo enviada e aplicá-la como a única textura em todas as células transitáveis dos mapas.
+- [x] Remover todos os objetos visuais, seus colisores e geometrias de bloqueio, preservando apenas portais e a movimentação/câmera congeladas.
+- [x] Atualizar contratos, testes e documentação para o mapa integralmente transitável de campo uniforme.
+- [ ] Validar em desktop e mobile, salvar checkpoint e sincronizar a atualização com GitHub e GitHub Pages.

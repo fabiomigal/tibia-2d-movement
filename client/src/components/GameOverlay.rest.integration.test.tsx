@@ -148,6 +148,21 @@ describe("GameOverlay — ciclo de repouso integrado", () => {
     window.removeEventListener("vale:portal-travel", onPortalTravel);
   });
 
+  it("mostra no minimapa de campo apenas jogador, criaturas e travessias", () => {
+    render(<GameOverlay status={{
+      ...movingStatus,
+      monsters: [{ key: "field-boar", name: "Javali do Campo", x: 2, z: 3, hp: 24, maxHp: 38 }],
+      nearbyHotspot: { id: "portal-inn-entry", label: "Porta da Estalagem", kind: "portal", x: -18.2, z: 13.9 },
+    }} />);
+
+    expect(document.querySelector(".minimap-player")).toBeTruthy();
+    expect(document.querySelectorAll(".minimap-monster")).toHaveLength(1);
+    expect(document.querySelectorAll(".minimap-hotspot")).toHaveLength(1);
+    expect(document.querySelector(".minimap-feature")).toBeNull();
+    expect(document.querySelector(".minimap-water")).toBeNull();
+    expect(document.querySelector(".minimap-path")).toBeNull();
+  });
+
   it("renova o snapshot ao final dos dois segundos de respawn após uma derrota", async () => {
     render(<GameOverlay status={movingStatus} />);
     await act(async () => {

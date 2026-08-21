@@ -41,6 +41,14 @@ jobs:
             'vale-ambar-batedor-ruinas-v1/atlases/*.png' \
             -d dist/public/sprites/batedor-ruinas
           test "$(find dist/public/sprites/batedor-ruinas -maxdepth 1 -name '*.png' | wc -l)" -eq 5
+      - name: Incluir sprite do campo uniforme
+        run: |
+          curl --fail --location --silent --show-error \
+            https://github.com/fabiomigal/tibia-2d-movement/releases/download/uniform-field-tile-v1/amber-field-uniform.png \
+            --output /tmp/amber-field-uniform.png
+          mkdir -p dist/public/field-assets
+          cp /tmp/amber-field-uniform.png dist/public/field-assets/amber-field-uniform.png
+          test -s dist/public/field-assets/amber-field-uniform.png
       - name: Configurar Pages
         uses: actions/configure-pages@v5
         with:

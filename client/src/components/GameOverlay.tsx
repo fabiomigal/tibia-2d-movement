@@ -11,7 +11,7 @@ import { groupLootChests } from "@/game/lootChestState";
 import { createCombatFloatEvents } from "@/game/combatFloatEvents";
 import { REST_REGENERATION } from "@shared/restRegeneration";
 import { resolveRestSync } from "@/game/restSyncPipeline";
-import { getZaoMapFeatures, projectZaoMapPoint, resolveZaoSubarea } from "@/game/zaoMapLayout";
+import { projectZaoMapPoint, resolveZaoSubarea } from "@/game/zaoMapLayout";
 import { createQuickInventory, getQuickInventoryTotal } from "@/game/quickInventory";
 
 type PanelKey = "character" | "inventory" | "equipment" | "skills" | "map" | "idle" | "merchant" | "quests" | "city" | "teleport" | "loot" | null;
@@ -316,7 +316,6 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const quickInventory = useMemo(() => createQuickInventory(data?.items ?? []), [data?.items]);
   const quickInventoryTotal = getQuickInventoryTotal(data?.items ?? []);
   const zaoSubarea = resolveZaoSubarea(status.position[0], status.position[1]);
-  const minimapFeatures = getZaoMapFeatures(zaoSubarea);
   const minimapPlayerPoint = projectZaoMapPoint(zaoSubarea, status.position[0], status.position[1]);
   const minimapPlayerStyle = { left: `${minimapPlayerPoint.left}%`, top: `${minimapPlayerPoint.top}%` };
   const minimapHotspotStyle = status.nearbyHotspot ? (() => {
@@ -347,11 +346,6 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       <section className="rpg-minimap" aria-label="Minimapa de região">
         <div className="rpg-minimap__heading"><Map size={14}/><span>MAPA LOCAL</span></div>
         <div className={`rpg-minimap__map rpg-minimap__map--zao rpg-minimap__map--${zaoSubarea}`}>
-          {minimapFeatures.map((feature) => {
-            const point = projectZaoMapPoint(zaoSubarea, feature.x, feature.z);
-            const bounds = zaoSubarea === "wind-road" ? { width: 22.4, height: 12.6 } : { width: 22.4, height: 12.6 };
-            return <i key={feature.id} className={`minimap-feature minimap-feature--${feature.kind}`} style={{ left: `${point.left}%`, top: `${point.top}%`, width: `${(feature.width / bounds.width) * 100}%`, height: `${(feature.height / bounds.height) * 100}%`, transform: `translate(-50%, -50%) rotate(${feature.rotation ?? 0}rad)` }} aria-hidden="true"/>;
-          })}
           {status.monsters.map((monster) => {
             const tone = DEMO_MONSTERS.find((entry) => entry.key === monster.key)?.tone ?? "#d58d52";
             const point = projectZaoMapPoint(zaoSubarea, monster.x, monster.z);

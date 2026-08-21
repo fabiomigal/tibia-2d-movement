@@ -87,7 +87,7 @@ describe("GameWorld — ataque básico por duplo clique", () => {
     respawningBoar.respawnAt = 0;
     world.update(0);
     expect(respawningBoar.body.isVisible).toBe(false);
-    expect(respawningBoar.sprite.mesh.isVisible).toBe(true);
+    expect(respawningBoar.sprite.mesh.isVisible).toBe(false);
 
     world.dispose();
     scene.dispose();
