@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AURORA_REFERENCE_DIRECTION_ROWS, AURORA_REFERENCE_SPRITE_URLS, BATEDOR_RUINAS_DIRECTION_ROWS, BATEDOR_RUINAS_SPRITE_URLS, BATEDOR_RUINAS_STATIC_SPRITE_URLS, OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv, usesSpriteTexture } from "./spriteAnimation";
+import { AURORA_REFERENCE_DIRECTION_ROWS, AURORA_REFERENCE_SPRITE_URLS, BATEDOR_RUINAS_DIRECTION_ROWS, BATEDOR_RUINAS_SPRITE_URLS, BATEDOR_RUINAS_STATIC_SPRITE_URLS, OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectCardinalSpriteDirection, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv, usesSpriteTexture } from "./spriteAnimation";
 import { Material } from "@babylonjs/core/Materials/material";
 
 describe("seleção de frame dos sprites Zao", () => {
@@ -15,6 +15,17 @@ describe("seleção de frame dos sprites Zao", () => {
     expect(selectSpriteDirection(0, -1)).toBe("north");
     expect(selectSpriteDirection(1, 1)).toBe("southeast");
     expect(selectSpriteDirection(-1, -1)).toBe("northwest");
+  });
+
+  it("limita o Batedor de Ruínas a uma face cardinal e conserva a última direção em repouso", () => {
+    expect(selectCardinalSpriteDirection(1, 0)).toBe("east");
+    expect(selectCardinalSpriteDirection(-1, 0)).toBe("west");
+    expect(selectCardinalSpriteDirection(0, 1)).toBe("south");
+    expect(selectCardinalSpriteDirection(0, -1)).toBe("north");
+    expect(selectCardinalSpriteDirection(1, 1)).toBe("south");
+    expect(selectCardinalSpriteDirection(-1, -1)).toBe("north");
+    expect(selectCardinalSpriteDirection(0, 0, "east")).toBe("east");
+    expect(selectCardinalSpriteDirection(0, 0, "northwest")).toBe("west");
   });
 
   it("preserva o eixo V nativo sem trocar a ordem declarada das direções no atlas", () => {

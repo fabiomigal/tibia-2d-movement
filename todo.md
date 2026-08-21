@@ -206,3 +206,5 @@
 - [x] Remover todos os objetos visuais, seus colisores e geometrias de bloqueio, preservando apenas portais e a movimentação/câmera congeladas.
 - [x] Atualizar contratos, testes e documentação para o mapa integralmente transitável de campo uniforme.
 - [x] Validar em desktop e mobile, salvar checkpoint e sincronizar a atualização com GitHub e GitHub Pages.
+- [x] Corrigir o Batedor de Ruínas para exibir somente a direção cardinal correspondente ao último sentido de deslocamento ou repouso.
+- [ ] Cobrir a retenção de direção por testes, validar em desktop/mobile e sincronizar o ajuste com GitHub e GitHub Pages.

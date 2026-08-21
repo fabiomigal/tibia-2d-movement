@@ -29,6 +29,7 @@ export const OPAQUE_SPRITE_CONTRAST = {
 } as const;
 
 type SpriteDirection = "south" | "southwest" | "west" | "northwest" | "north" | "northeast" | "east" | "southeast";
+export type CardinalSpriteDirection = "south" | "west" | "north" | "east";
 type SpriteDirectionRows = Readonly<Partial<Record<SpriteDirection, number>>>;
 type SpriteSheet = { url: string; columns: number; fps: number; loop: boolean; rows?: number; directionRows?: SpriteDirectionRows; invertV?: boolean; columnStart?: number; frameColumns?: number };
 
@@ -138,6 +139,18 @@ export function selectSpriteDirection(deltaX: number, deltaZ: number, fallback: 
   return deltaZ > 0 ? "southwest" : "northwest";
 }
 
+/** O Batedor possui somente quatro linhas no atlas; diagonais sempre escolhem uma única face cardinal. */
+export function selectCardinalSpriteDirection(deltaX: number, deltaZ: number, fallback: SpriteDirection = "south"): CardinalSpriteDirection {
+  const cardinalFallback: Record<SpriteDirection, CardinalSpriteDirection> = {
+    south: "south", southwest: "west", west: "west", northwest: "west", north: "north", northeast: "east", east: "east", southeast: "east",
+  };
+  if (Math.abs(deltaX) < 0.0001 && Math.abs(deltaZ) < 0.0001) return cardinalFallback[fallback];
+  const horizontal = Math.abs(deltaX);
+  const vertical = Math.abs(deltaZ);
+  if (horizontal > vertical) return deltaX > 0 ? "east" : "west";
+  return deltaZ > 0 ? "south" : "north";
+}
+
 /** Durante a limpeza visual, somente o personagem principal conserva um atlas de imagem. */
 export function usesSpriteTexture(kind: SpriteActorKind) {
   return kind === "adventurer";
@@ -149,7 +162,7 @@ export class AnimatedSpriteActor {
   private readonly material: StandardMaterial;
   private readonly textures = new Map<SpriteAction, Texture>();
   private action: SpriteAction = "idle";
-  private direction: SpriteDirection = "south";
+  private direction: CardinalSpriteDirection = "south";
   private elapsed = 0;
   private forcedAction: SpriteAction | null = null;
   private forcedUntil = 0;
@@ -187,7 +200,7 @@ export class AnimatedSpriteActor {
   update(deltaSeconds: number, x: number, y: number, z: number, suggestedAction: SpriteAction) {
     const dx = this.lastX === null ? 0 : x - this.lastX;
     const dz = this.lastZ === null ? 0 : z - this.lastZ;
-    this.direction = selectSpriteDirection(dx, dz, this.direction);
+    this.direction = selectCardinalSpriteDirection(dx, dz, this.direction);
     this.lastX = x;
     this.lastZ = z;
     const now = performance.now();
@@ -249,7 +262,7 @@ export class AnimatedSpriteActor {
       texture.wrapU = Texture.CLAMP_ADDRESSMODE;
       texture.wrapV = Texture.CLAMP_ADDRESSMODE;
       texture.uScale = 1 / sheet.columns;
-      const initialRowUv = selectSpriteRowUv("south", sheet.rows ?? 4, sheet.directionRows, sheet.invertV);
+      const initialRowUv = selectSpriteRowUv(this.direction, sheet.rows ?? 4, sheet.directionRows, sheet.invertV);
       texture.vOffset = initialRowUv.vOffset;
       texture.vScale = initialRowUv.vScale;
       this.textures.set(action, texture);
