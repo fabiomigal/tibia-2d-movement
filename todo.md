@@ -205,4 +205,4 @@
 - [x] Publicar a sprite de campo enviada e aplicá-la como a única textura em todas as células transitáveis dos mapas.
 - [x] Remover todos os objetos visuais, seus colisores e geometrias de bloqueio, preservando apenas portais e a movimentação/câmera congeladas.
 - [x] Atualizar contratos, testes e documentação para o mapa integralmente transitável de campo uniforme.
-- [ ] Validar em desktop e mobile, salvar checkpoint e sincronizar a atualização com GitHub e GitHub Pages.
+- [x] Validar em desktop e mobile, salvar checkpoint e sincronizar a atualização com GitHub e GitHub Pages.
