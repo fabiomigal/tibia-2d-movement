@@ -77,8 +77,12 @@ export const EXPANSION_SPRITE_URLS = {
   chest: "/manus-storage/chest_sprite_v3_f8d4ef4d.png",
 } as const;
 
-/** URLs de armazenamento para monstros e baú, acessíveis globalmente (incluindo GitHub Pages). */
-export const EXPANSION_STATIC_SPRITE_URLS = EXPANSION_SPRITE_URLS;
+/** URLs locais para monstros e baú no GitHub Pages, garantindo que a demonstração seja auto-contida. */
+export const EXPANSION_STATIC_SPRITE_URLS = {
+  goblin: `${import.meta.env.BASE_URL}sprites/aurora-monsters/aurora_goblin.png`,
+  boar: `${import.meta.env.BASE_URL}sprites/aurora-monsters/aurora_boar.png`,
+  chest: `${import.meta.env.BASE_URL}sprites/aurora-monsters/aurora_chest.png`,
+} as const;
 
 export const AURORA_REFERENCE_DIRECTION_ROWS: SpriteDirectionRows = BATEDOR_RUINAS_DIRECTION_ROWS;
 const AURORA_REFERENCE_BASE_SHEET = {
@@ -101,25 +105,25 @@ const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteS
     death: { ...BATEDOR_RUINAS_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.death, columns: 4, fps: 8, loop: false },
   },
   goblin: {
-    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 4, loop: true },
-    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 8, loop: true },
-    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 12, loop: false },
-    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 10, loop: false },
-    death: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 8, loop: false },
+    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.goblin : EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 4, loop: true },
+    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.goblin : EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 8, loop: true },
+    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.goblin : EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 12, loop: false },
+    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.goblin : EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 10, loop: false },
+    death: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.goblin : EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 8, loop: false },
   },
   boar: {
-    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 4, loop: true },
-    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 8, loop: true },
-    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 12, loop: false },
-    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 10, loop: false },
-    death: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 8, loop: false },
+    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.boar : EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 4, loop: true },
+    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.boar : EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 8, loop: true },
+    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.boar : EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 12, loop: false },
+    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.boar : EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 10, loop: false },
+    death: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.boar : EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 8, loop: false },
   },
   chest: {
-    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
-    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
-    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
-    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
-    death: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
+    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.chest : EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
+    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.chest : EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
+    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.chest : EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
+    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.chest : EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
+    death: { ...AURORA_REFERENCE_BASE_SHEET, url: IS_STATIC_DEMO ? EXPANSION_STATIC_SPRITE_URLS.chest : EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
   },
 };
 

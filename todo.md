@@ -232,4 +232,6 @@
 - [x] Identificar e corrigir quaisquer erros remanescentes no projeto, incluindo falhas de tipo e duplicidade de chaves.
 - [x] Atualizar o repositório no GitHub e o GitHub Pages com o estado final limpo e funcional.
 
-- [ ] Refatorar a geração de chaves em `GameOverlay.tsx` para garantir unicidade absoluta (usar `monsterEncounterId` ou UUID como fallback).
+- [x] Refatorar a geração de chaves em `GameOverlay.tsx` para garantir unicidade absoluta (usar `monsterEncounterId` ou UUID como fallback).
+
+- [ ] Validar o workflow de deploy do GitHub Pages e realizar a sincronização final do repositório.

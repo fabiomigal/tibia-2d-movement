@@ -7,7 +7,7 @@ import type { Scene } from "@babylonjs/core/scene";
 const WORLD_WIDTH = 48;
 const WORLD_HEIGHT = 34;
 const GROUND_LEVEL = 0.018;
-const IS_GITHUB_PAGES = import.meta.env.VITE_GITHUB_PAGES === "true";
+const IS_GITHUB_PAGES = import.meta.env.GITHUB_PAGES === "true";
 
 /** Sprite autorizada pelo usuário, repetida uma vez para cada célula de mundo. */
 export const UNIFORM_FIELD_TILE_URL = IS_GITHUB_PAGES
