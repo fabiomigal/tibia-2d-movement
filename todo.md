@@ -210,3 +210,15 @@
 - [x] Cobrir a retenção de direção por testes, validar em desktop/mobile e sincronizar o ajuste com GitHub e GitHub Pages.
 - [x] Restaurar e orientar corretamente os sprites de goblin e javali no mapa, preservando suas interações de combate.
 - [x] Cobrir os sprites de monstros com testes, validar em desktop/mobile e sincronizar a atualização com GitHub e GitHub Pages.
+
+- [x] Expansão do mapa Zao em 200% (ZAO_WORLD_BOUNDS atualizado para 864) e aumento da densidade de monstros.
+- [x] Implementação da funcionalidade 'Coletar Tudo' no backend e integração no HUD com o atalho de teclado [A].
+- [x] Geração e publicação de novas spritesheets para monstros (Goblin, Boar) e baús com persistência cardinal.
+- [x] Sincronização de novos assets com o diretório público para compatibilidade com GitHub Pages.
+- [x] Correção de erros de sincronização de tipos e validação de compilação do projeto.
+
+- [x] Processar spritesheets de monstros (Goblin, Boar) e baú para remover fundo e garantir transparência PNG.
+- [x] Ajustar orientação de todas as spritesheets para que o Norte (topo da sprite) esteja no topo do arquivo.
+- [x] Validar e ajustar a tile de campo uniforme para garantir alinhamento com o Norte.
+- [x] Atualizar o código de animação e mapeamento UV para refletir as mudanças de orientação e transparência.
+- [x] Sincronizar ativos processados com o GitHub e atualizar o GitHub Pages.

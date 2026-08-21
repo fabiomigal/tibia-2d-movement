@@ -387,7 +387,7 @@ export class GameWorld {
     const incoming = new Set(chests.map((chest) => chest.chestKey));
     this.lootChests.forEach((chest, key) => {
       if (incoming.has(key)) return;
-      chest.sprite.dispose(); chest.material.dispose(); chest.glow.dispose();
+      chest.sprite.dispose(); chest.glow.dispose();
       this.lootChests.delete(key);
     });
     for (const chest of chests) {
@@ -395,15 +395,13 @@ export class GameWorld {
       const glow = MeshBuilder.CreateDisc(`loot-glow-${chest.chestKey}`, { radius: 0.64, tessellation: 20 }, this.scene);
       glow.position.set(chest.x, 0.04, chest.z); glow.rotation.x = Math.PI / 2;
       glow.material = this.colorMaterial(`loot-glow-material-${chest.chestKey}`, "#F2B84B", 0.55, 0.32); glow.isPickable = false; glow.isVisible = false;
-      const material = this.colorMaterial(`loot-chest-material-${chest.chestKey}`, "#D9A441", 0.16, 1);
-      const sprite = MeshBuilder.CreatePlane(`loot-chest-${chest.chestKey}`, { width: 0.74, height: 0.74 }, this.scene);
-      sprite.position.set(chest.x, 0.092, chest.z);
-      sprite.rotation.x = Math.PI / 2;
-      sprite.material = material;
-      sprite.visibility = 0.001;
-      sprite.isPickable = true;
-      sprite.metadata = { valeLootChest: chest.chestKey };
-      this.lootChests.set(chest.chestKey, { ...chest, sprite, material, glow });
+      
+      const sprite = new AnimatedSpriteActor(this.scene, "chest", `loot-chest-${chest.chestKey}`, ZAO_SPRITE_SIZE.chest);
+      sprite.update(0, chest.x, 0.12, chest.z, "idle");
+      sprite.mesh.metadata = { valeLootChest: chest.chestKey };
+      sprite.mesh.isPickable = true;
+      
+      this.lootChests.set(chest.chestKey, { ...chest, sprite: sprite.mesh, material: sprite.material as StandardMaterial, glow });
     }
   }
 

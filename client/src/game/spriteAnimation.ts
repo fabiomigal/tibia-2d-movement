@@ -49,7 +49,8 @@ const STATIC_SPRITE_COLORS: Record<SpriteActorKind, string> = {
 };
 
 const CARDINAL_DIRECTION_ROWS: SpriteDirectionRows = { south: 0, east: 1, north: 2, west: 3 };
-/** Ordem física do atlas reconstruído: norte ocupa a linha superior do PNG. */
+/** Ordem física do atlas reconstruído: norte ocupa a linha superior do PNG. 
+ * Todos os ativos V3 seguem este padrão: Norte(0), Leste(1), Sul(2), Oeste(3). */
 export const BATEDOR_RUINAS_DIRECTION_ROWS: SpriteDirectionRows = { north: 0, east: 1, south: 2, west: 3 };
 /** Atlas cardinal 4×4 do Batedor de Ruínas, recortado da spritesheet autorizada pelo autor. */
 export const BATEDOR_RUINAS_SPRITE_URLS = {
@@ -69,24 +70,21 @@ export const BATEDOR_RUINAS_STATIC_SPRITE_URLS = {
   death: `${import.meta.env.BASE_URL}sprites/batedor-ruinas/batedor-ruinas-death-4x4.png`,
 } as const;
 
-/** Novas spritesheets geradas para monstros e baú. */
+/** Novas spritesheets geradas para monstros e baú (V4 - Transparência Corrigida e Orientação Norte). */
 export const EXPANSION_SPRITE_URLS = {
-  goblin: "/manus-storage/goblin_atlas_v2_f905cb24.png",
-  boar: "/manus-storage/boar_atlas_v2_d330e534.png",
-  chest: "/manus-storage/chest_sprite_v2_fa0d8994.png",
+  goblin: "/manus-storage/goblin_atlas_v3_a5715b7f.png",
+  boar: "/manus-storage/boar_atlas_v3_38659554.png",
+  chest: "/manus-storage/chest_sprite_v3_f8d4ef4d.png",
 } as const;
 
-/** Cópias das novas sprites para o GitHub Pages. */
-export const EXPANSION_STATIC_SPRITE_URLS = {
-  goblin: `${import.meta.env.BASE_URL}sprites/expansion/goblin_atlas_v2.png`,
-  boar: `${import.meta.env.BASE_URL}sprites/expansion/boar_atlas_v2.png`,
-  chest: `${import.meta.env.BASE_URL}sprites/expansion/chest_sprite_v2.png`,
-} as const;
+/** URLs de armazenamento para monstros e baú, acessíveis globalmente (incluindo GitHub Pages). */
+export const EXPANSION_STATIC_SPRITE_URLS = EXPANSION_SPRITE_URLS;
 
-export const AURORA_REFERENCE_DIRECTION_ROWS: SpriteDirectionRows = CARDINAL_DIRECTION_ROWS;
+export const AURORA_REFERENCE_DIRECTION_ROWS: SpriteDirectionRows = BATEDOR_RUINAS_DIRECTION_ROWS;
 const AURORA_REFERENCE_BASE_SHEET = {
   rows: 4,
   directionRows: AURORA_REFERENCE_DIRECTION_ROWS,
+  invertV: true, // Inverte V para alinhar com o plano horizontal do mundo, assim como o protagonista
 } as const;
 const BATEDOR_RUINAS_BASE_SHEET = {
   rows: 4,
@@ -176,7 +174,7 @@ export function usesSpriteTexture(kind: SpriteActorKind) {
 /** Camada visual independente da lógica de movimento: recorta atlas 4×N ou 8×N em um plano horizontal do mundo. */
 export class AnimatedSpriteActor {
   readonly mesh: Mesh;
-  private readonly material: StandardMaterial;
+  readonly material: StandardMaterial;
   private readonly textures = new Map<SpriteAction, Texture>();
   private action: SpriteAction = "idle";
   private direction: CardinalSpriteDirection = "south";

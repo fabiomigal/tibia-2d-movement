@@ -24,7 +24,7 @@ export function createZaoTileWorld(scene: Scene) {
   const material = new StandardMaterial("uniform-field-material", scene);
   const texture = new Texture(UNIFORM_FIELD_TILE_URL, scene, true, false);
   texture.uScale = WORLD_WIDTH;
-  texture.vScale = WORLD_HEIGHT;
+  texture.vScale = -WORLD_HEIGHT; // Inverte V para alinhar o Norte ao topo do mapa
   texture.hasAlpha = false;
   material.diffuseTexture = texture;
   material.emissiveTexture = texture;
