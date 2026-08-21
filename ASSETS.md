@@ -17,6 +17,6 @@
 
 > **Proveniência do Batedor de Ruínas:** gerado por Gemini sob comandos do usuário `fabiomigal@gmail.com`; uso autorizado pelo autor para o projeto Vale de Âmbar. O arquivo original é preservado fora da aplicação, em `webdev-static-assets/batedor-ruinas/`, e o runtime usa somente os atlas PNG publicados.
 
-> **Pacote no GitHub:** a release [`sprites-batedor-ruinas-v1`](https://github.com/fabiomigal/tibia-2d-movement/releases/tag/sprites-batedor-ruinas-v1) preserva a fonte original, cinco atlas 4×4, os 80 quadros individuais, o manifesto de direções e o script reprodutível de preparação. Esse pacote é documental; o runtime continua carregando os atlas pelo armazenamento estático.
+> **Pacote no GitHub:** a release [`sprites-batedor-ruinas-v1`](https://github.com/fabiomigal/tibia-2d-movement/releases/tag/sprites-batedor-ruinas-v1) preserva a fonte original, cinco atlas 4×4, os 80 quadros individuais, o manifesto de direções e o script reprodutível de preparação. Durante o workflow, os cinco atlas são extraídos dessa release para `sprites/batedor-ruinas/` no artefato do GitHub Pages; o modo estático do protagonista usa essas URLs públicas, enquanto o runtime hospedado continua carregando os atlas pelo armazenamento estático.
 
 Os conjuntos anteriores permanecem apenas como histórico documental e **não são referenciados pelo runtime ativo**. A troca não modifica movimentação, câmera, colisões, combate, portais, inventário ou controles.

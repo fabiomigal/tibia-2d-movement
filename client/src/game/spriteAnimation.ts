@@ -57,6 +57,15 @@ export const BATEDOR_RUINAS_SPRITE_URLS = {
   death: "/manus-storage/batedor-ruinas-death-4x4_e8975156.png",
 } as const;
 
+/** Atlases copiados da release para o artefato estático; BASE_URL preserva o subdiretório do GitHub Pages. */
+export const BATEDOR_RUINAS_STATIC_SPRITE_URLS = {
+  idle: `${import.meta.env.BASE_URL}sprites/batedor-ruinas/batedor-ruinas-idle-4x4.png`,
+  walk: `${import.meta.env.BASE_URL}sprites/batedor-ruinas/batedor-ruinas-walk-4x4.png`,
+  attack: `${import.meta.env.BASE_URL}sprites/batedor-ruinas/batedor-ruinas-attack-4x4.png`,
+  hit: `${import.meta.env.BASE_URL}sprites/batedor-ruinas/batedor-ruinas-hit-4x4.png`,
+  death: `${import.meta.env.BASE_URL}sprites/batedor-ruinas/batedor-ruinas-death-4x4.png`,
+} as const;
+
 /** Atlases Aurora preservados exclusivamente para as criaturas existentes. */
 export const AURORA_REFERENCE_SPRITE_URLS = {
   goblin: "/manus-storage/aurora_goblin_44e23aa6.png",
@@ -159,7 +168,7 @@ export class AnimatedSpriteActor {
     this.material.backFaceCulling = false;
     this.material.disableLighting = OPAQUE_SPRITE_RENDERING.disableLighting;
     this.mesh.material = this.material;
-    if (IS_STATIC_DEMO) {
+    if (IS_STATIC_DEMO && this.kind !== "adventurer") {
       const color = Color3.FromHexString(STATIC_SPRITE_COLORS[this.kind]);
       this.material.diffuseColor = color;
       this.material.emissiveColor = color;
@@ -217,11 +226,15 @@ export class AnimatedSpriteActor {
   }
 
   private sheet(action: SpriteAction) {
-    return spriteSheets[this.kind][action] ?? spriteSheets[this.kind].idle!;
+    const sheet = spriteSheets[this.kind][action] ?? spriteSheets[this.kind].idle!;
+    if (IS_STATIC_DEMO && this.kind === "adventurer") {
+      return { ...sheet, url: BATEDOR_RUINAS_STATIC_SPRITE_URLS[action] ?? BATEDOR_RUINAS_STATIC_SPRITE_URLS.idle };
+    }
+    return sheet;
   }
 
   private applySheet(action: SpriteAction) {
-    if (IS_STATIC_DEMO) return;
+    if (IS_STATIC_DEMO && this.kind !== "adventurer") return;
     const sheet = this.sheet(action);
     let texture = this.textures.get(action);
     if (!texture) {

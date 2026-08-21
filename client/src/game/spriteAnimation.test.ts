@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AURORA_REFERENCE_DIRECTION_ROWS, AURORA_REFERENCE_SPRITE_URLS, BATEDOR_RUINAS_DIRECTION_ROWS, BATEDOR_RUINAS_SPRITE_URLS, OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv } from "./spriteAnimation";
+import { AURORA_REFERENCE_DIRECTION_ROWS, AURORA_REFERENCE_SPRITE_URLS, BATEDOR_RUINAS_DIRECTION_ROWS, BATEDOR_RUINAS_SPRITE_URLS, BATEDOR_RUINAS_STATIC_SPRITE_URLS, OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv } from "./spriteAnimation";
 import { Material } from "@babylonjs/core/Materials/material";
 
 describe("seleção de frame dos sprites Zao", () => {
@@ -39,6 +39,16 @@ describe("seleção de frame dos sprites Zao", () => {
     expect(selectSpriteRowUv("northeast", 4, AURORA_REFERENCE_DIRECTION_ROWS)).toEqual({ vOffset: 0.25, vScale: 0.25 });
     expect(selectSpriteFrameUv(0.45, 8, 4, true, 4)).toEqual({ uOffset: 3 / 4, uScale: 1 / 4 });
     expect(selectSpriteFrameUv(0.7, 12, 4, false, 4)).toEqual({ uOffset: 3 / 4, uScale: 1 / 4 });
+  });
+
+  it("expõe os cinco atlas públicos no subdiretório do GitHub Pages", () => {
+    expect(BATEDOR_RUINAS_STATIC_SPRITE_URLS).toEqual(expect.objectContaining({
+      idle: expect.stringMatching(/sprites\/batedor-ruinas\/batedor-ruinas-idle-4x4\.png$/),
+      walk: expect.stringMatching(/sprites\/batedor-ruinas\/batedor-ruinas-walk-4x4\.png$/),
+      attack: expect.stringMatching(/sprites\/batedor-ruinas\/batedor-ruinas-attack-4x4\.png$/),
+      hit: expect.stringMatching(/sprites\/batedor-ruinas\/batedor-ruinas-hit-4x4\.png$/),
+      death: expect.stringMatching(/sprites\/batedor-ruinas\/batedor-ruinas-death-4x4\.png$/),
+    }));
   });
 
   it("mantém o plano horizontal virado para a câmera superior", () => {

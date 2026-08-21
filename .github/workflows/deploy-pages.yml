@@ -31,6 +31,16 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Construir demonstração estática
         run: pnpm build:github-pages
+      - name: Incluir atlas do Batedor de Ruínas
+        run: |
+          curl --fail --location --silent --show-error \
+            https://github.com/fabiomigal/tibia-2d-movement/releases/download/sprites-batedor-ruinas-v1/vale-ambar-batedor-ruinas-v1.zip \
+            --output /tmp/vale-ambar-batedor-ruinas-v1.zip
+          mkdir -p dist/public/sprites/batedor-ruinas
+          unzip -j -o /tmp/vale-ambar-batedor-ruinas-v1.zip \
+            'vale-ambar-batedor-ruinas-v1/atlases/*.png' \
+            -d dist/public/sprites/batedor-ruinas
+          test "$(find dist/public/sprites/batedor-ruinas -maxdepth 1 -name '*.png' | wc -l)" -eq 5
       - name: Configurar Pages
         uses: actions/configure-pages@v5
         with:
