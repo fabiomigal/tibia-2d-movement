@@ -191,4 +191,4 @@
 - [x] Validar as animações em desktop e mobile, executar testes e sincronizar o checkpoint com o GitHub.
 - [x] Isolar cada sprite do Batedor de Ruínas em recortes individuais, removendo cortes incorretos e sobreposições entre quadros.
 - [x] Reorganizar o atlas para que a direção norte corresponda à parte superior da sprite e corrigir a inversão vertical no mundo.
-- [ ] Atualizar contratos, validar desktop/mobile, salvar checkpoint e sincronizar a correção com o GitHub.
+- [x] Atualizar contratos, validar desktop/mobile, salvar checkpoint e sincronizar a correção com o GitHub.
