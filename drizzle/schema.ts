@@ -138,6 +138,7 @@ export const groundDrops = mysqlTable("ground_drops", {
   weight: int("weight").notNull().default(1),
   x: int("x").notNull().default(0),
   z: int("z").notNull().default(0),
+  quantity: int("quantity").notNull().default(1),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

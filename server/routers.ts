@@ -3,7 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
-import { acceptQuest, buyFromMerchant, claimQuest, collectGroundDrop, getGameSnapshot, listMerchantItems, resolveCombat, reviveCharacter, resumeIdleHunt, selectArchetype, setAutoPotion, setRestState, startIdleHunt, travelToRegion, updateInventory } from "./gameService";
+import { acceptQuest, buyFromMerchant, claimQuest, collectGroundDrop, collectAllGroundDrops, getGameSnapshot, listMerchantItems, resolveCombat, reviveCharacter, resumeIdleHunt, selectArchetype, setAutoPotion, setRestState, startIdleHunt, travelToRegion, updateInventory } from "./gameService";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -30,6 +30,7 @@ export const appRouter = router({
     merchant: publicProcedure.query(() => listMerchantItems()),
     merchantBuy: publicProcedure.input(z.object({ catalogKey: z.string(), confirmLegendary: z.boolean().optional() })).mutation(({ input }) => buyFromMerchant(input.catalogKey, input.confirmLegendary)),
     collectDrop: publicProcedure.input(z.object({ dropId: z.number().int() })).mutation(({ input }) => collectGroundDrop(input.dropId)),
+    collectAllDrops: publicProcedure.input(z.object({ chestKey: z.string() })).mutation(({ input }) => collectAllGroundDrops(input.chestKey)),
     autoPotion: publicProcedure.input(z.object({ enabled: z.boolean() })).mutation(({ input }) => setAutoPotion(input.enabled)),
     questAccept: publicProcedure.input(z.object({ questKey: z.string() })).mutation(({ input }) => acceptQuest(input.questKey)),
     questClaim: publicProcedure.input(z.object({ questKey: z.string() })).mutation(({ input }) => claimQuest(input.questKey)),

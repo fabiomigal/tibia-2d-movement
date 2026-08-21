@@ -178,6 +178,13 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
     onError: (error) => setNotice(error.message),
   });
   const autoPotion = trpc.game.autoPotion.useMutation({ onSuccess: refresh, onError: (error) => setNotice(error.message) });
+  const collectAll = trpc.game.collectAllDrops.useMutation({
+    onSuccess: async () => {
+      setNotice("Todos os itens do baú foram coletados.");
+      await refresh();
+    },
+    onError: (error: any) => setNotice(error.message),
+  });
   const merchantBuy = trpc.game.merchantBuy.useMutation({ onSuccess: async () => { setNotice("Compra concluída. O item foi guardado na mochila."); await refresh(); }, onError: (error) => setNotice(error.message) });
   const questAccept = trpc.game.questAccept.useMutation({ onSuccess: async () => { setNotice("Missão aceita. Os sinais da estrada agora contam para sua expedição."); await refresh(); }, onError: (error) => setNotice(error.message) });
   const questClaim = trpc.game.questClaim.useMutation({ onSuccess: async () => { setNotice("Recompensa recebida. A carta de expedição foi atualizada."); await refresh(); }, onError: (error) => setNotice(error.message) });
@@ -212,6 +219,9 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       if (event.key.toLowerCase() === "b") setPanel("quests");
       if (event.key.toLowerCase() === "g") setPanel("city");
       if (event.key.toLowerCase() === "p") setPanel("teleport");
+      if (event.key.toLowerCase() === "a" && panel === "loot" && selectedChestKey) {
+        collectAll.mutate({ chestKey: selectedChestKey });
+      }
       if (/^F[1-6]$/.test(event.key)) setSelectedSkill(data?.skills.find((skill) => skill.hotkey === event.key)?.key);
     };
     window.addEventListener("keydown", onKeyDown);
@@ -424,7 +434,33 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
 
       {panel === "loot" && <aside className="rpg-panel rpg-panel--left" aria-label="Baú de saque"><PanelHeader title="Baú de expedição" onClose={() => setPanel(null)} />
         <div className="rpg-panel__body loot-chest-panel">
-          {selectedChest ? <><p className="panel-note">Selecione um item para transferi-lo para a mochila. O baú desaparece quando estiver vazio.</p><div className="inventory-list">{selectedChest.drops.map((drop) => <article className={`inventory-item ${RARITY_CLASS[drop.rarity] ?? ""}`} key={drop.id}><div className="inventory-item__glyph">✦</div><div><b>{drop.name}</b><span>{drop.rarity} · {drop.weight} oz</span></div><button className="panel-action" onClick={() => collectDrop.mutate({ dropId: drop.id })} disabled={collectDrop.isPending}>{collectDrop.isPending ? "Guardando..." : "Guardar"}</button></article>)}</div></> : <p className="panel-note">Este baú já foi esvaziado.</p>}
+          {selectedChest ? (
+            <>
+              <div className="loot-actions">
+                <p className="panel-note">Selecione um item ou colete tudo. Atalho: [A]</p>
+                <button 
+                  className="panel-action panel-action--primary" 
+                  onClick={() => collectAll.mutate({ chestKey: selectedChest.chestKey })}
+                  disabled={collectAll.isPending}
+                >
+                  {collectAll.isPending ? "Coletando..." : "Coletar Tudo"}
+                </button>
+              </div>
+              <div className="inventory-list">
+                {selectedChest.drops.map((drop) => (
+                  <article className={`inventory-item ${RARITY_CLASS[drop.rarity] ?? ""}`} key={drop.id}>
+                    <div className="inventory-item__glyph">✦</div>
+                    <div><b>{drop.name}</b><span>{drop.rarity} · {drop.weight} oz</span></div>
+                    <button className="panel-action" onClick={() => collectDrop.mutate({ dropId: drop.id })} disabled={collectDrop.isPending}>
+                      {collectDrop.isPending ? "..." : "Guardar"}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="panel-note">Este baú já foi esvaziado.</p>
+          )}
         </div></aside>}
 
       {panel === "equipment" && <aside className="rpg-panel rpg-panel--left" aria-label="Equipamentos"><PanelHeader title="Equipamentos em uso" onClose={() => setPanel(null)} />

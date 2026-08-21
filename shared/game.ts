@@ -35,12 +35,13 @@ export const ZAO_START_POSITION = {
   z: -2.5,
 } as const;
 
-/** Limites explícitos do campo Zao para contratos compartilhados de mapa e spawn. */
+/** Limites explícitos do campo Zao para contratos compartilhados de mapa e spawn. 
+ * Aumentado em 200% conforme solicitado (de 432 para 864). */
 export const ZAO_WORLD_BOUNDS = {
-  minX: -27,
-  maxX: 27,
-  minZ: -27,
-  maxZ: 27,
+  minX: -864,
+  maxX: 864,
+  minZ: -864,
+  maxZ: 864,
 } as const;
 
 export const REGIONS = [
@@ -84,13 +85,93 @@ export type MonsterTemplate = {
   color: string;
 };
 
-/** Posições de referência do campo usadas pelo mundo visual e pelo baú de cada criatura derrotada. */
+/** Posições de referência do campo usadas pelo mundo visual e pelo baú de cada criatura derrotada.
+ * Aumentado em spawns para o mapa 200% maior. */
 export const WORLD_MONSTER_SPAWNS = [
+  // Javali de Campo (field-boar) - Spawns espalhados
   { monsterKey: "field-boar", x: 2, z: 6 },
+  { monsterKey: "field-boar", x: -15, z: 12 },
+  { monsterKey: "field-boar", x: 25, z: -18 },
+  { monsterKey: "field-boar", x: -30, z: -25 },
+  { monsterKey: "field-boar", x: 50, z: 50 },
+  { monsterKey: "field-boar", x: -60, z: 40 },
+  { monsterKey: "field-boar", x: 70, z: -30 },
+  { monsterKey: "field-boar", x: -80, z: -60 },
+  { monsterKey: "field-boar", x: 120, z: 120 },
+  { monsterKey: "field-boar", x: -150, z: 180 },
+  { monsterKey: "field-boar", x: 180, z: -150 },
+  { monsterKey: "field-boar", x: -200, z: -200 },
+  { monsterKey: "field-boar", x: 300, z: 300 },
+  { monsterKey: "field-boar", x: -350, z: 250 },
+  { monsterKey: "field-boar", x: 400, z: -400 },
+  { monsterKey: "field-boar", x: -450, z: -350 },
+  { monsterKey: "field-boar", x: 500, z: 100 },
+  { monsterKey: "field-boar", x: -550, z: -100 },
+  { monsterKey: "field-boar", x: 600, z: 600 },
+  { monsterKey: "field-boar", x: -700, z: -700 },
+
+  // Goblin dos Ventos (wind-goblin) - Spawns espalhados
   { monsterKey: "wind-goblin", x: 8, z: -8 },
+  { monsterKey: "wind-goblin", x: 20, z: 22 },
+  { monsterKey: "wind-goblin", x: -22, z: -10 },
+  { monsterKey: "wind-goblin", x: 35, z: 5 },
+  { monsterKey: "wind-goblin", x: 60, z: -60 },
+  { monsterKey: "wind-goblin", x: -70, z: 70 },
+  { monsterKey: "wind-goblin", x: 90, z: 10 },
+  { monsterKey: "wind-goblin", x: -95, z: -20 },
+  { monsterKey: "wind-goblin", x: 150, z: -150 },
+  { monsterKey: "wind-goblin", x: -180, z: 120 },
+  { monsterKey: "wind-goblin", x: 200, z: 200 },
+  { monsterKey: "wind-goblin", x: 280, z: -280 },
+  { monsterKey: "wind-goblin", x: -320, z: 320 },
+  { monsterKey: "wind-goblin", x: 450, z: 450 },
+  { monsterKey: "wind-goblin", x: -500, z: -500 },
+  { monsterKey: "wind-goblin", x: 650, z: 50 },
+  { monsterKey: "wind-goblin", x: -650, z: -50 },
+  { monsterKey: "wind-goblin", x: 750, z: 750 },
+  { monsterKey: "wind-goblin", x: -800, z: 800 },
+
+  // Arqueiro de Bambu (bamboo-archer) - Spawns espalhados
   { monsterKey: "bamboo-archer", x: -6.2, z: -6.2 },
+  { monsterKey: "bamboo-archer", x: -40, z: 15 },
+  { monsterKey: "bamboo-archer", x: 12, z: -35 },
+  { monsterKey: "bamboo-archer", x: 80, z: 80 },
+  { monsterKey: "bamboo-archer", x: -90, z: 45 },
+  { monsterKey: "bamboo-archer", x: 160, z: 160 },
+  { monsterKey: "bamboo-archer", x: -180, z: -100 },
+  { monsterKey: "bamboo-archer", x: 350, z: -150 },
+  { monsterKey: "bamboo-archer", x: -400, z: 400 },
+  { monsterKey: "bamboo-archer", x: 550, z: 200 },
+  { monsterKey: "bamboo-archer", x: -600, z: -300 },
+  { monsterKey: "bamboo-archer", x: 700, z: 700 },
+  { monsterKey: "bamboo-archer", x: -750, z: -750 },
+
+  // Ácaro da Estalagem (inn-mite) - Spawns espalhados
   { monsterKey: "inn-mite", x: -20.2, z: 11.4 },
+  { monsterKey: "inn-mite", x: -45, z: -40 },
+  { monsterKey: "inn-mite", x: 100, z: -100 },
+  { monsterKey: "inn-mite", x: 210, z: 210 },
+  { monsterKey: "inn-mite", x: -210, z: -210 },
+  { monsterKey: "inn-mite", x: 400, z: 0 },
+  { monsterKey: "inn-mite", x: -400, z: 0 },
+  { monsterKey: "inn-mite", x: 0, z: 400 },
+  { monsterKey: "inn-mite", x: 0, z: -400 },
+  { monsterKey: "inn-mite", x: 600, z: -600 },
+  { monsterKey: "inn-mite", x: -600, z: 600 },
+  { monsterKey: "inn-mite", x: 800, z: 0 },
+
+  // Fogo Fátuo da Lua (moon-wisp) - Spawns espalhados
   { monsterKey: "moon-wisp", x: 19.2, z: -13.2 },
+  { monsterKey: "moon-wisp", x: 42, z: -28 },
+  { monsterKey: "moon-wisp", x: -100, z: 100 },
+  { monsterKey: "moon-wisp", x: 180, z: 0 },
+  { monsterKey: "moon-wisp", x: 0, z: -180 },
+  { monsterKey: "moon-wisp", x: 300, z: -300 },
+  { monsterKey: "moon-wisp", x: -300, z: 300 },
+  { monsterKey: "moon-wisp", x: 500, z: 500 },
+  { monsterKey: "moon-wisp", x: -500, z: -500 },
+  { monsterKey: "moon-wisp", x: 700, z: -700 },
+  { monsterKey: "moon-wisp", x: -700, z: 700 },
 ] as const;
 
 export type GameSkill = {

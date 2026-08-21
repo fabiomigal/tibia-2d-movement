@@ -332,3 +332,33 @@ export async function resumeIdleHunt() {
   }
   return { turns: 0, xp: 0, gold: 0, snapshot: await getGameSnapshot() };
 }
+
+export async function collectAllGroundDrops(chestKey: string) {
+  const db = await requireDb();
+  const character = await loadCharacter();
+  const drops = await db.select().from(groundDrops).where(and(eq(groundDrops.chestKey, chestKey), eq(groundDrops.characterId, character.id)));
+  if (!drops.length) throw new Error("Este baú já foi esvaziado.");
+  const currentItems = await db.select().from(gameItems).where(eq(gameItems.characterId, character.id));
+  const totalWeight = drops.reduce((sum, d) => sum + d.weight * d.quantity, 0);
+  if (currentItems.length + drops.length > MAX_SLOTS || inventoryWeight(currentItems) + totalWeight > capacityForLevel(character.level)) {
+    throw new Error("A mochila não comporta todos os itens do baú. Pegue individualmente.");
+  }
+  for (const drop of drops) {
+    await db.insert(gameItems).values({
+      characterId: character.id,
+      templateKey: drop.itemKey,
+      name: drop.name,
+      kind: "material",
+      rarity: drop.rarity,
+      weight: drop.weight,
+      quantity: drop.quantity,
+      slot: "material",
+      equipped: false,
+      sellValue: 8,
+    });
+  }
+  await db.delete(groundDrops).where(and(eq(groundDrops.chestKey, chestKey), eq(groundDrops.characterId, character.id)));
+  return getGameSnapshot();
+}
+
+

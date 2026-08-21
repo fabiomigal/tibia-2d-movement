@@ -6,7 +6,7 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import type { Scene } from "@babylonjs/core/scene";
 
-export type SpriteActorKind = "adventurer" | "goblin" | "boar";
+export type SpriteActorKind = "adventurer" | "goblin" | "boar" | "chest";
 export type SpriteAction = "idle" | "walk" | "attack" | "hit" | "death";
 export const SPRITE_PLANE_ROTATION_X = Math.PI / 2;
 /** Pixels translúcidos abaixo deste limite são descartados; o personagem permanece sólido sobre o terreno. */
@@ -38,12 +38,14 @@ export const ZAO_SPRITE_SIZE: Record<SpriteActorKind, number> = {
   adventurer: 1.08,
   goblin: 1.42,
   boar: 1.58,
+  chest: 1.0,
 };
 const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
 const STATIC_SPRITE_COLORS: Record<SpriteActorKind, string> = {
   adventurer: "#f2b84b",
   goblin: "#87a85a",
   boar: "#b99064",
+  chest: "#8b5e34",
 };
 
 const CARDINAL_DIRECTION_ROWS: SpriteDirectionRows = { south: 0, east: 1, north: 2, west: 3 };
@@ -67,16 +69,18 @@ export const BATEDOR_RUINAS_STATIC_SPRITE_URLS = {
   death: `${import.meta.env.BASE_URL}sprites/batedor-ruinas/batedor-ruinas-death-4x4.png`,
 } as const;
 
-/** Atlases Aurora preservados exclusivamente para as criaturas existentes. */
-export const AURORA_REFERENCE_SPRITE_URLS = {
-  goblin: "/manus-storage/aurora_goblin_44e23aa6.png",
-  boar: "/manus-storage/aurora_boar_e32a98d2.png",
+/** Novas spritesheets geradas para monstros e baú. */
+export const EXPANSION_SPRITE_URLS = {
+  goblin: "/manus-storage/goblin_atlas_v2_f905cb24.png",
+  boar: "/manus-storage/boar_atlas_v2_d330e534.png",
+  chest: "/manus-storage/chest_sprite_v2_fa0d8994.png",
 } as const;
 
-/** Cópias dos atlas Aurora incluídas no artefato do GitHub Pages. */
-export const AURORA_REFERENCE_STATIC_SPRITE_URLS = {
-  goblin: `${import.meta.env.BASE_URL}sprites/aurora-monsters/aurora_goblin.png`,
-  boar: `${import.meta.env.BASE_URL}sprites/aurora-monsters/aurora_boar.png`,
+/** Cópias das novas sprites para o GitHub Pages. */
+export const EXPANSION_STATIC_SPRITE_URLS = {
+  goblin: `${import.meta.env.BASE_URL}sprites/expansion/goblin_atlas_v2.png`,
+  boar: `${import.meta.env.BASE_URL}sprites/expansion/boar_atlas_v2.png`,
+  chest: `${import.meta.env.BASE_URL}sprites/expansion/chest_sprite_v2.png`,
 } as const;
 
 export const AURORA_REFERENCE_DIRECTION_ROWS: SpriteDirectionRows = CARDINAL_DIRECTION_ROWS;
@@ -99,18 +103,25 @@ const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteS
     death: { ...BATEDOR_RUINAS_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.death, columns: 4, fps: 8, loop: false },
   },
   goblin: {
-    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.goblin, columns: 4, fps: 4, loop: true },
-    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.goblin, columns: 4, fps: 8, loop: true },
-    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.goblin, columns: 4, fps: 12, loop: false },
-    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.goblin, columns: 4, fps: 10, loop: false },
-    death: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.goblin, columns: 4, fps: 8, loop: false },
+    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 4, loop: true },
+    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 8, loop: true },
+    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 12, loop: false },
+    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 10, loop: false },
+    death: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.goblin, columns: 4, fps: 8, loop: false },
   },
   boar: {
-    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.boar, columns: 4, fps: 4, loop: true },
-    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.boar, columns: 4, fps: 8, loop: true },
-    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.boar, columns: 4, fps: 12, loop: false },
-    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.boar, columns: 4, fps: 10, loop: false },
-    death: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.boar, columns: 4, fps: 8, loop: false },
+    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 4, loop: true },
+    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 8, loop: true },
+    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 12, loop: false },
+    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 10, loop: false },
+    death: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.boar, columns: 4, fps: 8, loop: false },
+  },
+  chest: {
+    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
+    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
+    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
+    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
+    death: { ...AURORA_REFERENCE_BASE_SHEET, url: EXPANSION_SPRITE_URLS.chest, columns: 1, fps: 1, loop: true, rows: 1, directionRows: { south: 0 } },
   },
 };
 
@@ -159,7 +170,7 @@ export function selectCardinalSpriteDirection(deltaX: number, deltaZ: number, fa
 
 /** O protagonista e as criaturas usam seus respectivos atlas de imagem. */
 export function usesSpriteTexture(kind: SpriteActorKind) {
-  return kind === "adventurer" || kind === "goblin" || kind === "boar";
+  return kind === "adventurer" || kind === "goblin" || kind === "boar" || kind === "chest";
 }
 
 /** Camada visual independente da lógica de movimento: recorta atlas 4×N ou 8×N em um plano horizontal do mundo. */
@@ -256,8 +267,8 @@ export class AnimatedSpriteActor {
       if (this.kind === "adventurer") {
         return { ...sheet, url: BATEDOR_RUINAS_STATIC_SPRITE_URLS[action] ?? BATEDOR_RUINAS_STATIC_SPRITE_URLS.idle };
       }
-      if (this.kind === "goblin" || this.kind === "boar") {
-        return { ...sheet, url: AURORA_REFERENCE_STATIC_SPRITE_URLS[this.kind] };
+      if (this.kind === "goblin" || this.kind === "boar" || this.kind === "chest") {
+        return { ...sheet, url: EXPANSION_STATIC_SPRITE_URLS[this.kind] };
       }
     }
     return sheet;
