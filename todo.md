@@ -193,3 +193,5 @@
 - [x] Reorganizar o atlas para que a direção norte corresponda à parte superior da sprite e corrigir a inversão vertical no mundo.
 - [x] Atualizar contratos, validar desktop/mobile, salvar checkpoint e sincronizar a correção com o GitHub.
 - [x] Confirmar a sincronização da versão mais recente no GitHub e a publicação correspondente no GitHub Pages.
+- [x] Publicar no GitHub um pacote versionado com os atlas e quadros individuais do Batedor de Ruínas, sem alterar o runtime do jogo.
+- [x] Registrar o conteúdo e a proveniência do pacote de sprites e confirmar seu acesso público no repositório.
