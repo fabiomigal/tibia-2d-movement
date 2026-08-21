@@ -139,13 +139,30 @@ describe("GameOverlay — ciclo de repouso integrado", () => {
     render(<GameOverlay status={movingStatus} />);
 
     await act(async () => {
-      window.dispatchEvent(new CustomEvent("vale:world-interaction", { detail: { kind: "portal", label: "Porta da Estalagem", portalId: "portal-inn-entry" } }));
+      window.dispatchEvent(new CustomEvent("vale:world-interaction", { detail: { kind: "portal", label: "Travessia do Campo Âmbar", portalId: "portal-inn-entry" } }));
     });
 
     expect(mocks.travelMutate).toHaveBeenCalledWith({ region: "amber-inn", portalId: "portal-inn-entry" }, expect.anything());
     expect(received).toEqual([{ x: -18.2, z: 13.9 }]);
-    expect(document.body.textContent).toContain("Porta da Estalagem: transição concluída.");
+    expect(document.body.textContent).toContain("Travessia do Campo Âmbar: transição concluída.");
     window.removeEventListener("vale:portal-travel", onPortalTravel);
+  });
+
+  it("apresenta no minimapa somente a grade de campo e os marcadores de jogo", () => {
+    const statusWithMarkers = {
+      ...restingStatus,
+      nearbyHotspot: { id: "portal-inn-entry", kind: "portal" as const, label: "Travessia do Campo Âmbar", x: -9.6, z: -3.3 },
+      monsters: [{ key: "field-boar", name: "Javali do Campo", x: 2, z: 6, hp: 38, maxHp: 38 }],
+    };
+    render(<GameOverlay status={statusWithMarkers} />);
+
+    const minimap = document.querySelector(".rpg-minimap__map");
+    expect(minimap?.classList.contains("rpg-minimap__map--bamboo-forest")).toBe(true);
+    expect(minimap?.querySelector(".minimap-player")).not.toBeNull();
+    expect(minimap?.querySelector(".minimap-monster")).not.toBeNull();
+    expect(minimap?.querySelector(".minimap-hotspot")).not.toBeNull();
+    expect(minimap?.querySelector(".minimap-compass")).not.toBeNull();
+    expect(minimap?.querySelector(".minimap-feature, .minimap-water, .minimap-path")).toBeNull();
   });
 
   it("renova o snapshot ao final dos dois segundos de respawn após uma derrota", async () => {

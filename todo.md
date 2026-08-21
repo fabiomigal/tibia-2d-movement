@@ -206,4 +206,5 @@
 - [x] Redesenhar todos os mapas como grades limpas compostas somente pelas tiles de chão, conservando a identidade de campo de cada mapa.
 - [x] Remover do visual de todos os mapas paredes, pontes, muros, casas, árvores, rochas, baús e demais objetos, sem alterar colisões, portais ou sistemas de jogo.
 - [ ] Atualizar contratos e documentação, validar desktop/mobile, salvar checkpoint e sincronizar a limpeza dos mapas com GitHub e GitHub Pages.
-- [ ] Disponibilizar os quatro atlas de chão no artefato estático do GitHub Pages e validar suas URLs públicas.
+- [x] Disponibilizar os quatro atlas de chão no artefato estático do GitHub Pages e validar suas URLs públicas.
+- [x] Simplificar o minimapa e as descrições locais para refletirem somente os campos limpos, preservando os dados de colisão e portais.

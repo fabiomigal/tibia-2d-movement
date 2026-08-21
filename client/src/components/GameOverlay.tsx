@@ -11,7 +11,7 @@ import { groupLootChests } from "@/game/lootChestState";
 import { createCombatFloatEvents } from "@/game/combatFloatEvents";
 import { REST_REGENERATION } from "@shared/restRegeneration";
 import { resolveRestSync } from "@/game/restSyncPipeline";
-import { getZaoMapFeatures, projectZaoMapPoint, resolveZaoSubarea } from "@/game/zaoMapLayout";
+import { projectZaoMapPoint, resolveZaoSubarea } from "@/game/zaoMapLayout";
 import { createQuickInventory, getQuickInventoryTotal } from "@/game/quickInventory";
 
 type PanelKey = "character" | "inventory" | "equipment" | "skills" | "map" | "idle" | "merchant" | "quests" | "city" | "teleport" | "loot" | null;
@@ -316,7 +316,6 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
   const quickInventory = useMemo(() => createQuickInventory(data?.items ?? []), [data?.items]);
   const quickInventoryTotal = getQuickInventoryTotal(data?.items ?? []);
   const zaoSubarea = resolveZaoSubarea(status.position[0], status.position[1]);
-  const minimapFeatures = getZaoMapFeatures(zaoSubarea);
   const minimapPlayerPoint = projectZaoMapPoint(zaoSubarea, status.position[0], status.position[1]);
   const minimapPlayerStyle = { left: `${minimapPlayerPoint.left}%`, top: `${minimapPlayerPoint.top}%` };
   const minimapHotspotStyle = status.nearbyHotspot ? (() => {
@@ -347,11 +346,6 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
       <section className="rpg-minimap" aria-label="Minimapa de região">
         <div className="rpg-minimap__heading"><Map size={14}/><span>MAPA LOCAL</span></div>
         <div className={`rpg-minimap__map rpg-minimap__map--zao rpg-minimap__map--${zaoSubarea}`}>
-          {minimapFeatures.map((feature) => {
-            const point = projectZaoMapPoint(zaoSubarea, feature.x, feature.z);
-            const bounds = zaoSubarea === "wind-road" ? { width: 22.4, height: 12.6 } : { width: 22.4, height: 12.6 };
-            return <i key={feature.id} className={`minimap-feature minimap-feature--${feature.kind}`} style={{ left: `${point.left}%`, top: `${point.top}%`, width: `${(feature.width / bounds.width) * 100}%`, height: `${(feature.height / bounds.height) * 100}%`, transform: `translate(-50%, -50%) rotate(${feature.rotation ?? 0}rad)` }} aria-hidden="true"/>;
-          })}
           {status.monsters.map((monster) => {
             const tone = DEMO_MONSTERS.find((entry) => entry.key === monster.key)?.tone ?? "#d58d52";
             const point = projectZaoMapPoint(zaoSubarea, monster.x, monster.z);
@@ -376,7 +370,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
         <button className="action-key" onClick={() => setPanel("idle")}><Play size={18}/><span>H</span><b>Caça idle</b></button>
         <button className="action-key" onClick={() => setPanel("merchant")}><ShoppingBag size={18}/><span>T</span><b>Mercador</b></button>
         <button className="action-key" onClick={() => setPanel("quests")}><ScrollText size={18}/><span>B</span><b>Missões</b></button>
-        <button className="action-key" onClick={() => setPanel("city")}><MapPin size={18}/><span>G</span><b>Cidade</b></button>
+        <button className="action-key" onClick={() => setPanel("city")}><MapPin size={18}/><span>G</span><b>Posto</b></button>
         <button className="action-key" onClick={() => setPanel("teleport")}><Sparkles size={18}/><span>P</span><b>Portal</b></button>
       </section>
 
@@ -443,7 +437,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
         <div className="rpg-panel__body region-list"><ActionFeedback feedback={panelFeedback?.panel === "map" ? panelFeedback : undefined}/>{REGIONS.map((entry, index) => { const unlocked = entry.level <= character.level; const current = entry.key === character.currentRegion; return <article className={`region-card ${current ? "region-card--current" : ""}`} key={entry.key}><span>{String(index + 1).padStart(2, "0")}</span><div><b>{entry.name}</b><small>Nível recomendado {entry.level} · {entry.theme}</small></div><button disabled={!unlocked || current || travel.isPending} onClick={() => travelTo(entry.key, "map")}>{current ? "Aqui" : unlocked ? "Viajar" : `Lv.${entry.level}`}</button></article>; })}</div></aside>}
 
       {panel === "city" && <aside className="rpg-panel rpg-panel--left" aria-label="Posto do Vale"><PanelHeader title="Posto do Vale" onClose={() => setPanel(null)} />
-        <div className="rpg-panel__body city-panel"><p>Um refúgio de estrada para reorganizar a expedição antes de seguir pelos portais.</p><ActionFeedback feedback={panelFeedback?.panel === "city" ? panelFeedback : undefined}/><button className="city-action" onClick={() => openCityService("merchant", "Selene abriu sua caixa de provisões.")}><ShoppingBag size={17}/><span><b>Selene · Mercadora</b><small>Provisões, compras e venda de itens.</small></span><ChevronRight size={15}/></button><button className="city-action" onClick={() => openCityService("quests", "Arden preparou a carta de missões.")}><ScrollText size={17}/><span><b>Arden · Batedor</b><small>Missões e recompensas de exploração.</small></span><ChevronRight size={15}/></button><button className="city-action city-action--locked" onClick={() => { const message = "A caravana de longo alcance exige nível 15 e ainda não está disponível."; setNotice(message); setPanelFeedback({ panel: "city", tone: "error", message }); }}><MapPin size={17}/><span><b>Caravana distante</b><small>Transporte regional protegido.</small></span><X size={15}/></button></div></aside>}
+        <div className="rpg-panel__body city-panel"><p>Um ponto de expedição em campo aberto para reorganizar a jornada antes de seguir pelos portais.</p><ActionFeedback feedback={panelFeedback?.panel === "city" ? panelFeedback : undefined}/><button className="city-action" onClick={() => openCityService("merchant", "Selene abriu sua caixa de provisões.")}><ShoppingBag size={17}/><span><b>Selene · Mercadora</b><small>Provisões, compras e venda de itens.</small></span><ChevronRight size={15}/></button><button className="city-action" onClick={() => openCityService("quests", "Arden preparou a carta de missões.")}><ScrollText size={17}/><span><b>Arden · Batedor</b><small>Missões e recompensas de exploração.</small></span><ChevronRight size={15}/></button><button className="city-action city-action--locked" onClick={() => { const message = "A caravana de longo alcance exige nível 15 e ainda não está disponível."; setNotice(message); setPanelFeedback({ panel: "city", tone: "error", message }); }}><MapPin size={17}/><span><b>Caravana distante</b><small>Transporte regional protegido.</small></span><X size={15}/></button></div></aside>}
 
       {panel === "teleport" && <aside className="rpg-panel rpg-panel--wide" aria-label="Portais de expedição"><PanelHeader title="Portais de expedição" onClose={() => setPanel(null)} />
         <div className="rpg-panel__body region-list"><ActionFeedback feedback={panelFeedback?.panel === "teleport" ? panelFeedback : undefined}/>{REGIONS.map((entry, index) => { const ready = entry.level <= character.level; const current = entry.key === character.currentRegion; return <article className={`region-card ${current ? "region-card--current" : ""}`} key={entry.key}><span>{String(index + 1).padStart(2, "0")}</span><div><b>{entry.name}</b><small>{entry.theme} · requer nível {entry.level}</small></div><button disabled={!ready || current || travel.isPending} onClick={() => travelTo(entry.key, "teleport")}>{current ? "Ancorado" : ready ? "Atravessar" : `Lv.${entry.level}`}</button></article>; })}</div></aside>}

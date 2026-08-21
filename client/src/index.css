@@ -523,33 +523,19 @@ textarea {
   backdrop-filter: blur(10px);
 }
 .rpg-minimap__heading { display: flex; gap: 0.3rem; align-items: center; margin-bottom: 0.35rem; color: #cbd7b9; font-size: 0.51rem; font-weight: 900; letter-spacing: 0.11em; }
-.rpg-minimap__map { --minimap-land-a: #67824d; --minimap-land-b: #4e7045; --minimap-land-c: #76904f; --minimap-water-tone: #3a6d70; --minimap-path-tone: #d1b365; --minimap-hue: 0deg; position: relative; height: 7.2rem; overflow: hidden; border: 1px solid rgba(255,241,200,0.15); background: linear-gradient(140deg, var(--minimap-land-a), var(--minimap-land-b) 44%, var(--minimap-land-c)); }
-.rpg-minimap__map--zao { --minimap-land-a: #506d48; --minimap-land-b: #354f37; --minimap-land-c: #6a7f4d; isolation: isolate; }
-.rpg-minimap__map--wind-road { --minimap-land-a: #687443; --minimap-land-b: #46572f; --minimap-land-c: #8a8952; }
-.rpg-minimap__map::before { position: absolute; inset: 0; opacity: 0.6; background-image: linear-gradient(35deg, transparent 43%, rgba(192,166,87,0.78) 44% 47%, transparent 48%), radial-gradient(ellipse at 20% 20%, rgba(52,82,56,0.7) 0 12%, transparent 13%), radial-gradient(ellipse at 78% 72%, rgba(60,89,54,0.6) 0 15%, transparent 16%); filter: hue-rotate(var(--minimap-hue)); content: ""; }
-.rpg-minimap__map--wind-road { --minimap-land-a: #9a895e; --minimap-land-b: #5d6f4c; --minimap-land-c: #b09b67; --minimap-water-tone: #2e7d83; --minimap-path-tone: #e2c483; }
-.rpg-minimap__map--wind-road .minimap-water--one { top: 0; right: 42%; bottom: auto; left: auto; width: 8%; height: 58%; }
-.rpg-minimap__map--wind-road .minimap-water--two { top: 62%; right: 42%; bottom: auto; left: auto; width: 8%; height: 38%; }
-.rpg-minimap__map--wind-road .minimap-path { top: 48%; left: 4%; width: 92%; transform: none; }
-.rpg-minimap__map--bamboo-forest { --minimap-land-a: #437a54; --minimap-land-b: #265a44; --minimap-land-c: #6e9a5c; --minimap-water-tone: #2d7080; --minimap-hue: 18deg; }
-.rpg-minimap__map--elders-ruins { --minimap-land-a: #657068; --minimap-land-b: #454f4c; --minimap-land-c: #8e866c; --minimap-path-tone: #c0a27d; --minimap-hue: -28deg; }
-.rpg-minimap__map--cursed-graveyard, .rpg-minimap__map--ghost-forest { --minimap-land-a: #554d68; --minimap-land-b: #333842; --minimap-land-c: #66627d; --minimap-water-tone: #4c5874; --minimap-path-tone: #a89b70; --minimap-hue: 86deg; }
-.rpg-minimap__map--oasis, .rpg-minimap__map--desert-island { --minimap-land-a: #c69c59; --minimap-land-b: #9b7645; --minimap-land-c: #d1b46b; --minimap-water-tone: #2e8790; --minimap-path-tone: #f2d07f; --minimap-hue: -15deg; }
-.rpg-minimap__map--frozen-land { --minimap-land-a: #a7c4c5; --minimap-land-b: #759a9f; --minimap-land-c: #c8d9d3; --minimap-water-tone: #497c9e; --minimap-path-tone: #edf0cd; --minimap-hue: 155deg; }
-.rpg-minimap__map--valley-of-despair { --minimap-land-a: #806754; --minimap-land-b: #55483e; --minimap-land-c: #9c7b5e; --minimap-water-tone: #596b67; --minimap-path-tone: #d1a875; --minimap-hue: -46deg; }
-.rpg-minimap__map--volcano { --minimap-land-a: #774741; --minimap-land-b: #402c31; --minimap-land-c: #a7593e; --minimap-water-tone: #6b3a31; --minimap-path-tone: #f0a24f; --minimap-hue: -74deg; }
-.minimap-water { position: absolute; z-index: 1; display: block; background: var(--minimap-water-tone); box-shadow: inset 0 0 0 2px rgba(187,204,168,0.22); }
-.minimap-water--one { bottom: 0; left: 0; width: 28%; height: 64%; }
-.minimap-water--two { bottom: 34%; left: 25%; width: 23%; height: 15%; }
-.minimap-path { position: absolute; z-index: 2; top: 51%; left: 28%; width: 62%; height: 3px; transform: rotate(-22deg); background: var(--minimap-path-tone); }
-.minimap-feature { position: absolute; z-index: 1; display: block; transform-origin: center; }
-.minimap-feature--water { background: #2f7180; box-shadow: inset 0 0 0 1px rgba(178,226,218,0.4); }
-.minimap-feature--road { z-index: 2; background: #c1a362; box-shadow: inset 0 0 0 1px rgba(91,72,39,0.28); }
-.minimap-feature--bridge { z-index: 3; background: repeating-linear-gradient(90deg, #d7b36a 0 3px, #805d39 3px 5px); box-shadow: 0 0 0 1px rgba(61,44,28,0.55); }
-.minimap-feature--wall, .minimap-feature--gate { z-index: 4; background: #8f8a73; box-shadow: inset 0 0 0 1px rgba(53,48,41,0.75); }
-.minimap-feature--structure { z-index: 4; background: #6d513b; box-shadow: inset 0 0 0 1px rgba(40,29,21,0.78); }
-.minimap-feature--tower { z-index: 5; border-radius: 50%; background: #b09970; box-shadow: inset 0 0 0 2px #51483d; }
-.minimap-feature--cliff { z-index: 2; background: #475745; clip-path: polygon(0 18%, 27% 0, 70% 9%, 100% 40%, 88% 100%, 18% 91%); opacity: 0.94; }
+.rpg-minimap__map { --minimap-field-tone: #637d4f; position: relative; height: 7.2rem; overflow: hidden; border: 1px solid rgba(255,241,200,0.15); background: var(--minimap-field-tone); }
+.rpg-minimap__map--zao { --minimap-field-tone: #536d48; isolation: isolate; }
+.rpg-minimap__map--wind-road { --minimap-field-tone: #74804d; }
+.rpg-minimap__map--bamboo-forest { --minimap-field-tone: #4d8058; }
+.rpg-minimap__map--amber-inn { --minimap-field-tone: #8b8150; }
+.rpg-minimap__map--moon-sanctuary { --minimap-field-tone: #687a67; }
+.rpg-minimap__map--elders-ruins { --minimap-field-tone: #70766a; }
+.rpg-minimap__map--cursed-graveyard, .rpg-minimap__map--ghost-forest { --minimap-field-tone: #585467; }
+.rpg-minimap__map--oasis, .rpg-minimap__map--desert-island { --minimap-field-tone: #b79158; }
+.rpg-minimap__map--frozen-land { --minimap-field-tone: #8eafb0; }
+.rpg-minimap__map--valley-of-despair { --minimap-field-tone: #756253; }
+.rpg-minimap__map--volcano { --minimap-field-tone: #713f3b; }
+.rpg-minimap__map::before { position: absolute; inset: 0; opacity: 0.28; background-image: linear-gradient(rgba(255,244,206,0.28) 1px, transparent 1px), linear-gradient(90deg, rgba(255,244,206,0.28) 1px, transparent 1px); background-size: 0.9rem 0.9rem; content: ""; }
 .minimap-player { position: absolute; z-index: 3; width: 0.55rem; height: 0.55rem; border: 2px solid #fff4d4; border-radius: 50%; background: #f2b84b; box-shadow: 0 0 0 3px rgba(242,184,75,0.26); transform: translate(-50%, -50%); transition: left 140ms var(--ease-out, ease-out), top 140ms var(--ease-out, ease-out); }
 .minimap-monster { position: absolute; z-index: 3; width: 0.44rem; height: 0.44rem; border: 1px solid rgba(255,242,205,0.86); transform: translate(-50%, -50%) rotate(45deg); box-shadow: 0 0 0 2px rgba(22,34,27,0.52); transition: left 140ms var(--ease-out, ease-out), top 140ms var(--ease-out, ease-out); }
 .minimap-hotspot { position: absolute; z-index: 3; width: 0.76rem; height: 0.76rem; border: 1px solid #fff1b7; border-radius: 50%; background: rgba(242,184,75,0.4); box-shadow: 0 0 0 3px rgba(242,184,75,0.18); transform: translate(-50%, -50%); animation: hotspot-pulse 1.2s ease-in-out infinite; }
