@@ -41,16 +41,6 @@ jobs:
             'vale-ambar-batedor-ruinas-v1/atlases/*.png' \
             -d dist/public/sprites/batedor-ruinas
           test "$(find dist/public/sprites/batedor-ruinas -maxdepth 1 -name '*.png' | wc -l)" -eq 5
-      - name: Incluir grades de chão limpas
-        run: |
-          curl --fail --location --silent --show-error \
-            https://github.com/fabiomigal/tibia-2d-movement/releases/download/clean-field-tiles-v1/vale-ambar-clean-field-v1.zip \
-            --output /tmp/vale-ambar-clean-field-v1.zip
-          mkdir -p dist/public/tiles/clean-field
-          unzip -j -o /tmp/vale-ambar-clean-field-v1.zip \
-            'vale-ambar-clean-field-v1/atlases/*-atlas.png' \
-            -d dist/public/tiles/clean-field
-          test "$(find dist/public/tiles/clean-field -maxdepth 1 -name '*-atlas.png' | wc -l)" -eq 4
       - name: Configurar Pages
         uses: actions/configure-pages@v5
         with:

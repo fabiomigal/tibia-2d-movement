@@ -174,6 +174,7 @@ export class GameWorld {
     createZaoInitialMaps(this.scene, this.collision);
     createExplorationMaps(this.scene, this.collision);
     this.createWorldLandmarks();
+    this.createForegroundFoliage();
 
     this.player = new Player(scene, new Vector2(-4.5, -2.5));
     this.playerSprite = new AnimatedSpriteActor(scene, "adventurer", "player-zao", ZAO_SPRITE_SIZE.adventurer);
@@ -351,8 +352,7 @@ export class GameWorld {
     bar.label.position.set(x, y + 0.28, z + 0.015);
     const text = bar.text;
     if (bar.label.metadata?.healthText !== text) {
-      const context = bar.labelTexture.getContext() as unknown as CanvasRenderingContext2D | null;
-      if (!context) return;
+      const context = bar.labelTexture.getContext() as unknown as CanvasRenderingContext2D;
       context.clearRect(0, 0, 512, 128);
       context.font = "bold 54px Georgia";
       context.textAlign = "center";
@@ -395,14 +395,13 @@ export class GameWorld {
       if (this.lootChests.has(chest.chestKey)) continue;
       const glow = MeshBuilder.CreateDisc(`loot-glow-${chest.chestKey}`, { radius: 0.64, tessellation: 20 }, this.scene);
       glow.position.set(chest.x, 0.04, chest.z); glow.rotation.x = Math.PI / 2;
-      glow.material = this.colorMaterial(`loot-glow-material-${chest.chestKey}`, "#F2B84B", 0.55, 0.32); glow.isPickable = false; glow.isVisible = false;
+      glow.material = this.colorMaterial(`loot-glow-material-${chest.chestKey}`, "#F2B84B", 0.55, 0.32); glow.isPickable = false;
       const material = this.colorMaterial(`loot-chest-material-${chest.chestKey}`, "#D9A441", 0.16, 1);
       const sprite = MeshBuilder.CreatePlane(`loot-chest-${chest.chestKey}`, { width: 0.74, height: 0.74 }, this.scene);
       sprite.position.set(chest.x, 0.092, chest.z);
       sprite.rotation.x = Math.PI / 2;
       sprite.material = material;
       sprite.isPickable = true;
-      sprite.visibility = 0.001;
       sprite.metadata = { valeLootChest: chest.chestKey };
       this.lootChests.set(chest.chestKey, { ...chest, sprite, material, glow });
     }
@@ -709,22 +708,38 @@ export class GameWorld {
     this.registerLandmark(guide, { id: "arden", kind: "npc", label: "Arden · Batedor", x, z, radius: 1.4 });
   }
 
-  private createPortal(x: number, z: number, name: string, _color: string, label: string) {
+  private createPortal(x: number, z: number, name: string, color: string, label: string) {
+    const outer = MeshBuilder.CreateTorus(`${name}-outer`, { diameter: 1.65, thickness: 0.15, tessellation: 24 }, this.scene);
+    outer.position.set(x, 0.2, z);
+    outer.rotation.x = Math.PI / 2;
+    outer.material = this.colorMaterial(`${name}-outer-material`, color, 0.48, 0.92);
+    outer.isPickable = false;
     const inner = MeshBuilder.CreateDisc(`${name}-inner`, { radius: 0.61, tessellation: 24 }, this.scene);
     inner.position.set(x, 0.051, z);
     inner.rotation.x = Math.PI / 2;
-    inner.material = this.colorMaterial(`${name}-inner-material`, "#000000", 0, 0);
-    inner.visibility = 0.001;
+    inner.material = this.colorMaterial(`${name}-inner-material`, color, 0.18, 0.42);
     this.registerLandmark(inner, { id: name, kind: "portal", label, x, z, radius: 1.35, portalId: name });
+    [0, Math.PI * 0.67, Math.PI * 1.34].forEach((angle, index) => {
+      const rune = MeshBuilder.CreateBox(`${name}-rune-${index}`, { width: 0.16, height: 0.08, depth: 0.34 }, this.scene);
+      rune.position.set(x + Math.cos(angle) * 0.9, 0.14, z + Math.sin(angle) * 0.9);
+      rune.rotation.y = angle;
+      rune.material = this.colorMaterial(`${name}-rune-material-${index}`, "#F2B84B", 0.38);
+      rune.isPickable = false;
+    });
   }
 
   private createStairway(x: number, z: number) {
-    const trigger = MeshBuilder.CreateDisc("stairway-trigger", { radius: 0.65, tessellation: 16 }, this.scene);
-    trigger.position.set(x, 0.051, z);
-    trigger.rotation.x = Math.PI / 2;
-    trigger.material = this.colorMaterial("stairway-trigger-material", "#000000", 0, 0);
-    trigger.visibility = 0.001;
-    this.registerLandmark(trigger, { id: "stairway", kind: "stairs", label: "Escadaria antiga", x, z, radius: 1.25 });
+    const material = this.colorMaterial("stairway-material", "#7D8790", 0.07);
+    [0, 1, 2, 3].forEach((step) => {
+      const block = MeshBuilder.CreateBox(`stair-step-${step}`, { width: 1.28 - step * 0.08, height: 0.15, depth: 0.35 }, this.scene);
+      block.position.set(x + step * 0.13, 0.075 + step * 0.075, z - step * 0.26);
+      block.material = material;
+      block.isPickable = false;
+    });
+    const torch = MeshBuilder.CreateSphere("stairway-torch", { diameter: 0.22, segments: 8 }, this.scene);
+    torch.position.set(x - 0.82, 0.54, z - 0.42);
+    torch.material = this.colorMaterial("stairway-torch-material", "#F2B84B", 0.72);
+    this.registerLandmark(torch, { id: "stairway", kind: "stairs", label: "Escadaria antiga", x, z, radius: 1.25 });
   }
 
   private createMonsterSighting(x: number, z: number, name: string, color: string, scale: number, monsterKey: string, label: string) {
@@ -734,7 +749,6 @@ export class GameWorld {
     shadow.scaling.z = 0.6;
     shadow.material = this.colorMaterial(`${name}-shadow-material`, "#263F31", 0.02, 0.32);
     shadow.isPickable = false;
-    shadow.isVisible = false;
     const body = MeshBuilder.CreateSphere(`${name}-body`, { diameter: scale * 1.45, segments: 10 }, this.scene);
     body.position.set(x, scale * 0.38, z);
     body.scaling.set(1.2, 0.72, 0.85);
@@ -745,16 +759,14 @@ export class GameWorld {
     const kind: SpriteActorKind = monsterKey === "field-boar" ? "boar" : "goblin";
     const sprite = new AnimatedSpriteActor(this.scene, kind, name, ZAO_SPRITE_SIZE[kind]);
     sprite.update(0, x, 0.13, z, "idle");
-    sprite.setVisible(false);
     this.registerLandmark(sprite.mesh, interaction);
     const marker = MeshBuilder.CreateTorus(`${name}-target-marker`, { diameter: scale * 1.85, thickness: 0.045, tessellation: 20 }, this.scene);
     marker.position.set(x, 0.045, z);
     marker.rotation.x = Math.PI / 2;
     marker.material = this.colorMaterial(`${name}-target-marker-material`, "#F2B84B", 0.42, 0.68);
     marker.isPickable = false;
-    marker.isVisible = false;
     const healthBar = this.createHealthBar(`${name}-health`, label, "#4FDD69", 1.14);
-    this.updateHealthBar(healthBar, x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, z, 1, 1, false);
+    this.updateHealthBar(healthBar, x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, z, 1, 1, true);
     this.creatureAgents.push({ interaction, body, sprite, marker, healthBar, hp: 1, maxHp: 1, home: new Vector2(x, z), phase: this.creatureAgents.length * 1.7, state: "idle", respawnAt: 0, attackCooldown: 0 });
   }
 
@@ -789,11 +801,11 @@ export class GameWorld {
         creature.state = "return";
         creature.body.isVisible = false;
         creature.body.isPickable = true;
-        creature.sprite.setVisible(false);
+        creature.sprite.setVisible(true);
         creature.sprite.mesh.isPickable = true;
-        creature.marker.isVisible = false;
+        creature.marker.isVisible = true;
         creature.hp = creature.maxHp;
-        this.setHealthBarVisible(creature.healthBar, false);
+        this.setHealthBarVisible(creature.healthBar, true);
         creature.body.position.x = creature.home.x;
         creature.body.position.z = creature.home.y;
         creature.marker.position.x = creature.home.x;
@@ -846,8 +858,7 @@ export class GameWorld {
       }
       const spriteAction: SpriteAction = creature.state === "attack" ? "attack" : creature.state === "chase" || creature.state === "return" ? "walk" : "idle";
       creature.sprite.update(deltaSeconds, creature.body.position.x, 0.13, creature.body.position.z, spriteAction);
-      creature.sprite.setVisible(false);
-      this.updateHealthBar(creature.healthBar, creature.body.position.x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, creature.body.position.z, creature.hp, creature.maxHp, false);
+      this.updateHealthBar(creature.healthBar, creature.body.position.x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, creature.body.position.z, creature.hp, creature.maxHp, true);
       const selected = creature.interaction.monsterKey === this.selectedAttackTarget;
       const markerMaterial = creature.marker.material as StandardMaterial;
       const indicator = getTargetIndicatorStyle(selected, creature.state);
@@ -855,7 +866,6 @@ export class GameWorld {
       markerMaterial.diffuseColor = markerColor;
       markerMaterial.emissiveColor = markerColor.scale(indicator.glow);
       creature.marker.scaling.setAll(indicator.scale);
-      creature.marker.isVisible = false;
     }
   }
 
@@ -877,6 +887,26 @@ export class GameWorld {
       return;
     }
     this.player.setTarget(new Vector2(action.destination.x, action.destination.z));
+  }
+
+  private createForegroundFoliage() {
+    const foliageMaterial = this.colorMaterial("foreground-foliage-material", "#34563B", 0.08, 0.9);
+    const amberGrassMaterial = this.colorMaterial("foreground-grass-material", "#A49350", 0.08, 0.9);
+    const clusters = [
+      [-22.7, -14.8, 2.3, foliageMaterial],
+      [-20.8, -15.9, 1.7, amberGrassMaterial],
+      [21.8, -14.6, 2.5, foliageMaterial],
+      [22.5, 14.6, 1.9, amberGrassMaterial],
+      [-22.2, 14.5, 2, foliageMaterial],
+    ] as const;
+
+    clusters.forEach(([x, z, radius, material], index) => {
+      const cluster = MeshBuilder.CreateSphere(`foreground-cluster-${index}`, { diameter: radius * 2, segments: 12 }, this.scene);
+      cluster.position.set(x, 0.42, z);
+      cluster.scaling.set(1.2, 0.38, 0.78);
+      cluster.material = material;
+      cluster.isPickable = false;
+    });
   }
 
   private colorMaterial(name: string, hex: string, emissiveStrength: number, alpha = 1) {
