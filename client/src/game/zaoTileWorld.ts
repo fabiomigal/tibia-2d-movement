@@ -1,116 +1,79 @@
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
-import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import type { Scene } from "@babylonjs/core/scene";
-import { getTileAsset } from "../tilemap/catalog";
 import { getZaoMapFeatures, type ZaoMapFeature, type ZaoMapFeatureKind } from "./zaoMapLayout";
 
 const WORLD_WIDTH = 48;
 const WORLD_HEIGHT = 34;
 const GROUND_LEVEL = 0.018;
-const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
+export type WorldSolidSurfaceId = "solid-grass" | "solid-grove" | "solid-road" | "solid-water" | "solid-stone" | "solid-wall";
 
-export type WorldTileAssetId = "aurora_grass" | "aurora_grass_variant" | "aurora_path" | "aurora_water" | "aurora_mine_stone" | "aurora_fortress_wall";
+/** Paleta temporária sem texturas: separa regiões e preserva a leitura do mapa após a limpeza dos tiles. */
+export const WORLD_SOLID_SURFACE_COLORS: Readonly<Record<WorldSolidSurfaceId, string>> = {
+  "solid-grass": "#4F7A43",
+  "solid-grove": "#35613D",
+  "solid-road": "#B9874C",
+  "solid-water": "#3B8798",
+  "solid-stone": "#667083",
+  "solid-wall": "#3E4859",
+};
 
 type TilePatch = {
   id: string;
-  assetId: WorldTileAssetId;
+  surfaceId: WorldSolidSurfaceId;
   x: number;
   z: number;
   width: number;
   height: number;
   rotation?: number;
-  tone?: string;
   level: number;
 };
 
 /** Zonas somente visuais. A geometria física continua inteiramente em zaoMapLayout.ts. */
 const VISUAL_ZONES: readonly TilePatch[] = [
-  { id: "amber-city-plaza", assetId: "aurora_mine_stone", x: -5.35, z: -3.42, width: 5.35, height: 4.6, tone: "#B8C1D2", level: 0.022 },
-  { id: "amber-city-west-court", assetId: "aurora_mine_stone", x: -8.9, z: -3.38, width: 2.55, height: 8.75, tone: "#8393AE", level: 0.021 },
-  { id: "amber-city-riverside-lawn", assetId: "aurora_grass", x: -0.08, z: -3.48, width: 2.25, height: 10.5, tone: "#78945B", level: 0.019 },
-  { id: "amber-city-south-garden", assetId: "aurora_grass_variant", x: -7.7, z: -7.45, width: 11.1, height: 2.25, tone: "#FFFFFF", level: 0.019 },
-  { id: "wind-road-forest-floor", assetId: "aurora_grass", x: 4.95, z: 9.3, width: 16.8, height: 11.9, tone: "#5A7948", level: 0.019 },
-  { id: "wind-road-west-grove", assetId: "aurora_grass_variant", x: -2.25, z: 9.85, width: 6.2, height: 7.5, tone: "#FFFFFF", level: 0.02 },
-  { id: "wind-road-east-grove", assetId: "aurora_grass_variant", x: 12.6, z: 9.6, width: 5.6, height: 8.1, tone: "#FFFFFF", level: 0.02 },
-  { id: "wind-road-south-clearing", assetId: "aurora_path", x: 5.1, z: 3.68, width: 14.75, height: 2.05, tone: "#B97840", level: 0.024 },
+  { id: "amber-city-plaza", surfaceId: "solid-stone", x: -5.35, z: -3.42, width: 5.35, height: 4.6, level: 0.022 },
+  { id: "amber-city-west-court", surfaceId: "solid-stone", x: -8.9, z: -3.38, width: 2.55, height: 8.75, level: 0.021 },
+  { id: "amber-city-riverside-lawn", surfaceId: "solid-grass", x: -0.08, z: -3.48, width: 2.25, height: 10.5, level: 0.019 },
+  { id: "amber-city-south-garden", surfaceId: "solid-grove", x: -7.7, z: -7.45, width: 11.1, height: 2.25, level: 0.019 },
+  { id: "wind-road-forest-floor", surfaceId: "solid-grass", x: 4.95, z: 9.3, width: 16.8, height: 11.9, level: 0.019 },
+  { id: "wind-road-west-grove", surfaceId: "solid-grove", x: -2.25, z: 9.85, width: 6.2, height: 7.5, level: 0.02 },
+  { id: "wind-road-east-grove", surfaceId: "solid-grove", x: 12.6, z: 9.6, width: 5.6, height: 8.1, level: 0.02 },
+  { id: "wind-road-south-clearing", surfaceId: "solid-road", x: 5.1, z: 3.68, width: 14.75, height: 2.05, level: 0.024 },
 ];
 
-const DECORATIONS = [
-  { assetId: "aurora_tree", x: -14.95, z: -7.45, scale: 2.35 },
-  { assetId: "aurora_tree", x: -13.75, z: -7.15, scale: 2.08 },
-  { assetId: "aurora_flower_bed", x: -12.4, z: 0.22, scale: 0.72 },
-  { assetId: "aurora_tree", x: -11.85, z: 0.3, scale: 2.16 },
-  { assetId: "aurora_tree", x: -8.55, z: -1.85, scale: 2.07 },
-  { assetId: "aurora_flower_bed", x: -8.68, z: -5.55, scale: 0.72 },
-  { assetId: "aurora_tree", x: -2.05, z: -5.55, scale: 1.98 },
-  { assetId: "aurora_flower_bed", x: -1.18, z: -1.18, scale: 0.66 },
-  { assetId: "aurora_tree", x: 0.62, z: -3.28, scale: 1.67 },
-  { assetId: "aurora_tree", x: -1.38, z: 10.85, scale: 2.35 },
-  { assetId: "aurora_tree", x: -0.78, z: 11.35, scale: 1.98 },
-  { assetId: "aurora_flower_bed", x: -1.72, z: 9.95, scale: 0.7 },
-  { assetId: "aurora_tree", x: 11.1, z: 10.62, scale: 2.44 },
-  { assetId: "aurora_tree", x: 12.75, z: 13.22, scale: 2.22 },
-  { assetId: "aurora_tree", x: 13.05, z: 10.82, scale: 1.91 },
-  { assetId: "aurora_flower_bed", x: 12.15, z: 9.78, scale: 0.68 },
-  { assetId: "aurora_flower_bed", x: 0.48, z: 6.1, scale: 0.61 },
-  { assetId: "aurora_flower_bed", x: 13.08, z: 5.72, scale: 0.61 },
-] as const;
-
-export function resolveWorldTileAsset(kind: ZaoMapFeatureKind): WorldTileAssetId {
+export function resolveWorldSolidSurface(kind: ZaoMapFeatureKind): WorldSolidSurfaceId {
   switch (kind) {
-    case "water": return "aurora_water";
-    case "road": return "aurora_path";
-    case "bridge": return "aurora_mine_stone";
-    case "wall": return "aurora_fortress_wall";
+    case "water": return "solid-water";
+    case "road": return "solid-road";
+    case "bridge": return "solid-stone";
+    case "wall": return "solid-wall";
     case "structure":
     case "tower":
-    case "gate": return "aurora_fortress_wall";
-    case "cliff": return "aurora_mine_stone";
+    case "gate": return "solid-wall";
+    case "cliff": return "solid-stone";
   }
 }
 
-export function getZaoWorldTileFeatures(): Array<ZaoMapFeature & { assetId: WorldTileAssetId }> {
+export function getZaoWorldSolidFeatures(): Array<ZaoMapFeature & { surfaceId: WorldSolidSurfaceId }> {
   return (["bamboo-forest", "wind-road"] as const)
     .flatMap((subarea) => getZaoMapFeatures(subarea))
-    .map((feature) => ({ ...feature, assetId: resolveWorldTileAsset(feature.kind) }));
+    .map((feature) => ({ ...feature, surfaceId: resolveWorldSolidSurface(feature.kind) }));
 }
 
 export function getZaoWorldVisualZones() {
   return [...VISUAL_ZONES];
 }
 
-function createTileMaterial(scene: Scene, assetId: string, name: string, materialCache: Map<string, StandardMaterial>, tone = "#FFFFFF") {
-  const cacheKey = `${assetId}:${tone}`;
+function createSolidMaterial(scene: Scene, surfaceId: WorldSolidSurfaceId, name: string, materialCache: Map<string, StandardMaterial>) {
+  const cacheKey = surfaceId;
   const cached = materialCache.get(cacheKey);
   if (cached) return cached;
-  const asset = getTileAsset(assetId);
-  if (!asset) throw new Error(`Tile do mundo não encontrado: ${assetId}`);
-  const material = new StandardMaterial(`${name}-${assetId}-material`, scene);
-  if (IS_STATIC_DEMO) {
-    const fallbackColor = Color3.FromHexString(asset.previewColor);
-    material.diffuseColor = fallbackColor;
-    material.emissiveColor = fallbackColor;
-    material.specularColor = Color3.Black();
-    material.backFaceCulling = false;
-    material.disableLighting = true;
-    materialCache.set(cacheKey, material);
-    return material;
-  }
-  const texture = new Texture(asset.localFilename, scene, false, false, Texture.NEAREST_SAMPLINGMODE);
-  texture.hasAlpha = true;
-  texture.wrapU = Texture.WRAP_ADDRESSMODE;
-  texture.wrapV = Texture.WRAP_ADDRESSMODE;
-  texture.vOffset = 1;
-  texture.vScale = -1;
-  const tint = Color3.FromHexString(tone);
-  material.diffuseTexture = texture;
-  material.emissiveTexture = texture;
-  material.diffuseColor = tint;
-  material.emissiveColor = tint;
+  const material = new StandardMaterial(`${name}-${surfaceId}-material`, scene);
+  const color = Color3.FromHexString(WORLD_SOLID_SURFACE_COLORS[surfaceId]);
+  material.diffuseColor = color;
+  material.emissiveColor = color;
   material.specularColor = Color3.Black();
-  material.useAlphaFromDiffuseTexture = true;
   material.backFaceCulling = false;
   material.disableLighting = true;
   materialCache.set(cacheKey, material);
@@ -122,7 +85,7 @@ function createTilePatch(scene: Scene, feature: TilePatch, materialCache: Map<st
   const rows = Math.max(1, Math.round(feature.height));
   const tileWidth = feature.width / columns;
   const tileHeight = feature.height / rows;
-  const material = createTileMaterial(scene, feature.assetId, `world-tile-${feature.id}`, materialCache, feature.tone);
+  const material = createSolidMaterial(scene, feature.surfaceId, `world-surface-${feature.id}`, materialCache);
   for (let row = 0; row < rows; row += 1) {
     for (let column = 0; column < columns; column += 1) {
       const tile = MeshBuilder.CreateGround(`world-tile-${feature.id}-${column}-${row}`, { width: tileWidth + 0.012, height: tileHeight + 0.012 }, scene);
@@ -147,28 +110,15 @@ function getFeatureTileLevel(kind: ZaoMapFeatureKind) {
   }
 }
 
-/** Renderização jogável em tiles: camadas distinguem cidade, rio, estrada e floresta sem backdrop. */
+/** Superfícies sólidas temporárias: mantêm a leitura espacial enquanto as tiles e props são removidas do runtime. */
 export function createZaoTileWorld(scene: Scene) {
   const materialCache = new Map<string, StandardMaterial>();
-  const grassMaterial = createTileMaterial(scene, "aurora_grass", "world-ground", materialCache, "#FFFFFF");
-  if (!IS_STATIC_DEMO) {
-    const grassTexture = grassMaterial.diffuseTexture as Texture;
-    grassTexture.uScale = WORLD_WIDTH;
-    grassTexture.vOffset = WORLD_HEIGHT;
-    grassTexture.vScale = -WORLD_HEIGHT;
-  }
+  const grassMaterial = createSolidMaterial(scene, "solid-grass", "world-ground", materialCache);
   const ground = MeshBuilder.CreateGround("walkable-grass", { width: WORLD_WIDTH, height: WORLD_HEIGHT, subdivisions: 2 }, scene);
   ground.position.y = GROUND_LEVEL;
   ground.material = grassMaterial;
   ground.isPickable = true;
 
   getZaoWorldVisualZones().forEach((zone) => createTilePatch(scene, zone, materialCache));
-  getZaoWorldTileFeatures().forEach((feature) => createTilePatch(scene, { ...feature, level: getFeatureTileLevel(feature.kind) }, materialCache));
-  DECORATIONS.forEach((decoration, index) => {
-    const tile = MeshBuilder.CreatePlane(`world-decoration-${index}`, { width: decoration.scale, height: decoration.scale }, scene);
-    tile.position.set(decoration.x, GROUND_LEVEL + 0.075, decoration.z);
-    tile.rotation.x = Math.PI / 2;
-    tile.material = createTileMaterial(scene, decoration.assetId, "world-decoration", materialCache);
-    tile.isPickable = false;
-  });
+  getZaoWorldSolidFeatures().forEach((feature) => createTilePatch(scene, { ...feature, level: getFeatureTileLevel(feature.kind) }, materialCache));
 }

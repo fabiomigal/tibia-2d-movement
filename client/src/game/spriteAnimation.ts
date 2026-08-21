@@ -138,6 +138,11 @@ export function selectSpriteDirection(deltaX: number, deltaZ: number, fallback: 
   return deltaZ > 0 ? "southwest" : "northwest";
 }
 
+/** Durante a limpeza visual, somente o personagem principal conserva um atlas de imagem. */
+export function usesSpriteTexture(kind: SpriteActorKind) {
+  return kind === "adventurer";
+}
+
 /** Camada visual independente da lógica de movimento: recorta atlas 4×N ou 8×N em um plano horizontal do mundo. */
 export class AnimatedSpriteActor {
   readonly mesh: Mesh;
@@ -168,10 +173,11 @@ export class AnimatedSpriteActor {
     this.material.backFaceCulling = false;
     this.material.disableLighting = OPAQUE_SPRITE_RENDERING.disableLighting;
     this.mesh.material = this.material;
-    if (IS_STATIC_DEMO && this.kind !== "adventurer") {
+    if (!usesSpriteTexture(this.kind)) {
       const color = Color3.FromHexString(STATIC_SPRITE_COLORS[this.kind]);
       this.material.diffuseColor = color;
       this.material.emissiveColor = color;
+      this.material.useAlphaFromDiffuseTexture = false;
       this.material.transparencyMode = Material.MATERIAL_OPAQUE;
     } else {
       this.applySheet("idle");
@@ -234,7 +240,7 @@ export class AnimatedSpriteActor {
   }
 
   private applySheet(action: SpriteAction) {
-    if (IS_STATIC_DEMO && this.kind !== "adventurer") return;
+    if (!usesSpriteTexture(this.kind)) return;
     const sheet = this.sheet(action);
     let texture = this.textures.get(action);
     if (!texture) {

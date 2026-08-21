@@ -6,17 +6,17 @@
 
 **Direção de arte:** pixel art nítida em visão superior 3/4, contorno escuro de um pixel, luz superior esquerda e sombras curtas. A floresta combina verde-musgo, terra âmbar e água ciano; mina usa ardósia azul e cristais cianos; fortaleza trabalha com pedra grafite e luz quente; catacumbas usam pedra violeta e magia púrpura. Personagens e criaturas mantêm leitura forte em escalas entre um e dois tiles.
 
-| Conjunto | Uso ativo | Arquivos publicados |
+| Conjunto | Estado no runtime atual | Arquivos preservados |
 |---|---|---|
-| Campo transitável | Duas variações de relva repetida, fornecidas e autorizadas pelo autor, sem moldura externa | `field-meadow-a_38596e09.png`, `field-meadow-b_1e3bf0f5.png` |
-| Floresta do Orvalho | Trilha, água, árvore e flores do exterior; usa as variações de Campo transitável como relva | `aurora_path_33133ffa.png`, `aurora_water_bfd50fd5.png`, `aurora_tree_d42827c3.png`, `aurora_flower_bed_9d7b95d7.png` |
-| Mina / Fortaleza / Catacumbas | Pedra, muralhas e interiores | `aurora_mine_stone_6e3b1013.png`, `aurora_fortress_wall_e826603d.png`, `aurora_catacomb_stone_f82954c0.png` |
-| Personagem principal | Batedor de Ruínas em cinco atlas cardinais 4×4, reconstruídos de 80 quadros individuais, com norte na linha superior | `batedor-ruinas-idle-4x4_e8c66a18.png`, `batedor-ruinas-walk-4x4_198bb673.png`, `batedor-ruinas-attack-4x4_f5f91a67.png`, `batedor-ruinas-hit-4x4_78b1c80e.png`, `batedor-ruinas-death-4x4_e8975156.png` |
-| Criaturas | Goblin e javali nos atlas existentes, sem alteração nesta entrega | `aurora_goblin_a3a2f159.png`, `aurora_boar_deeedfd0.png` |
-| Props e efeitos | Baú, rochas e poeira de movimento | `aurora_loot_chest_23688efc.png`, `aurora_rock_cluster_584ad55e.png`, `aurora_dust_sheet_2c6cb634.png` |
+| Campo, floresta, mina, fortaleza e catacumbas | Removidos do runtime; regiões são superfícies de cor sólida | Arquivos anteriores preservados apenas como histórico |
+| Personagem principal | **Único atlas de imagem ativo**: Batedor de Ruínas em cinco atlas cardinais 4×4, com norte na linha superior | `batedor-ruinas-idle-4x4_e8c66a18.png`, `batedor-ruinas-walk-4x4_198bb673.png`, `batedor-ruinas-attack-4x4_f5f91a67.png`, `batedor-ruinas-hit-4x4_78b1c80e.png`, `batedor-ruinas-death-4x4_e8975156.png` |
+| Criaturas | Marcadores sólidos, sem atlas de criatura ativo | Atlases anteriores preservados apenas como histórico |
+| Baús, props e efeitos de mundo | Marcadores e geometrias sólidos, sem tiles ou props de imagem ativos | Arquivos anteriores preservados apenas como histórico |
 
 > **Proveniência do Batedor de Ruínas:** gerado por Gemini sob comandos do usuário `fabiomigal@gmail.com`; uso autorizado pelo autor para o projeto Vale de Âmbar. O arquivo original é preservado fora da aplicação, em `webdev-static-assets/batedor-ruinas/`, e o runtime usa somente os atlas PNG publicados.
 
 > **Pacote no GitHub:** a release [`sprites-batedor-ruinas-v1`](https://github.com/fabiomigal/tibia-2d-movement/releases/tag/sprites-batedor-ruinas-v1) preserva a fonte original, cinco atlas 4×4, os 80 quadros individuais, o manifesto de direções e o script reprodutível de preparação. Durante o workflow, os cinco atlas são extraídos dessa release para `sprites/batedor-ruinas/` no artefato do GitHub Pages; o modo estático do protagonista usa essas URLs públicas, enquanto o runtime hospedado continua carregando os atlas pelo armazenamento estático.
+
+> **Acervo de floresta separado:** a spritesheet `Gemini_Generated_Image_atsht5atsht5atsh.jpg` fornecida pelo autor foi recortada e organizada em `ground`, `paths`, `water` e `props`, com catálogo técnico em [`docs/forest-sprite-catalog.md`](docs/forest-sprite-catalog.md). Nenhuma dessas tiles ou props é carregada no runtime atual: o mapa foi deliberadamente limpo para uma paleta de cores sólidas, preservando somente o atlas do Batedor de Ruínas.
 
 Os conjuntos anteriores permanecem apenas como histórico documental e **não são referenciados pelo runtime ativo**. A troca não modifica movimentação, câmera, colisões, combate, portais, inventário ou controles.

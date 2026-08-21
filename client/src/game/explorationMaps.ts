@@ -1,38 +1,22 @@
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
-import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import type { Scene } from "@babylonjs/core/scene";
-import { getTileAsset } from "../tilemap/catalog";
 import type { CollisionWorld } from "./CollisionWorld";
 
-const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
-type AssetId = "aurora_grass" | "aurora_mine_stone" | "aurora_fortress_wall" | "aurora_catacomb_stone" | "aurora_tree" | "aurora_flower_bed";
-type MapDefinition = { id: string; label: string; x: number; z: number; width: number; height: number; floor: AssetId; tone: string };
+type MapDefinition = { id: string; label: string; x: number; z: number; width: number; height: number; tone: string };
 
 export const EXPLORATION_MAPS: readonly MapDefinition[] = [
-  { id: "amber-inn", label: "Estalagem do Âmbar", x: -18.2, z: 12.6, width: 7.2, height: 6.1, floor: "aurora_mine_stone", tone: "#8294B0" },
-  { id: "moon-sanctuary", label: "Santuário da Lua", x: 18.2, z: -11.8, width: 8.6, height: 7.1, floor: "aurora_catacomb_stone", tone: "#76518C" },
+  { id: "amber-inn", label: "Estalagem do Âmbar", x: -18.2, z: 12.6, width: 7.2, height: 6.1, tone: "#8294B0" },
+  { id: "moon-sanctuary", label: "Santuário da Lua", x: 18.2, z: -11.8, width: 8.6, height: 7.1, tone: "#76518C" },
 ];
 
-function material(scene: Scene, id: AssetId, tone: string, cache: Map<string, StandardMaterial>) {
+function material(scene: Scene, id: string, tone: string, cache: Map<string, StandardMaterial>) {
   const key = `${id}:${tone}`;
   const cached = cache.get(key);
   if (cached) return cached;
-  const asset = getTileAsset(id);
-  if (!asset) throw new Error(`Asset de exploração ausente: ${id}`);
   const output = new StandardMaterial(`exploration-${key}`, scene);
   const tint = Color3.FromHexString(tone);
-  if (!IS_STATIC_DEMO) {
-    const texture = new Texture(asset.localFilename, scene, false, false, Texture.NEAREST_SAMPLINGMODE);
-    texture.hasAlpha = true;
-    texture.wrapU = Texture.WRAP_ADDRESSMODE;
-    texture.wrapV = Texture.WRAP_ADDRESSMODE;
-    texture.vOffset = 1;
-    texture.vScale = -1;
-    output.diffuseTexture = texture;
-    output.emissiveTexture = texture;
-  }
   output.diffuseColor = tint;
   output.emissiveColor = tint;
   output.specularColor = Color3.Black();
@@ -45,7 +29,7 @@ function material(scene: Scene, id: AssetId, tone: string, cache: Map<string, St
 function ground(scene: Scene, definition: MapDefinition, cache: Map<string, StandardMaterial>) {
   const mesh = MeshBuilder.CreateGround(`exploration-floor-${definition.id}`, { width: definition.width, height: definition.height }, scene);
   mesh.position.set(definition.x, 0.041, definition.z);
-  mesh.material = material(scene, definition.floor, definition.tone, cache);
+  mesh.material = material(scene, "floor", definition.tone, cache);
   mesh.isPickable = true;
   return mesh;
 }
@@ -53,15 +37,15 @@ function ground(scene: Scene, definition: MapDefinition, cache: Map<string, Stan
 function wall(scene: Scene, x: number, z: number, width: number, depth: number, name: string, cache: Map<string, StandardMaterial>) {
   const mesh = MeshBuilder.CreateBox(name, { width, height: 0.42, depth }, scene);
   mesh.position.set(x, 0.24, z);
-  mesh.material = material(scene, "aurora_fortress_wall", "#787C98", cache);
+  mesh.material = material(scene, "wall", "#787C98", cache);
   mesh.isPickable = false;
 }
 
-function decoration(scene: Scene, id: "aurora_tree" | "aurora_flower_bed", x: number, z: number, scale: number, cache: Map<string, StandardMaterial>) {
+function decoration(scene: Scene, id: "tree-marker" | "flower-marker", x: number, z: number, scale: number, cache: Map<string, StandardMaterial>) {
   const mesh = MeshBuilder.CreatePlane(`exploration-${id}-${x}-${z}`, { width: scale, height: scale }, scene);
   mesh.position.set(x, 0.095, z);
   mesh.rotation.x = Math.PI / 2;
-  mesh.material = material(scene, id, "#FFFFFF", cache);
+  mesh.material = material(scene, id, id === "tree-marker" ? "#557047" : "#B59054", cache);
   mesh.isPickable = false;
 }
 
@@ -96,10 +80,10 @@ export function createExplorationMaps(scene: Scene, collision: CollisionWorld) {
   wall(scene, sanctuary.x, sanctuaryBottom, sanctuary.width, 0.3, "sanctuary-cliff-south", cache);
   wall(scene, sanctuaryLeft, sanctuary.z, 0.3, sanctuary.height, "sanctuary-cliff-west", cache);
   wall(scene, sanctuaryRight, sanctuary.z, 0.3, sanctuary.height, "sanctuary-cliff-east", cache);
-  decoration(scene, "aurora_tree", sanctuaryLeft + 1, sanctuaryTop + 1.1, 2.3, cache);
-  decoration(scene, "aurora_tree", sanctuaryRight - 1.2, sanctuaryTop + 1.15, 2.1, cache);
-  decoration(scene, "aurora_flower_bed", sanctuaryLeft + 1.15, sanctuaryBottom - 1.1, 0.85, cache);
-  decoration(scene, "aurora_flower_bed", sanctuaryRight - 1.05, sanctuaryBottom - 1, 0.78, cache);
+  decoration(scene, "tree-marker", sanctuaryLeft + 1, sanctuaryTop + 1.1, 2.3, cache);
+  decoration(scene, "tree-marker", sanctuaryRight - 1.2, sanctuaryTop + 1.15, 2.1, cache);
+  decoration(scene, "flower-marker", sanctuaryLeft + 1.15, sanctuaryBottom - 1.1, 0.85, cache);
+  decoration(scene, "flower-marker", sanctuaryRight - 1.05, sanctuaryBottom - 1, 0.78, cache);
   collision.addRectangle(sanctuaryLeft - 0.15, sanctuaryRight + 0.15, sanctuaryTop - 0.15, sanctuaryTop + 0.15);
   collision.addRectangle(sanctuaryLeft - 0.15, sanctuaryRight + 0.15, sanctuaryBottom - 0.15, sanctuaryBottom + 0.15);
   collision.addRectangle(sanctuaryLeft - 0.15, sanctuaryLeft + 0.15, sanctuaryTop - 0.15, sanctuaryBottom + 0.15);

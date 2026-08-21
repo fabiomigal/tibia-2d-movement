@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AURORA_REFERENCE_DIRECTION_ROWS, AURORA_REFERENCE_SPRITE_URLS, BATEDOR_RUINAS_DIRECTION_ROWS, BATEDOR_RUINAS_SPRITE_URLS, BATEDOR_RUINAS_STATIC_SPRITE_URLS, OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv } from "./spriteAnimation";
+import { AURORA_REFERENCE_DIRECTION_ROWS, AURORA_REFERENCE_SPRITE_URLS, BATEDOR_RUINAS_DIRECTION_ROWS, BATEDOR_RUINAS_SPRITE_URLS, BATEDOR_RUINAS_STATIC_SPRITE_URLS, OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv, usesSpriteTexture } from "./spriteAnimation";
 import { Material } from "@babylonjs/core/Materials/material";
 
 describe("seleção de frame dos sprites Zao", () => {
@@ -49,6 +49,12 @@ describe("seleção de frame dos sprites Zao", () => {
       hit: expect.stringMatching(/sprites\/batedor-ruinas\/batedor-ruinas-hit-4x4\.png$/),
       death: expect.stringMatching(/sprites\/batedor-ruinas\/batedor-ruinas-death-4x4\.png$/),
     }));
+  });
+
+  it("preserva imagem apenas para o personagem principal durante a limpeza visual", () => {
+    expect(usesSpriteTexture("adventurer")).toBe(true);
+    expect(usesSpriteTexture("goblin")).toBe(false);
+    expect(usesSpriteTexture("boar")).toBe(false);
   });
 
   it("mantém o plano horizontal virado para a câmera superior", () => {

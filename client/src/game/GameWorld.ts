@@ -7,7 +7,6 @@ import { Matrix, Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
-import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture";
 import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
 import type { Scene } from "@babylonjs/core/scene";
@@ -28,17 +27,11 @@ import { COMBAT_VISUAL_HEIGHTS } from "./combatVisualLayout";
 import { AnimatedSpriteActor, ZAO_SPRITE_SIZE, type SpriteActorKind, type SpriteAction } from "./spriteAnimation";
 import { createZaoInitialMaps, resolveZaoSubarea } from "./zaoMapLayout";
 import { createZaoTileWorld } from "./zaoTileWorld";
-import { getTileAsset } from "../tilemap/catalog";
 import { resolveEnvironmentState, type EnvironmentState } from "./environment";
 import { createExplorationMaps } from "./explorationMaps";
 import { MONSTER_RESPAWN_DELAY_MS, WORLD_MONSTER_SPAWNS, WORLD_PORTALS } from "@shared/game";
 
 const IS_STATIC_DEMO = import.meta.env.VITE_STATIC_DEMO === "true";
-
-const assets = {
-  grass: "/manus-storage/field-meadow-a_38596e09.png",
-  water: "/manus-storage/aurora_water_f80cfd58.png",
-} as const;
 
 const worldBounds: WorldBounds = {
   minX: -23.4,
@@ -58,7 +51,7 @@ type LandmarkKind = "npc" | "portal" | "stairs" | "monster";
 type LandmarkInteraction = { id: string; kind: LandmarkKind; label: string; x: number; z: number; radius: number; monsterKey?: string; portalId?: string };
 type HealthBar = { rail: Mesh; fill: Mesh; label: Mesh; labelTexture: DynamicTexture; width: number; fillWidth: number; text: string };
 type CreatureAgent = { interaction: LandmarkInteraction; body: Mesh; sprite: AnimatedSpriteActor; marker: Mesh; healthBar: HealthBar; hp: number; maxHp: number; home: Vector2; phase: number; state: "idle" | "chase" | "attack" | "return" | "dead"; respawnAt: number; attackCooldown: number };
-type LootChest = { chestKey: string; x: number; z: number; sprite: Mesh; material: StandardMaterial; texture: Texture; glow: Mesh };
+type LootChest = { chestKey: string; x: number; z: number; sprite: Mesh; material: StandardMaterial; glow: Mesh };
 
 export class GameWorld {
   private readonly collision = new CollisionWorld(worldBounds);
@@ -66,14 +59,6 @@ export class GameWorld {
   private readonly cameraController: CameraController;
   private readonly input: MovementInput;
   private readonly demoPilot: DemoPilot | null;
-  private readonly pendingTextures: Array<{
-    material: StandardMaterial;
-    url: string;
-    uScale: number;
-    vScale: number;
-    alpha: number;
-  }> = [];
-  private textureRetryTimer: number | null = null;
   private hudTimer = 0;
   private environmentElapsedMs = 0;
   private environment: EnvironmentState = resolveEnvironmentState(0);
@@ -256,7 +241,7 @@ export class GameWorld {
     this.movementDust.dispose();
     this.movementDustTexture.dispose();
     this.creatureAgents.forEach((creature) => creature.sprite.dispose());
-    this.lootChests.forEach((chest) => { chest.sprite.dispose(); chest.texture.dispose(); chest.material.dispose(); chest.glow.dispose(); });
+    this.lootChests.forEach((chest) => { chest.sprite.dispose(); chest.material.dispose(); chest.glow.dispose(); });
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("vale:creature-defeated", this.onCreatureDefeated);
     window.removeEventListener("vale:portal-travel", this.onPortalTravel);
@@ -403,7 +388,7 @@ export class GameWorld {
     const incoming = new Set(chests.map((chest) => chest.chestKey));
     this.lootChests.forEach((chest, key) => {
       if (incoming.has(key)) return;
-      chest.sprite.dispose(); chest.texture.dispose(); chest.material.dispose(); chest.glow.dispose();
+      chest.sprite.dispose(); chest.material.dispose(); chest.glow.dispose();
       this.lootChests.delete(key);
     });
     for (const chest of chests) {
@@ -411,36 +396,14 @@ export class GameWorld {
       const glow = MeshBuilder.CreateDisc(`loot-glow-${chest.chestKey}`, { radius: 0.64, tessellation: 20 }, this.scene);
       glow.position.set(chest.x, 0.04, chest.z); glow.rotation.x = Math.PI / 2;
       glow.material = this.colorMaterial(`loot-glow-material-${chest.chestKey}`, "#F2B84B", 0.55, 0.32); glow.isPickable = false;
-      const asset = getTileAsset("aurora_loot_chest");
-      if (!asset) continue;
-      const texture = IS_STATIC_DEMO
-        ? new DynamicTexture(`loot-chest-fallback-${chest.chestKey}`, { width: 2, height: 2 }, this.scene)
-        : new Texture(asset.localFilename, this.scene, false, false, Texture.NEAREST_SAMPLINGMODE);
-      if (!IS_STATIC_DEMO) {
-        texture.hasAlpha = true;
-        texture.wrapU = Texture.CLAMP_ADDRESSMODE;
-        texture.wrapV = Texture.CLAMP_ADDRESSMODE;
-        texture.vOffset = 1;
-        texture.vScale = -1;
-      }
-      const material = new StandardMaterial(`loot-chest-material-${chest.chestKey}`, this.scene);
-      if (!IS_STATIC_DEMO) {
-        material.diffuseTexture = texture;
-        material.emissiveTexture = texture;
-      }
-      material.diffuseColor = IS_STATIC_DEMO ? Color3.FromHexString("#D9A441") : Color3.White();
-      material.emissiveColor = IS_STATIC_DEMO ? Color3.FromHexString("#D9A441") : Color3.White();
-      material.specularColor = Color3.Black();
-      material.useAlphaFromDiffuseTexture = true;
-      material.backFaceCulling = false;
-      material.disableLighting = true;
-      const sprite = MeshBuilder.CreatePlane(`loot-chest-${chest.chestKey}`, { width: 0.92, height: 0.92 }, this.scene);
+      const material = this.colorMaterial(`loot-chest-material-${chest.chestKey}`, "#D9A441", 0.16, 1);
+      const sprite = MeshBuilder.CreatePlane(`loot-chest-${chest.chestKey}`, { width: 0.74, height: 0.74 }, this.scene);
       sprite.position.set(chest.x, 0.092, chest.z);
       sprite.rotation.x = Math.PI / 2;
       sprite.material = material;
       sprite.isPickable = true;
       sprite.metadata = { valeLootChest: chest.chestKey };
-      this.lootChests.set(chest.chestKey, { ...chest, sprite, material, texture, glow });
+      this.lootChests.set(chest.chestKey, { ...chest, sprite, material, glow });
     }
   }
 
@@ -460,12 +423,12 @@ export class GameWorld {
 
     const paintedField = MeshBuilder.CreateGround("painted-field", { width: 48, height: 34, subdivisions: 2 }, this.scene);
     paintedField.position.y = 0.006;
-    paintedField.material = this.texturedMaterial("painted-field-material", assets.grass, "#536E42", 1, 1, 0.56);
+    paintedField.material = this.colorMaterial("painted-field-material", "#536E42", 0.012, 0.56);
     paintedField.isPickable = false;
 
     const grass = MeshBuilder.CreateGround("walkable-grass", { width: 48, height: 34, subdivisions: 2 }, this.scene);
     grass.position.y = 0.018;
-    grass.material = this.texturedMaterial("grass-material", assets.grass, "#718856", 16, 12, 0.66);
+    grass.material = this.colorMaterial("grass-material", "#718856", 0.02, 0.66);
     grass.isPickable = true;
   }
 
@@ -490,7 +453,7 @@ export class GameWorld {
 
     const water = MeshBuilder.CreateGround(name, { width, height, subdivisions: 1 }, this.scene);
     water.position.set(x, 0.052, z);
-    water.material = this.texturedMaterial(`${name}-material`, assets.water, "#4C8D91", width / 2, height / 2, 0.38);
+    water.material = this.colorMaterial(`${name}-material`, "#4C8D91", 0.02, 0.38);
     water.isPickable = false;
 
     const reedMaterial = this.colorMaterial(`${name}-reed-material`, "#789253", 0.08, 0.88);
@@ -943,40 +906,6 @@ export class GameWorld {
       cluster.scaling.set(1.2, 0.38, 0.78);
       cluster.material = material;
       cluster.isPickable = false;
-    });
-  }
-
-  private texturedMaterial(name: string, url: string, fallback: string, uScale: number, vScale: number, alpha = 1) {
-    const material = new StandardMaterial(name, this.scene);
-    material.diffuseColor = Color3.FromHexString(fallback);
-    material.specularColor = Color3.Black();
-    material.alpha = 0;
-    this.pendingTextures.push({ material, url, uScale, vScale, alpha });
-    return material;
-  }
-
-  private tryLoadGeneratedTextures() {
-    if (IS_STATIC_DEMO) return;
-    this.pendingTextures.forEach((entry) => {
-      if (entry.material.diffuseTexture) return;
-      void fetch(entry.url, { method: "HEAD", cache: "no-store" })
-        .then((response) => response.headers.get("content-type") ?? "")
-        .then((contentType) => {
-          if (!contentType.startsWith("image/") || contentType.includes("svg")) return;
-          const texture = new Texture(entry.url, this.scene, true, false);
-          texture.wrapU = Texture.WRAP_ADDRESSMODE;
-          texture.wrapV = Texture.WRAP_ADDRESSMODE;
-          texture.uScale = entry.uScale;
-          texture.vOffset = entry.vScale;
-          texture.vScale = -entry.vScale;
-          texture.level = entry.url.includes("field-meadow") ? 0.72 : 0.68;
-          texture.anisotropicFilteringLevel = 4;
-          entry.material.diffuseTexture = texture;
-          entry.material.alpha = entry.alpha;
-        })
-        .catch(() => {
-          // A cor-base permanece ativa caso o recurso ainda esteja em processamento.
-        });
     });
   }
 

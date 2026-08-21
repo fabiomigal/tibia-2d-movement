@@ -198,3 +198,7 @@
 - [x] Disponibilizar os cinco atlas do Batedor de Ruínas por URLs públicas compatíveis com o GitHub Pages.
 - [x] Aplicar os atlas públicos somente ao modo estático, preservando os sprites e os módulos de jogo existentes.
 - [x] Validar o build GitHub Pages, a página publicada e sincronizar o checkpoint da atualização.
+- [x] Recortar e catalogar a spritesheet de floresta fornecida por categorias: cobertura, caminhos, transições, decoração e água.
+- [x] Remover do runtime todas as tiles e props visuais atuais, preservando apenas o atlas do personagem principal e as regras de colisão existentes.
+- [x] Aplicar um cenário temporário composto apenas por cores sólidas às regiões, caminhos, água, construções e obstáculos do mapa.
+- [ ] Atualizar contratos e documentação, validar desktop/mobile, salvar checkpoint e sincronizar a limpeza visual com GitHub e GitHub Pages.

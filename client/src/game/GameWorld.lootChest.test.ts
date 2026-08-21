@@ -37,13 +37,12 @@ describe("GameWorld — sprite de baú de drop", () => {
     const scene = new Scene(engine);
     const canvas = Object.assign(new EventTarget(), { width: 1280, height: 720, focus: () => undefined, getBoundingClientRect: () => ({ left: 12, top: 18, width: 1280, height: 720 }) }) as unknown as HTMLCanvasElement;
     const world = new GameWorld(scene, canvas, false);
-    const internals = world as unknown as { lootChests: Map<string, { sprite: { rotation: { x: number }; metadata: unknown; dispose: () => void }; texture: { dispose: () => void }; material: { dispose: () => void }; glow: { dispose: () => void } }> };
+    const internals = world as unknown as { lootChests: Map<string, { sprite: { rotation: { x: number }; metadata: unknown; dispose: () => void }; material: { dispose: () => void }; glow: { dispose: () => void } }> };
 
     target.dispatchEvent(new CustomEvent("vale:loot-chests", { detail: [{ chestKey: "drop-1", x: 2, z: -3 }] }));
     const chest = internals.lootChests.get("drop-1");
     expect(chest?.sprite.metadata).toEqual({ valeLootChest: "drop-1" });
     expect(chest?.sprite.rotation.x).toBe(Math.PI / 2);
-    const textureDispose = vi.spyOn(chest!.texture, "dispose");
     const materialDispose = vi.spyOn(chest!.material, "dispose");
     const spriteDispose = vi.spyOn(chest!.sprite, "dispose");
     const glowDispose = vi.spyOn(chest!.glow, "dispose");
@@ -58,7 +57,6 @@ describe("GameWorld — sprite de baú de drop", () => {
 
     target.dispatchEvent(new CustomEvent("vale:loot-chests", { detail: [] }));
     expect(internals.lootChests.has("drop-1")).toBe(false);
-    expect(textureDispose).toHaveBeenCalledOnce();
     expect(materialDispose).toHaveBeenCalledOnce();
     expect(spriteDispose).toHaveBeenCalledOnce();
     expect(glowDispose).toHaveBeenCalledOnce();
