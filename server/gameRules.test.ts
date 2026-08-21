@@ -23,7 +23,7 @@ describe("regras de progressão do Vale de Âmbar", () => {
   it("mantém os sete elementos e a rota de regiões em ordem de progressão", () => {
     expect(DAMAGE_ELEMENTS).toEqual(["physical", "fire", "ice", "energy", "earth", "holy", "death"]);
     expect(REGIONS[0]).toMatchObject({ key: "wind-road", level: 1 });
-    expect(REGIONS.at(-1)).toMatchObject({ key: "volcano", level: 48 });
+    expect(REGIONS.at(-1)).toMatchObject({ key: "amber-inn", level: 5 });
     expect(REGIONS.every((region, index) => index === 0 || region.level > REGIONS[index - 1]!.level)).toBe(true);
   });
 

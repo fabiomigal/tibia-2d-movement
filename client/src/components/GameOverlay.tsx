@@ -72,14 +72,7 @@ const DEMO_MONSTERS = [
   { key: "field-boar", name: "Javali do Campo", region: "wind-road", level: 1, element: "physical" as DamageElement, tone: "#b99064" },
   { key: "wind-goblin", name: "Goblin da Estrada", region: "wind-road", level: 3, element: "earth" as DamageElement, tone: "#82965c" },
   { key: "bamboo-archer", name: "Arqueiro Maligno", region: "bamboo-forest", level: 5, element: "physical" as DamageElement, tone: "#4c7d62" },
-  { key: "ruin-golem", name: "Golem de Ruína", region: "elders-ruins", level: 8, element: "earth" as DamageElement, tone: "#7d8790" },
-  { key: "grave-wraith", name: "Wraith do Cemitério", region: "cursed-graveyard", level: 12, element: "death" as DamageElement, tone: "#8e6db3" },
-  { key: "dune-scorpion", name: "Escorpião das Dunas", region: "oasis", level: 18, element: "earth" as DamageElement, tone: "#c9954b" },
-  { key: "sand-cobra", name: "Cobra da Areia", region: "desert-island", level: 22, element: "earth" as DamageElement, tone: "#b8a05a" },
-  { key: "haunted-bat", name: "Morcego Assombrado", region: "ghost-forest", level: 27, element: "death" as DamageElement, tone: "#75558d" },
-  { key: "ice-wolf", name: "Lobo Gélido", region: "frozen-land", level: 33, element: "ice" as DamageElement, tone: "#8dcbe4" },
-  { key: "despair-titan", name: "Titã do Desespero", region: "valley-of-despair", level: 40, element: "physical" as DamageElement, tone: "#8b735a" },
-  { key: "lava-golem", name: "Golem de Lava", region: "volcano", level: 48, element: "fire" as DamageElement, tone: "#d56a42" },
+  { key: "inn-mite", name: "Rato da Estalagem", region: "amber-inn", level: 5, element: "physical" as DamageElement, tone: "#9b7b5a" },
 ];
 
 const RARITY_CLASS: Record<string, string> = {
@@ -129,13 +122,33 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
 
   const refresh = async () => { if (!IS_STATIC_DEMO) await utils.game.bootstrap.invalidate(); };
   const combat = trpc.game.combat.useMutation({
-    onSuccess: async (result) => {
+    onSuccess: async (result, variables) => {
       setLastCombat(result.result);
       setNotice(result.result.defeated ? `${result.result.monster} caiu. O drop aguarda no campo.` : `${result.result.monster} contra-atacou.`);
-      createCombatFloatEvents(result.result).forEach((detail) => window.dispatchEvent(new CustomEvent("vale:floating-combat-text", { detail })));
-      window.dispatchEvent(new CustomEvent("vale:world-combat-state", { detail: { player: result.snapshot.character, monsters: result.snapshot.encounters.map((entry) => ({ key: entry.monsterKey, hp: entry.hp, maxHp: entry.maxHp })) } }));
+      
+      // O backend agora deve retornar monsterEncounterId no resultado, ou usamos o das variáveis
+      const monsterEncounterId = (result.result as any).monsterEncounterId || variables.monsterEncounterId;
+      
+      createCombatFloatEvents(result.result).forEach((detail) => {
+        // Ajusta o alvo do texto flutuante para o ID da instância
+        const instanceDetail = detail.target === result.result.monsterKey ? { ...detail, target: monsterEncounterId } : detail;
+        window.dispatchEvent(new CustomEvent("vale:floating-combat-text", { detail: instanceDetail }));
+      });
+
+      window.dispatchEvent(new CustomEvent("vale:world-combat-state", { 
+        detail: { 
+          player: result.snapshot.character, 
+          monsters: result.snapshot.encounters.map((entry) => ({ 
+            id: entry.id, 
+            key: entry.monsterKey, 
+            hp: entry.hp, 
+            maxHp: entry.maxHp 
+          })) 
+        } 
+      }));
+
       if (result.result.defeated) {
-        window.dispatchEvent(new CustomEvent("vale:creature-defeated", { detail: { monsterKey: result.result.monsterKey } }));
+        window.dispatchEvent(new CustomEvent("vale:creature-defeated", { detail: { monsterEncounterId, monsterKey: result.result.monsterKey } }));
         const timer = window.setTimeout(() => {
           respawnRefreshTimersRef.current = respawnRefreshTimersRef.current.filter((entry) => entry !== timer);
           void refresh();

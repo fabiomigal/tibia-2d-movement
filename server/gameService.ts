@@ -221,7 +221,7 @@ export async function resolveCombat(monsterEncounterId: number, skillKey?: strin
     const [quest] = await db.select().from(gameQuests).where(and(eq(gameQuests.characterId, character.id), eq(gameQuests.status, "active"))).limit(1);
     if (quest) { const progress = Math.min(quest.target, quest.progress + 1); await db.update(gameQuests).set({ progress, status: progress >= quest.target ? "complete" : "active" }).where(eq(gameQuests.id, quest.id)); }
   }
-  return { result: { monster: monster.name, monsterKey: monster.key, damage: finalDamage, counterDamage, counterCritical, healing, element: skill.element as DamageElement, critical, defeated, monsterHp, monsterMaxHp: monster.hp, xpGained: defeated ? monster.xp : 0, goldGained: defeated ? monster.gold : 0, autoPotionUsed }, snapshot: await getGameSnapshot() };
+  return { result: { monster: monster.name, monsterKey: monster.key, monsterEncounterId: encounter.id, damage: finalDamage, counterDamage, counterCritical, healing, element: skill.element as DamageElement, critical, defeated, monsterHp, monsterMaxHp: monster.hp, xpGained: defeated ? monster.xp : 0, goldGained: defeated ? monster.gold : 0, autoPotionUsed }, snapshot: await getGameSnapshot() };
 }
 
 export async function reviveCharacter() {
@@ -258,7 +258,7 @@ export async function travelToRegion(region: string, portalId?: string) {
   if (!validPortal && character.level < targetRegion.level) throw new Error(`O portal exige nível ${targetRegion.level}.`);
   const unlocked = JSON.parse(character.unlockedRegions) as string[];
   if (!unlocked.includes(targetRegion.key)) unlocked.push(targetRegion.key);
-  await db.update(gameCharacters).set({ currentRegion: targetRegion.key, floor: targetRegion.key === "ancient-dungeon" ? 1 : 0, unlockedRegions: JSON.stringify(unlocked), updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));
+  await db.update(gameCharacters).set({ currentRegion: targetRegion.key, floor: 0, unlockedRegions: JSON.stringify(unlocked), updatedAt: new Date() }).where(eq(gameCharacters.id, character.id));
   return getGameSnapshot();
 }
 

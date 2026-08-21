@@ -161,7 +161,7 @@ export class GameWorld {
   };
   private readonly onAttackTarget = (event: Event) => {
     const detail = (event as CustomEvent<{ monsterEncounterId?: number; defaultAttack?: boolean }>).detail;
-    if (!detail?.monsterEncounterId) return;
+    if (detail?.monsterEncounterId === undefined) return;
     this.activeAttackTarget = detail.monsterEncounterId;
     this.selectedAttackTarget = detail.monsterEncounterId;
     this.activeAttackUsesDefault = detail.defaultAttack === true;
@@ -400,7 +400,9 @@ export class GameWorld {
     const incoming = new Set(chests.map((chest) => chest.chestKey));
     this.lootChests.forEach((chest, key) => {
       if (incoming.has(key)) return;
-      chest.sprite.dispose(); chest.glow.dispose();
+      chest.sprite.dispose();
+      chest.material.dispose();
+      chest.glow.dispose();
       this.lootChests.delete(key);
     });
     for (const chest of chests) {
@@ -671,13 +673,12 @@ export class GameWorld {
     this.createCityGuide(-8.35, -3.25);
     WORLD_PORTALS.forEach((portal) => this.createPortal(portal.x, portal.z, portal.id, portal.id.includes("inn") ? "#D19A50" : "#769A94", portal.label));
     this.createStairway(11.8, -1.9);
-    const creatures = {
+    const creatures: Record<string, { color: string; scale: number; label: string }> = {
       "field-boar": { color: "#B99064", scale: 0.7, label: "Javali do Campo" },
       "wind-goblin": { color: "#82965C", scale: 0.63, label: "Goblin da Estrada" },
       "bamboo-archer": { color: "#4C7D62", scale: 0.65, label: "Arqueiro Maligno" },
       "inn-mite": { color: "#9B7B5A", scale: 0.58, label: "Rato da Estalagem" },
-      "moon-wisp": { color: "#8AB9C8", scale: 0.62, label: "Luz Lunar" },
-    } as const;
+    };
     WORLD_MONSTER_SPAWNS.forEach((spawn, index) => {
       const creature = creatures[spawn.monsterKey];
       const visualId = spawn.monsterKey === "field-boar" ? "sighting-boar" : spawn.monsterKey === "wind-goblin" ? "sighting-goblin" : `sighting-${spawn.monsterKey}-${index}`;
@@ -891,8 +892,8 @@ export class GameWorld {
   }
 
   private updateTargetedAttack() {
-    if (!this.activeAttackTarget) return;
-    const creature = this.creatureAgents.find((entry) => entry.interaction.monsterEncounterId === this.activeAttackTarget);
+    if (this.activeAttackTarget === null) return;
+    const creature = this.creatureAgents.find((entry) => (entry.interaction.monsterEncounterId ?? 0) === (this.activeAttackTarget ?? 0));
     if (!creature || creature.state === "dead") { this.activeAttackTarget = null; this.activeAttackUsesDefault = false; return; }
     const creaturePosition = new Vector2(creature.body.position.x, creature.body.position.z);
     const playerPosition = { x: this.player.position.x, z: this.player.position.y };
@@ -900,7 +901,7 @@ export class GameWorld {
       ? resolveDefaultAttackFlow(this.activeAttackTarget, playerPosition, { x: creaturePosition.x, z: creaturePosition.y }).approach
       : resolveAttackApproach(playerPosition, { x: creaturePosition.x, z: creaturePosition.y });
     if (action.kind === "attack") {
-      const monsterEncounterId = this.activeAttackTarget!;
+      const monsterEncounterId = this.activeAttackTarget ?? 0;
       const defaultAttack = this.activeAttackUsesDefault;
       this.activeAttackTarget = null;
       this.activeAttackUsesDefault = false;
@@ -954,7 +955,15 @@ export class GameWorld {
       environment: this.environment,
       position: [this.player.position.x, this.player.position.y],
       nearbyHotspot: this.landmarkInteractions.find((entry) => entry.id === this.nearbyLandmarkId) ?? null,
-      monsters: this.creatureAgents.filter((entry) => entry.state !== "dead").map((entry) => ({ key: entry.interaction.monsterKey ?? entry.interaction.id, name: entry.interaction.label, x: entry.interaction.x, z: entry.interaction.z, hp: entry.hp, maxHp: entry.maxHp })),
+      monsters: this.creatureAgents.filter((entry) => entry.state !== "dead").map((entry) => ({ 
+        id: entry.interaction.monsterEncounterId ?? -1, 
+        key: entry.interaction.monsterKey ?? entry.interaction.id, 
+        name: entry.interaction.label, 
+        x: entry.interaction.x, 
+        z: entry.interaction.z, 
+        hp: entry.hp, 
+        maxHp: entry.maxHp 
+      })),
     };
     window.dispatchEvent(new CustomEvent<GameStatus>("vale:status", { detail }));
   }

@@ -75,13 +75,14 @@ describe("GameWorld — ataque básico por duplo clique", () => {
     const gesture = new TestDoubleClick();
     canvas.dispatchEvent(gesture);
     expect(gesture.defaultPrevented).toBe(true);
-    expect(targets).toEqual([{ monsterKey: "field-boar", defaultAttack: true }]);
+    // Nota: No teste, o monstro sighting-boar não tem ID inicial
+    expect(targets).toEqual([{ monsterEncounterId: 0, monsterKey: "field-boar", defaultAttack: true }]);
 
     world.update(0);
     const gameInternals = world as unknown as { player: { position: { copyFromFloats: (x: number, y: number) => void } } };
     gameInternals.player.position.copyFromFloats(boar!.position.x - 0.4, boar!.position.z);
     world.update(0);
-    expect(ready).toEqual([{ monsterKey: "field-boar", defaultAttack: true }]);
+    expect(ready).toEqual([{ monsterEncounterId: 0, defaultAttack: true }]);
 
     const internals = world as unknown as { creatureAgents: Array<{ body: { isVisible: boolean }; sprite: { mesh: { isVisible: boolean } }; state: string; respawnAt: number }> };
     const respawningBoar = internals.creatureAgents.find((creature) => creature.body === boar)!;

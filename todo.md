@@ -226,3 +226,8 @@
 - [x] Identificar e corrigir a duplicidade de chaves `moon-wisp` na renderização da lista de monstros no HUD (`GameOverlay.tsx`).
 - [x] Garantir que cada instância de monstro no estado do jogo possua um identificador único para o React.
 - [x] Ajustar a lógica de drop em `gameService.ts` para usar a posição (x, z) do monstro no momento da derrota.
+
+- [x] Remover todos os mapas excedentes, mantendo apenas os 3 primeiros (Estrada dos Ventos, Cidade de Âmbar, Estalagem do Âmbar).
+- [x] Ajustar todas as referências no código (gameCatalog.ts, gameService.ts, GameWorld.ts, etc.) para refletir a remoção dos mapas.
+- [x] Identificar e corrigir quaisquer erros remanescentes no projeto, incluindo falhas de tipo e duplicidade de chaves.
+- [x] Atualizar o repositório no GitHub e o GitHub Pages com o estado final limpo e funcional.

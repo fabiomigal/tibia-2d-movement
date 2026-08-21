@@ -15,7 +15,7 @@ vi.mock("@/game/scene", () => ({
 }));
 vi.mock("@/lib/trpc", () => {
   const mutation = { useMutation: () => ({ mutate: vi.fn() }) };
-  return { trpc: { useUtils: () => ({ game: { bootstrap: { invalidate: vi.fn() } } }), game: { bootstrap: { useQuery: () => ({ data: mocks.snapshot, refetch: mocks.refetch }) }, merchant: { useQuery: () => ({ data: [] }) }, combat: mutation, inventory: mutation, travel: mutation, idleStart: mutation, idleResume: mutation, revive: mutation, collectDrop: mutation, autoPotion: mutation, merchantBuy: mutation, questAccept: mutation, questClaim: mutation, archetype: mutation, restState: { useMutation: () => ({ mutate: mocks.restMutate }) } } } };
+  return { trpc: { useUtils: () => ({ game: { bootstrap: { invalidate: vi.fn() } } }), game: { bootstrap: { useQuery: () => ({ data: mocks.snapshot, refetch: mocks.refetch }) }, merchant: { useQuery: () => ({ data: [] }) }, combat: mutation, inventory: mutation, travel: mutation, idleStart: mutation, idleResume: mutation, revive: mutation, collectDrop: mutation, collectAllDrops: mutation, autoPotion: mutation, merchantBuy: mutation, questAccept: mutation, questClaim: mutation, archetype: mutation, restState: { useMutation: () => ({ mutate: mocks.restMutate }) } } } };
 });
 
 import GameCanvas from "./GameCanvas";

@@ -6,7 +6,6 @@ type MapDefinition = { id: string; label: string; x: number; z: number; width: n
 /** Metadados preservados para as transições de área, sem paredes, props ou pisos sobrepostos. */
 export const EXPLORATION_MAPS: readonly MapDefinition[] = [
   { id: "amber-inn", label: "Estalagem do Âmbar", x: -18.2, z: 12.6, width: 7.2, height: 6.1, tone: "#8294B0" },
-  { id: "moon-sanctuary", label: "Santuário da Lua", x: 18.2, z: -11.8, width: 8.6, height: 7.1, tone: "#76518C" },
 ];
 
 /** As duas áreas usam o mesmo campo global, portanto não instalam objetos nem colisores próprios. */

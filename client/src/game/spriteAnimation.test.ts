@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AURORA_REFERENCE_DIRECTION_ROWS, AURORA_REFERENCE_SPRITE_URLS, AURORA_REFERENCE_STATIC_SPRITE_URLS, BATEDOR_RUINAS_DIRECTION_ROWS, BATEDOR_RUINAS_SPRITE_URLS, BATEDOR_RUINAS_STATIC_SPRITE_URLS, OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectCardinalSpriteDirection, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv, usesSpriteTexture } from "./spriteAnimation";
+import { AURORA_REFERENCE_DIRECTION_ROWS, EXPANSION_SPRITE_URLS, EXPANSION_STATIC_SPRITE_URLS, BATEDOR_RUINAS_DIRECTION_ROWS, BATEDOR_RUINAS_SPRITE_URLS, BATEDOR_RUINAS_STATIC_SPRITE_URLS, OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectCardinalSpriteDirection, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv, usesSpriteTexture } from "./spriteAnimation";
 import { Material } from "@babylonjs/core/Materials/material";
 
 describe("seleção de frame dos sprites Zao", () => {
@@ -44,9 +44,9 @@ describe("seleção de frame dos sprites Zao", () => {
     expect(BATEDOR_RUINAS_DIRECTION_ROWS).toEqual({ north: 0, east: 1, south: 2, west: 3 });
     expect(selectSpriteRowUv("north", 4, BATEDOR_RUINAS_DIRECTION_ROWS, true)).toEqual({ vOffset: 0.25, vScale: -0.25 });
     expect(selectSpriteRowUv("south", 4, BATEDOR_RUINAS_DIRECTION_ROWS, true)).toEqual({ vOffset: 0.75, vScale: -0.25 });
-    expect(AURORA_REFERENCE_SPRITE_URLS.goblin).toBe("/manus-storage/aurora_goblin_44e23aa6.png");
-    expect(AURORA_REFERENCE_SPRITE_URLS.boar).toBe("/manus-storage/aurora_boar_e32a98d2.png");
-    expect(selectSpriteRowUv("south", 4, AURORA_REFERENCE_DIRECTION_ROWS)).toEqual({ vOffset: 0, vScale: 0.25 });
+    expect(EXPANSION_SPRITE_URLS.goblin).toBe("/manus-storage/goblin_atlas_v3_a5715b7f.png");
+    expect(EXPANSION_SPRITE_URLS.boar).toBe("/manus-storage/boar_atlas_v3_38659554.png");
+    expect(selectSpriteRowUv("south", 4, AURORA_REFERENCE_DIRECTION_ROWS)).toEqual({ vOffset: 0.5, vScale: 0.25 });
     expect(selectSpriteRowUv("northeast", 4, AURORA_REFERENCE_DIRECTION_ROWS)).toEqual({ vOffset: 0.25, vScale: 0.25 });
     expect(selectSpriteFrameUv(0.45, 8, 4, true, 4)).toEqual({ uOffset: 3 / 4, uScale: 1 / 4 });
     expect(selectSpriteFrameUv(0.7, 12, 4, false, 4)).toEqual({ uOffset: 3 / 4, uScale: 1 / 4 });
@@ -60,9 +60,10 @@ describe("seleção de frame dos sprites Zao", () => {
       hit: expect.stringMatching(/sprites\/batedor-ruinas\/batedor-ruinas-hit-4x4\.png$/),
       death: expect.stringMatching(/sprites\/batedor-ruinas\/batedor-ruinas-death-4x4\.png$/),
     }));
-    expect(AURORA_REFERENCE_STATIC_SPRITE_URLS).toEqual({
-      goblin: expect.stringMatching(/sprites\/aurora-monsters\/aurora_goblin\.png$/),
-      boar: expect.stringMatching(/sprites\/aurora-monsters\/aurora_boar\.png$/),
+    expect(EXPANSION_STATIC_SPRITE_URLS).toEqual({
+      goblin: "/manus-storage/goblin_atlas_v3_a5715b7f.png",
+      boar: "/manus-storage/boar_atlas_v3_38659554.png",
+      chest: "/manus-storage/chest_sprite_v3_f8d4ef4d.png",
     });
   });
 
@@ -99,7 +100,7 @@ describe("seleção de frame dos sprites Zao", () => {
   });
 
   it("calibra aventureiro e criaturas para a escala do grid de tiles", () => {
-    expect(ZAO_SPRITE_SIZE).toEqual({ adventurer: 1.08, goblin: 1.42, boar: 1.58 });
+    expect(ZAO_SPRITE_SIZE).toEqual({ adventurer: 1.08, goblin: 1.42, boar: 1.58, chest: 1.0 });
     expect(ZAO_SPRITE_SIZE.adventurer).toBeGreaterThan(1);
     expect(ZAO_SPRITE_SIZE.adventurer).toBeLessThan(ZAO_SPRITE_SIZE.goblin);
     expect(ZAO_SPRITE_SIZE.boar).toBeGreaterThan(ZAO_SPRITE_SIZE.goblin);

@@ -6,6 +6,7 @@ export type CombatFloatEvent = {
   kind: CombatFloatKind;
   value: number;
   monsterKey?: string;
+  monsterEncounterId?: number;
 };
 
 export type ScreenCombatFloat = {
@@ -63,6 +64,7 @@ export function normalizeScreenCombatFloat(value: unknown): ScreenCombatFloat | 
 
 type CombatFloatSource = {
   monsterKey: string;
+  monsterEncounterId?: number;
   damage: number;
   critical: boolean;
   counterDamage: number;
@@ -73,7 +75,15 @@ type CombatFloatSource = {
 /** Converte o resultado de uma rodada em feedback visual sem depender do canvas. */
 export function createCombatFloatEvents(result: CombatFloatSource): CombatFloatEvent[] {
   const events: CombatFloatEvent[] = [];
-  if (result.damage > 0) events.push({ target: "monster", monsterKey: result.monsterKey, kind: result.critical ? "critical" : "damage", value: result.damage });
+  if (result.damage > 0) {
+    events.push({ 
+      target: "monster", 
+      monsterKey: result.monsterKey, 
+      monsterEncounterId: result.monsterEncounterId,
+      kind: result.critical ? "critical" : "damage", 
+      value: result.damage 
+    });
+  }
   if (result.counterDamage > 0) events.push({ target: "player", kind: result.counterCritical ? "critical" : "damage", value: result.counterDamage });
   if (result.healing > 0) events.push({ target: "player", kind: "heal", value: result.healing });
   return events;

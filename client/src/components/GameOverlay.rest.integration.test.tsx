@@ -37,6 +37,7 @@ vi.mock("@/lib/trpc", () => {
         idleStart: passiveMutation,
         idleResume: passiveMutation, revive: passiveMutation,
         collectDrop: { useMutation: (options: unknown) => { mocks.collectDropOptions = options; return { mutate: mocks.collectDropMutate, isPending: false }; } },
+        collectAllDrops: passiveMutation,
         autoPotion: passiveMutation,
         merchantBuy: passiveMutation, questAccept: passiveMutation, questClaim: passiveMutation, archetype: passiveMutation,
         restState: { useMutation: () => ({ mutate: mocks.restMutate }) },
@@ -151,7 +152,7 @@ describe("GameOverlay — ciclo de repouso integrado", () => {
   it("mostra no minimapa de campo apenas jogador, criaturas e travessias", () => {
     render(<GameOverlay status={{
       ...movingStatus,
-      monsters: [{ key: "field-boar", name: "Javali do Campo", x: 2, z: 3, hp: 24, maxHp: 38 }],
+      monsters: [{ id: 101, key: "field-boar", name: "Javali do Campo", x: 2, z: 3, hp: 24, maxHp: 38 }],
       nearbyHotspot: { id: "portal-inn-entry", label: "Porta da Estalagem", kind: "portal", x: -18.2, z: 13.9 },
     }} />);
 
@@ -169,7 +170,7 @@ describe("GameOverlay — ciclo de repouso integrado", () => {
       await mocks.combatOptions?.onSuccess?.({
         result: { monster: "Javali do Campo", monsterKey: "field-boar", defeated: true, damage: 40, counterDamage: 0, counterCritical: false, healing: 0, element: "physical", critical: false, monsterHp: 0, monsterMaxHp: 38, xpGained: 18, goldGained: 7 },
         snapshot: { ...initialSnapshot, encounters: [] },
-      });
+      }, { monsterEncounterId: 101 });
     });
     expect(mocks.bootstrapInvalidate).toHaveBeenCalledTimes(1);
     act(() => { vi.advanceTimersByTime(MONSTER_RESPAWN_DELAY_MS - 1); });

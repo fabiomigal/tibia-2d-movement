@@ -48,16 +48,6 @@ export const REGIONS = [
   { key: "wind-road", name: "Estrada dos Ventos", level: 1, theme: "Portal norte e trilhas de pedra" },
   { key: "bamboo-forest", name: "Cidade de Âmbar", level: 4, theme: "Praça, rio e muralhas" },
   { key: "amber-inn", name: "Estalagem do Âmbar", level: 5, theme: "Salão, lareira e quartos de viagem" },
-  { key: "moon-sanctuary", name: "Santuário da Lua", level: 6, theme: "Bosque enevoado e ruínas silenciosas" },
-  { key: "elders-ruins", name: "Ruínas Anciãs", level: 7, theme: "Pedra e aranhas" },
-  { key: "cursed-graveyard", name: "Cemitério Amaldiçoado", level: 10, theme: "Mortos-vivos" },
-  { key: "ancient-dungeon", name: "Calabouço Antigo", level: 14, theme: "Dois andares" },
-  { key: "oasis", name: "Oásis das Dunas", level: 18, theme: "Deserto e terra" },
-  { key: "desert-island", name: "Ilha Deserta", level: 22, theme: "Areia e serpentes" },
-  { key: "ghost-forest", name: "Floresta Assombrada", level: 27, theme: "Morte e sagrado" },
-  { key: "frozen-land", name: "Terra Congelada", level: 33, theme: "Gelo" },
-  { key: "valley-of-despair", name: "Vale do Desespero", level: 40, theme: "Força bruta" },
-  { key: "volcano", name: "Vulcão Carmesim", level: 48, theme: "Fogo e lava" },
 ] as const;
 
 export type RegionKey = (typeof REGIONS)[number]["key"];
@@ -66,8 +56,6 @@ export const MONSTER_RESPAWN_DELAY_MS = 2_000;
 export const WORLD_PORTALS = [
   { id: "portal-inn-entry", label: "Porta da Estalagem", from: "bamboo-forest", to: "amber-inn", x: -9.6, z: -3.3, destination: { x: -18.2, z: 13.9 } },
   { id: "portal-inn-exit", label: "Saída para a Cidade de Âmbar", from: "amber-inn", to: "bamboo-forest", x: -18.2, z: 13.9, destination: { x: -8.55, z: -3.1 } },
-  { id: "portal-ruins-entry", label: "Portal do Santuário", from: "wind-road", to: "moon-sanctuary", x: 16.2, z: 4.6, destination: { x: 18.2, z: -10.3 } },
-  { id: "portal-ruins-exit", label: "Retorno à Estrada dos Ventos", from: "moon-sanctuary", to: "wind-road", x: 18.2, z: -10.3, destination: { x: 15.2, z: 4.6 } },
 ] as const satisfies readonly { id: string; label: string; from: RegionKey; to: RegionKey; x: number; z: number; destination: { x: number; z: number } }[];
 
 export type MonsterTemplate = {
@@ -160,18 +148,6 @@ export const WORLD_MONSTER_SPAWNS = [
   { monsterKey: "inn-mite", x: -600, z: 600 },
   { monsterKey: "inn-mite", x: 800, z: 0 },
 
-  // Fogo Fátuo da Lua (moon-wisp) - Spawns espalhados
-  { monsterKey: "moon-wisp", x: 19.2, z: -13.2 },
-  { monsterKey: "moon-wisp", x: 42, z: -28 },
-  { monsterKey: "moon-wisp", x: -100, z: 100 },
-  { monsterKey: "moon-wisp", x: 180, z: 0 },
-  { monsterKey: "moon-wisp", x: 0, z: -180 },
-  { monsterKey: "moon-wisp", x: 300, z: -300 },
-  { monsterKey: "moon-wisp", x: -300, z: 300 },
-  { monsterKey: "moon-wisp", x: 500, z: 500 },
-  { monsterKey: "moon-wisp", x: -500, z: -500 },
-  { monsterKey: "moon-wisp", x: 700, z: -700 },
-  { monsterKey: "moon-wisp", x: -700, z: 700 },
 ] as const;
 
 export type GameSkill = {
