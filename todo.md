@@ -189,3 +189,6 @@
 - [x] Mapear os frames de repouso, caminhada, ataque, dano e derrota da spritesheet Batedor de Ruínas fornecida.
 - [x] Preparar e publicar um atlas limpo do Batedor de Ruínas e aplicá-lo somente ao personagem principal.
 - [x] Validar as animações em desktop e mobile, executar testes e sincronizar o checkpoint com o GitHub.
+- [x] Isolar cada sprite do Batedor de Ruínas em recortes individuais, removendo cortes incorretos e sobreposições entre quadros.
+- [x] Reorganizar o atlas para que a direção norte corresponda à parte superior da sprite e corrigir a inversão vertical no mundo.
+- [ ] Atualizar contratos, validar desktop/mobile, salvar checkpoint e sincronizar a correção com o GitHub.

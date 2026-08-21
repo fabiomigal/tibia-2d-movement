@@ -31,9 +31,9 @@ describe("catálogo de assets Aurora autorizados", () => {
     expect(getTileAsset("aurora_tree")).toMatchObject({ tileWidth: 40, tileHeight: 48, localFilename: "/manus-storage/aurora_tree_3c9a975d.png" });
     expect(getTileAsset("aurora_adventurer")).toMatchObject({
       author: "fabiomigal@gmail.com",
-      tileWidth: 96,
-      tileHeight: 96,
-      localFilename: "/manus-storage/batedor-ruinas-idle-4x4_172055a4.png",
+      tileWidth: 128,
+      tileHeight: 128,
+      localFilename: "/manus-storage/batedor-ruinas-idle-4x4_e8c66a18.png",
       attributionText: "Gerado por Gemini sob comandos do usuário fabiomigal@gmail.com; uso autorizado pelo autor para o projeto Vale de Âmbar.",
     });
   });

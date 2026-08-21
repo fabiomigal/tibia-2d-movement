@@ -30,7 +30,7 @@ export const OPAQUE_SPRITE_CONTRAST = {
 
 type SpriteDirection = "south" | "southwest" | "west" | "northwest" | "north" | "northeast" | "east" | "southeast";
 type SpriteDirectionRows = Readonly<Partial<Record<SpriteDirection, number>>>;
-type SpriteSheet = { url: string; columns: number; fps: number; loop: boolean; rows?: number; directionRows?: SpriteDirectionRows; columnStart?: number; frameColumns?: number };
+type SpriteSheet = { url: string; columns: number; fps: number; loop: boolean; rows?: number; directionRows?: SpriteDirectionRows; invertV?: boolean; columnStart?: number; frameColumns?: number };
 
 /** Alturas em unidades de mundo: 1 tile = 1u; recalibradas para a leitura do novo cenário em grade. */
 export const ZAO_SPRITE_SIZE: Record<SpriteActorKind, number> = {
@@ -46,13 +46,15 @@ const STATIC_SPRITE_COLORS: Record<SpriteActorKind, string> = {
 };
 
 const CARDINAL_DIRECTION_ROWS: SpriteDirectionRows = { south: 0, east: 1, north: 2, west: 3 };
+/** Ordem física do atlas reconstruído: norte ocupa a linha superior do PNG. */
+export const BATEDOR_RUINAS_DIRECTION_ROWS: SpriteDirectionRows = { north: 0, east: 1, south: 2, west: 3 };
 /** Atlas cardinal 4×4 do Batedor de Ruínas, recortado da spritesheet autorizada pelo autor. */
 export const BATEDOR_RUINAS_SPRITE_URLS = {
-  idle: "/manus-storage/batedor-ruinas-idle-4x4_172055a4.png",
-  walk: "/manus-storage/batedor-ruinas-walk-4x4_c6df36d3.png",
-  attack: "/manus-storage/batedor-ruinas-attack-4x4_6d483878.png",
-  hit: "/manus-storage/batedor-ruinas-hit-4x4_c45f3f51.png",
-  death: "/manus-storage/batedor-ruinas-death-4x4_a1c8a2f0.png",
+  idle: "/manus-storage/batedor-ruinas-idle-4x4_e8c66a18.png",
+  walk: "/manus-storage/batedor-ruinas-walk-4x4_198bb673.png",
+  attack: "/manus-storage/batedor-ruinas-attack-4x4_f5f91a67.png",
+  hit: "/manus-storage/batedor-ruinas-hit-4x4_78b1c80e.png",
+  death: "/manus-storage/batedor-ruinas-death-4x4_e8975156.png",
 } as const;
 
 /** Atlases Aurora preservados exclusivamente para as criaturas existentes. */
@@ -66,14 +68,19 @@ const AURORA_REFERENCE_BASE_SHEET = {
   rows: 4,
   directionRows: AURORA_REFERENCE_DIRECTION_ROWS,
 } as const;
+const BATEDOR_RUINAS_BASE_SHEET = {
+  rows: 4,
+  directionRows: BATEDOR_RUINAS_DIRECTION_ROWS,
+  invertV: true,
+} as const;
 
 const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteSheet>>> = {
   adventurer: {
-    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.idle, columns: 4, fps: 4, loop: true },
-    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.walk, columns: 4, fps: 8, loop: true },
-    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.attack, columns: 4, fps: 12, loop: false },
-    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.hit, columns: 4, fps: 10, loop: false },
-    death: { ...AURORA_REFERENCE_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.death, columns: 4, fps: 8, loop: false },
+    idle: { ...BATEDOR_RUINAS_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.idle, columns: 4, fps: 4, loop: true },
+    walk: { ...BATEDOR_RUINAS_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.walk, columns: 4, fps: 8, loop: true },
+    attack: { ...BATEDOR_RUINAS_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.attack, columns: 4, fps: 12, loop: false },
+    hit: { ...BATEDOR_RUINAS_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.hit, columns: 4, fps: 10, loop: false },
+    death: { ...BATEDOR_RUINAS_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.death, columns: 4, fps: 8, loop: false },
   },
   goblin: {
     idle: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.goblin, columns: 4, fps: 4, loop: true },
@@ -91,13 +98,15 @@ const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteS
   },
 };
 
-/** Recorte UV no sentido nativo do atlas Aurora: o topo do PNG permanece no topo visual do plano. */
-export function selectSpriteRowUv(direction: SpriteDirection, rows = 4, directionRows: SpriteDirectionRows = CARDINAL_DIRECTION_ROWS) {
+/** Recorte UV por linha; o Batedor inverte V para compensar o plano horizontal do mundo. */
+export function selectSpriteRowUv(direction: SpriteDirection, rows = 4, directionRows: SpriteDirectionRows = CARDINAL_DIRECTION_ROWS, invertV = false) {
   const cardinalFallback: Record<SpriteDirection, "south" | "east" | "north" | "west"> = {
     south: "south", southwest: "west", west: "west", northwest: "west", north: "north", northeast: "east", east: "east", southeast: "east",
   };
   const row = directionRows[direction] ?? directionRows[cardinalFallback[direction]] ?? 0;
-  return { vOffset: row / rows, vScale: 1 / rows };
+  return invertV
+    ? { vOffset: (row + 1) / rows, vScale: -1 / rows }
+    : { vOffset: row / rows, vScale: 1 / rows };
 }
 
 export function selectSpriteFrame(elapsedSeconds: number, fps: number, columns: number, loop: boolean) {
@@ -181,8 +190,9 @@ export class AnimatedSpriteActor {
     if (texture) {
       const frameUv = selectSpriteFrameUv(this.elapsed, sheet.fps, sheet.frameColumns ?? sheet.columns, sheet.loop, sheet.columns, sheet.columnStart);
       texture.uOffset = frameUv.uOffset;
-      const rowUv = selectSpriteRowUv(this.direction, sheet.rows ?? 4, sheet.directionRows);
+      const rowUv = selectSpriteRowUv(this.direction, sheet.rows ?? 4, sheet.directionRows, sheet.invertV);
       texture.vOffset = rowUv.vOffset;
+      texture.vScale = rowUv.vScale;
     }
     this.mesh.position.set(x, y, z);
   }
@@ -220,7 +230,7 @@ export class AnimatedSpriteActor {
       texture.wrapU = Texture.CLAMP_ADDRESSMODE;
       texture.wrapV = Texture.CLAMP_ADDRESSMODE;
       texture.uScale = 1 / sheet.columns;
-      const initialRowUv = selectSpriteRowUv("south", sheet.rows ?? 4, sheet.directionRows);
+      const initialRowUv = selectSpriteRowUv("south", sheet.rows ?? 4, sheet.directionRows, sheet.invertV);
       texture.vOffset = initialRowUv.vOffset;
       texture.vScale = initialRowUv.vScale;
       this.textures.set(action, texture);
