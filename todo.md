@@ -184,3 +184,8 @@
 - [x] Publicar as duas variações e aplicá-las exclusivamente às células transitáveis de campo, preservando a orientação superior.
 - [x] Validar a continuidade visual em desktop e mobile e executar a checagem de tipos, 118 testes e builds de produção/GitHub Pages.
 - [x] Salvar o checkpoint das tiles de campo e sincronizá-lo com o GitHub.
+- [x] Gerar um arquivo independente com a distribuição atual da grade do primeiro mapa e sua legenda.
+- [x] Entregar o arquivo gráfico da grade ao usuário.
+- [x] Mapear os frames de repouso, caminhada, ataque, dano e derrota da spritesheet Batedor de Ruínas fornecida.
+- [x] Preparar e publicar um atlas limpo do Batedor de Ruínas e aplicá-lo somente ao personagem principal.
+- [ ] Validar as animações em desktop e mobile, executar testes e sincronizar o checkpoint com o GitHub.

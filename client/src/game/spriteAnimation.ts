@@ -46,9 +46,17 @@ const STATIC_SPRITE_COLORS: Record<SpriteActorKind, string> = {
 };
 
 const CARDINAL_DIRECTION_ROWS: SpriteDirectionRows = { south: 0, east: 1, north: 2, west: 3 };
-/** Recortes da guia Aurora autorizada pelo autor; cada atlas é uma grade cardinal 4×4. */
+/** Atlas cardinal 4×4 do Batedor de Ruínas, recortado da spritesheet autorizada pelo autor. */
+export const BATEDOR_RUINAS_SPRITE_URLS = {
+  idle: "/manus-storage/batedor-ruinas-idle-4x4_172055a4.png",
+  walk: "/manus-storage/batedor-ruinas-walk-4x4_c6df36d3.png",
+  attack: "/manus-storage/batedor-ruinas-attack-4x4_6d483878.png",
+  hit: "/manus-storage/batedor-ruinas-hit-4x4_c45f3f51.png",
+  death: "/manus-storage/batedor-ruinas-death-4x4_a1c8a2f0.png",
+} as const;
+
+/** Atlases Aurora preservados exclusivamente para as criaturas existentes. */
 export const AURORA_REFERENCE_SPRITE_URLS = {
-  adventurer: "/manus-storage/aurora_adventurer_46c6b802.png",
   goblin: "/manus-storage/aurora_goblin_44e23aa6.png",
   boar: "/manus-storage/aurora_boar_e32a98d2.png",
 } as const;
@@ -61,10 +69,11 @@ const AURORA_REFERENCE_BASE_SHEET = {
 
 const spriteSheets: Record<SpriteActorKind, Partial<Record<SpriteAction, SpriteSheet>>> = {
   adventurer: {
-    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.adventurer, columns: 4, fps: 4, loop: true },
-    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.adventurer, columns: 4, fps: 8, loop: true },
-    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.adventurer, columns: 4, fps: 12, loop: false },
-    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.adventurer, columns: 4, fps: 10, loop: false },
+    idle: { ...AURORA_REFERENCE_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.idle, columns: 4, fps: 4, loop: true },
+    walk: { ...AURORA_REFERENCE_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.walk, columns: 4, fps: 8, loop: true },
+    attack: { ...AURORA_REFERENCE_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.attack, columns: 4, fps: 12, loop: false },
+    hit: { ...AURORA_REFERENCE_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.hit, columns: 4, fps: 10, loop: false },
+    death: { ...AURORA_REFERENCE_BASE_SHEET, url: BATEDOR_RUINAS_SPRITE_URLS.death, columns: 4, fps: 8, loop: false },
   },
   goblin: {
     idle: { ...AURORA_REFERENCE_BASE_SHEET, url: AURORA_REFERENCE_SPRITE_URLS.goblin, columns: 4, fps: 4, loop: true },

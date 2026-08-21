@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AURORA_REFERENCE_DIRECTION_ROWS, AURORA_REFERENCE_SPRITE_URLS, OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv } from "./spriteAnimation";
+import { AURORA_REFERENCE_DIRECTION_ROWS, AURORA_REFERENCE_SPRITE_URLS, BATEDOR_RUINAS_SPRITE_URLS, OPAQUE_SPRITE_CONTRAST, OPAQUE_SPRITE_RENDERING, SPRITE_ALPHA_CUTOFF, SPRITE_PLANE_ROTATION_X, ZAO_SPRITE_SIZE, selectSpriteDirection, selectSpriteFrame, selectSpriteFrameUv, selectSpriteRowUv } from "./spriteAnimation";
 import { Material } from "@babylonjs/core/Materials/material";
 
 describe("seleção de frame dos sprites Zao", () => {
@@ -22,8 +22,14 @@ describe("seleção de frame dos sprites Zao", () => {
     expect(selectSpriteRowUv("north")).toEqual({ vOffset: 0.5, vScale: 0.25 });
   });
 
-  it("recorta os atlases Aurora de quatro direções e preserva a animação de cada ator", () => {
-    expect(AURORA_REFERENCE_SPRITE_URLS.adventurer).toBe("/manus-storage/aurora_adventurer_46c6b802.png");
+  it("recorta o Batedor de Ruínas em quatro direções e preserva os atlases das criaturas", () => {
+    expect(BATEDOR_RUINAS_SPRITE_URLS).toEqual({
+      idle: "/manus-storage/batedor-ruinas-idle-4x4_172055a4.png",
+      walk: "/manus-storage/batedor-ruinas-walk-4x4_c6df36d3.png",
+      attack: "/manus-storage/batedor-ruinas-attack-4x4_6d483878.png",
+      hit: "/manus-storage/batedor-ruinas-hit-4x4_c45f3f51.png",
+      death: "/manus-storage/batedor-ruinas-death-4x4_a1c8a2f0.png",
+    });
     expect(AURORA_REFERENCE_SPRITE_URLS.goblin).toBe("/manus-storage/aurora_goblin_44e23aa6.png");
     expect(AURORA_REFERENCE_SPRITE_URLS.boar).toBe("/manus-storage/aurora_boar_e32a98d2.png");
     expect(selectSpriteRowUv("south", 4, AURORA_REFERENCE_DIRECTION_ROWS)).toEqual({ vOffset: 0, vScale: 0.25 });
