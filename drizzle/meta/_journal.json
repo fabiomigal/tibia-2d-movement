@@ -36,6 +36,13 @@
       "when": 1787318893466,
       "tag": "0004_dark_argent",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1787322099187,
+      "tag": "0005_fair_nextwave",
+      "breakpoints": true
     }
   ]
 }

@@ -47,7 +47,7 @@ type Snapshot = {
   activeHunt: { monsterKey: string; region: string; totalTurns: number; rewardsXp: number; rewardsGold: number } | null;
   quests: Array<{ id: number; questKey: string; name: string; status: "available" | "active" | "complete"; progress: number; target: number; rewardGold: number; rewardXp: number }>;
   drops: Array<{ id: number; chestKey: string; name: string; rarity: string; weight: number; x: number; z: number }>;
-  encounters: Array<{ id: number; monsterKey: string; hp: number; maxHp: number; respawnAt: Date | null }>;
+  encounters: Array<{ id: number; monsterKey: string; hp: number; maxHp: number; x: number; z: number; respawnAt: Date | null }>;
 };
 
 const FALLBACK_CHARACTER: Snapshot["character"] = {
@@ -230,7 +230,7 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
 
   useEffect(() => {
     if (!data) return;
-    window.dispatchEvent(new CustomEvent("vale:world-combat-state", { detail: { player: data.character, monsters: data.encounters.map((entry) => ({ key: entry.monsterKey, hp: entry.hp, maxHp: entry.maxHp })) } }));
+    window.dispatchEvent(new CustomEvent("vale:world-combat-state", { detail: { player: data.character, monsters: data.encounters.map((entry) => ({ id: entry.id, key: entry.monsterKey, hp: entry.hp, maxHp: entry.maxHp })) } }));
     const chests = groupLootChests(data.drops);
     window.dispatchEvent(new CustomEvent("vale:loot-chests", { detail: chests }));
     if (selectedChestKey && !chests.some((chest) => chest.chestKey === selectedChestKey)) {
@@ -271,11 +271,11 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
 
   useEffect(() => {
     const onWorldInteraction = (event: Event) => {
-      const interaction = (event as CustomEvent<{ kind: "npc" | "portal" | "stairs" | "monster"; label: string; monsterKey?: string; portalId?: string }>).detail;
+      const interaction = (event as CustomEvent<{ kind: "npc" | "portal" | "stairs" | "monster"; label: string; monsterKey?: string; monsterEncounterId?: number; portalId?: string }>).detail;
       if (!interaction) return;
-      if (interaction.kind === "monster" && interaction.monsterKey) {
+      if (interaction.kind === "monster" && interaction.monsterEncounterId) {
         setNotice(`Alvo marcado: ${interaction.label}. Aproxime-se para atacar.`);
-        window.dispatchEvent(new CustomEvent("vale:attack-target", { detail: { monsterKey: interaction.monsterKey } }));
+        window.dispatchEvent(new CustomEvent("vale:attack-target", { detail: { monsterEncounterId: interaction.monsterEncounterId } }));
         return;
       }
       if (interaction.kind === "npc") { setNotice(`Você conversou com ${interaction.label}.`); setPanel("city"); return; }
@@ -357,9 +357,10 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
         <div className="rpg-minimap__heading"><Map size={14}/><span>MAPA LOCAL</span></div>
         <div className={`rpg-minimap__map rpg-minimap__map--zao rpg-minimap__map--${zaoSubarea}`}>
           {status.monsters.map((monster) => {
+            const encounter = data.encounters.find((e) => e.monsterKey === monster.key && Math.abs(e.x - monster.x) < 1 && Math.abs(e.z - monster.z) < 1);
             const tone = DEMO_MONSTERS.find((entry) => entry.key === monster.key)?.tone ?? "#d58d52";
             const point = projectZaoMapPoint(zaoSubarea, monster.x, monster.z);
-            return <b key={monster.key} className="minimap-monster" style={{ left: `${point.left}%`, top: `${point.top}%`, background: tone }} title={`${monster.name}: ${monster.hp}/${monster.maxHp} HP`}/>;
+            return <b key={encounter?.id ?? `${monster.key}-${monster.x}-${monster.z}`} className="minimap-monster" style={{ left: `${point.left}%`, top: `${point.top}%`, background: tone }} title={`${monster.name}: ${monster.hp}/${monster.maxHp} HP`}/>;
           })}
           {status.nearbyHotspot && <b className={`minimap-hotspot minimap-hotspot--${minimapMarkerTheme}`} style={minimapHotspotStyle} title={status.nearbyHotspot.label}/>}<b className={`minimap-player minimap-player--${minimapMarkerTheme}`} style={minimapPlayerStyle} title="Você"/><span className="minimap-compass">N</span>
         </div>
@@ -397,11 +398,15 @@ export default function GameOverlay({ status }: { status: GameStatus }) {
         <header><span><Swords size={15}/> ENCONTROS PRÓXIMOS</span><b>{status.movement}</b></header>
         {character.isDead ? (
           <div className="combat-console__dead"><p>Você caiu em batalha.</p><button onClick={() => revive.mutate()} disabled={revive.isPending}><RotateCcw size={14}/> {revive.isPending ? "Reviver..." : "Reviver na cidade"}</button><ActionFeedback feedback={reviveFeedback ?? undefined}/></div>
-        ) : nearbyMonsters.length ? (
+        ) : data.encounters.length ? (
           <div className="combat-targets">
-            {nearbyMonsters.map((monster) => { const encounter = data.encounters.find((entry) => entry.monsterKey === monster.key); return <button className="monster-target" key={monster.key} onClick={() => { setNotice(`Mira ajustada para ${monster.name}. Aproxime-se para atacar.`); window.dispatchEvent(new CustomEvent("vale:attack-target", { detail: { monsterKey: monster.key } })); }} disabled={combat.isPending || encounter?.hp === 0}>
-              <i style={{ background: monster.tone }} /><span><b>{monster.name}</b><small>Lv.{monster.level} · {ELEMENT_LABEL[monster.element]}{encounter ? ` · ${encounter.hp}/${encounter.maxHp} HP` : " · pronto"}</small></span><Crosshair size={15}/>
-            </button>; })}
+            {data.encounters.filter(e => e.hp > 0).map((encounter) => { 
+              const monster = DEMO_MONSTERS.find((entry) => entry.key === encounter.monsterKey);
+              if (!monster) return null;
+              return <button className="monster-target" key={encounter.id} onClick={() => { setNotice(`Mira ajustada para ${monster.name}. Aproxime-se para atacar.`); window.dispatchEvent(new CustomEvent("vale:attack-target", { detail: { monsterEncounterId: encounter.id } })); }} disabled={combat.isPending}>
+                <i style={{ background: monster.tone }} /><span><b>{monster.name}</b><small>Lv.{monster.level} · {ELEMENT_LABEL[monster.element]} · {encounter.hp}/{encounter.maxHp} HP</small></span><Crosshair size={15}/>
+              </button>; 
+            })}
           </div>
         ) : <p className="combat-console__empty">Nenhuma criatura catalogada nesta região por enquanto.</p>}
         <footer><Target size={13}/><span>{activeSkill ? `${activeSkill.name} selecionada` : "Carregando habilidades"}</span></footer>

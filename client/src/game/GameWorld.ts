@@ -48,7 +48,7 @@ export function resolveMovementDustEmitRate(isMoving: boolean) {
 }
 
 type LandmarkKind = "npc" | "portal" | "stairs" | "monster";
-type LandmarkInteraction = { id: string; kind: LandmarkKind; label: string; x: number; z: number; radius: number; monsterKey?: string; portalId?: string };
+type LandmarkInteraction = { id: string; kind: LandmarkKind; label: string; x: number; z: number; radius: number; monsterKey?: string; monsterEncounterId?: number; portalId?: string };
 type HealthBar = { rail: Mesh; fill: Mesh; label: Mesh; labelTexture: DynamicTexture; width: number; fillWidth: number; text: string };
 type CreatureAgent = { interaction: LandmarkInteraction; body: Mesh; sprite: AnimatedSpriteActor; marker: Mesh; healthBar: HealthBar; hp: number; maxHp: number; home: Vector2; phase: number; state: "idle" | "chase" | "attack" | "return" | "dead"; respawnAt: number; attackCooldown: number };
 type LootChest = { chestKey: string; x: number; z: number; sprite: Mesh; material: StandardMaterial; glow: Mesh };
@@ -70,8 +70,8 @@ export class GameWorld {
   private readonly movementDust: ParticleSystem;
   private readonly movementDustTexture: DynamicTexture;
   private playerHealth = { hp: 1, maxHp: 1 };
-  private activeAttackTarget: string | null = null;
-  private selectedAttackTarget: string | null = null;
+  private activeAttackTarget: number | null = null;
+  private selectedAttackTarget: number | null = null;
   private activeAttackUsesDefault = false;
   private nearbyLandmarkId: string | null = null;
   private nearbyHighlight: Mesh | null = null;
@@ -135,10 +135,23 @@ export class GameWorld {
     this.nearbyLandmarkId = null;
   };
   private readonly onCombatState = (event: Event) => {
-    const detail = (event as CustomEvent<{ player?: { hp: number; maxHp: number }; monsters?: Array<{ key: string; hp: number; maxHp: number }> }>).detail;
+    const detail = (event as CustomEvent<{ player?: { hp: number; maxHp: number }; monsters?: Array<{ id: number; key: string; hp: number; maxHp: number }> }>).detail;
     if (detail?.player) this.playerHealth = detail.player;
     for (const state of detail?.monsters ?? []) {
-      const creature = this.creatureAgents.find((entry) => entry.interaction.monsterKey === state.key);
+      // Primeiro tenta encontrar pelo ID real
+      let creature = this.creatureAgents.find((entry) => entry.interaction.monsterEncounterId === state.id);
+      
+      // Se não encontrar, tenta vincular um spawn genérico que ainda não tenha ID
+      if (!creature) {
+        creature = this.creatureAgents.find((entry) => 
+          entry.interaction.monsterKey === state.key && 
+          !entry.interaction.monsterEncounterId
+        );
+        if (creature) {
+          creature.interaction.monsterEncounterId = state.id;
+        }
+      }
+
       if (!creature) continue;
       if (state.hp < creature.hp) creature.sprite.play("hit");
       creature.hp = state.hp;
@@ -147,10 +160,10 @@ export class GameWorld {
     }
   };
   private readonly onAttackTarget = (event: Event) => {
-    const detail = (event as CustomEvent<{ monsterKey?: string; defaultAttack?: boolean }>).detail;
-    if (!detail?.monsterKey) return;
-    this.activeAttackTarget = detail.monsterKey;
-    this.selectedAttackTarget = detail.monsterKey;
+    const detail = (event as CustomEvent<{ monsterEncounterId?: number; defaultAttack?: boolean }>).detail;
+    if (!detail?.monsterEncounterId) return;
+    this.activeAttackTarget = detail.monsterEncounterId;
+    this.selectedAttackTarget = detail.monsterEncounterId;
     this.activeAttackUsesDefault = detail.defaultAttack === true;
   };
   private readonly onLootChests = (event: Event) => {
@@ -668,6 +681,7 @@ export class GameWorld {
     WORLD_MONSTER_SPAWNS.forEach((spawn, index) => {
       const creature = creatures[spawn.monsterKey];
       const visualId = spawn.monsterKey === "field-boar" ? "sighting-boar" : spawn.monsterKey === "wind-goblin" ? "sighting-goblin" : `sighting-${spawn.monsterKey}-${index}`;
+      // Nota: monsterEncounterId será preenchido pelo onCombatState quando o servidor retornar os IDs reais
       this.createMonsterSighting(spawn.x, spawn.z, visualId, creature.color, creature.scale, spawn.monsterKey, creature.label);
     });
   }
@@ -866,7 +880,7 @@ export class GameWorld {
       creature.sprite.update(deltaSeconds, creature.body.position.x, 0.13, creature.body.position.z, spriteAction);
       creature.sprite.setVisible(true);
       this.updateHealthBar(creature.healthBar, creature.body.position.x, COMBAT_VISUAL_HEIGHTS.monsterHealthBar, creature.body.position.z, creature.hp, creature.maxHp, false);
-      const selected = creature.interaction.monsterKey === this.selectedAttackTarget;
+      const selected = creature.interaction.monsterEncounterId === this.selectedAttackTarget;
       const markerMaterial = creature.marker.material as StandardMaterial;
       const indicator = getTargetIndicatorStyle(selected, creature.state);
       const markerColor = Color3.FromHexString(indicator.color);
@@ -878,7 +892,7 @@ export class GameWorld {
 
   private updateTargetedAttack() {
     if (!this.activeAttackTarget) return;
-    const creature = this.creatureAgents.find((entry) => entry.interaction.monsterKey === this.activeAttackTarget);
+    const creature = this.creatureAgents.find((entry) => entry.interaction.monsterEncounterId === this.activeAttackTarget);
     if (!creature || creature.state === "dead") { this.activeAttackTarget = null; this.activeAttackUsesDefault = false; return; }
     const creaturePosition = new Vector2(creature.body.position.x, creature.body.position.z);
     const playerPosition = { x: this.player.position.x, z: this.player.position.y };
@@ -886,11 +900,11 @@ export class GameWorld {
       ? resolveDefaultAttackFlow(this.activeAttackTarget, playerPosition, { x: creaturePosition.x, z: creaturePosition.y }).approach
       : resolveAttackApproach(playerPosition, { x: creaturePosition.x, z: creaturePosition.y });
     if (action.kind === "attack") {
-      const monsterKey = this.activeAttackTarget;
+      const monsterEncounterId = this.activeAttackTarget!;
       const defaultAttack = this.activeAttackUsesDefault;
       this.activeAttackTarget = null;
       this.activeAttackUsesDefault = false;
-      window.dispatchEvent(new CustomEvent("vale:attack-target-ready", { detail: { monsterKey, defaultAttack } }));
+      window.dispatchEvent(new CustomEvent("vale:attack-target-ready", { detail: { monsterEncounterId, defaultAttack } }));
       return;
     }
     this.player.setTarget(new Vector2(action.destination.x, action.destination.z));

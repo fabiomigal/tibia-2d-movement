@@ -20,7 +20,7 @@ export const appRouter = router({
   }),
   game: router({
     bootstrap: publicProcedure.query(() => getGameSnapshot()),
-    combat: publicProcedure.input(z.object({ monsterKey: z.string(), skillKey: z.string().optional() })).mutation(({ input }) => resolveCombat(input.monsterKey, input.skillKey)),
+    combat: publicProcedure.input(z.object({ monsterEncounterId: z.number().int(), skillKey: z.string().optional() })).mutation(({ input }) => resolveCombat(input.monsterEncounterId, input.skillKey)),
     restState: publicProcedure.input(z.object({ resting: z.boolean() })).mutation(({ input }) => setRestState(input.resting)),
     revive: publicProcedure.mutation(() => reviveCharacter()),
     inventory: publicProcedure.input(z.object({ action: z.enum(["equip", "sell", "discard", "use"]), itemId: z.number().int() })).mutation(({ input }) => updateInventory(input.action, input.itemId)),

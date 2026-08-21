@@ -222,3 +222,7 @@
 - [x] Validar e ajustar a tile de campo uniforme para garantir alinhamento com o Norte.
 - [x] Atualizar o código de animação e mapeamento UV para refletir as mudanças de orientação e transparência.
 - [x] Sincronizar ativos processados com o GitHub e atualizar o GitHub Pages.
+
+- [x] Identificar e corrigir a duplicidade de chaves `moon-wisp` na renderização da lista de monstros no HUD (`GameOverlay.tsx`).
+- [x] Garantir que cada instância de monstro no estado do jogo possua um identificador único para o React.
+- [x] Ajustar a lógica de drop em `gameService.ts` para usar a posição (x, z) do monstro no momento da derrota.

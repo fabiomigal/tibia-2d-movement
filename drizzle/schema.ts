@@ -149,6 +149,8 @@ export const monsterEncounters = mysqlTable("monster_encounters", {
   region: varchar("region", { length: 64 }).notNull(),
   hp: int("hp").notNull(),
   maxHp: int("maxHp").notNull(),
+  x: int("x").notNull().default(0),
+  z: int("z").notNull().default(0),
   respawnAt: timestamp("respawnAt"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

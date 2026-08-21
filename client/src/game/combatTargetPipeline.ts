@@ -24,6 +24,6 @@ export function dispatchDefaultAttackFromDoubleClick({
   const attackFlow = resolveDefaultAttackFromDoubleClick(interaction, player);
   if (!attackFlow) return false;
   event.preventDefault();
-  target.dispatchEvent(new CustomEvent<DefaultAttackRequest>("vale:attack-target", { detail: attackFlow.request }));
+  target.dispatchEvent(new CustomEvent<{ monsterEncounterId: number; defaultAttack: true }>("vale:attack-target", { detail: attackFlow.request }));
   return true;
 }
